@@ -1,0 +1,23 @@
+{
+  "name": "suzume-homepage",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev src",
+    "build": "node scripts/generate-og-image.mjs && vitepress build src",
+    "build:og": "node scripts/generate-og-image.mjs",
+    "preview": "vitepress preview src",
+    "copy:wasm": "cp ../suzume/dist/suzume.js ../suzume/dist/suzume-wasm.wasm src/.vitepress/theme/wasm/ && ./scripts/update-wasm-meta.sh",
+    "update": "yarn copy:wasm && yarn dev"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "opentype.js": "^1.3.4",
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.26"
+  },
+  "dependencies": {
+    "mermaid": "^11",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

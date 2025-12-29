@@ -1,0 +1,226 @@
+/* Suzume - Azure sky theme with clouds, inspired by sparrows soaring */
+:root {
+  --vp-c-brand-1: #3B82F6;
+  --vp-c-brand-2: #60A5FA;
+  --vp-c-brand-3: #2563EB;
+  --vp-c-brand-soft: rgba(59, 130, 246, 0.12);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #2563EB 0%, #60A5FA 40%, #93C5FD 70%, #3B82F6 100%);
+
+  --vp-home-hero-image-background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(147, 197, 253, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(96, 165, 250, 0.2) 0%, transparent 40%),
+    radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  --vp-home-hero-image-filter: blur(44px);
+}
+
+.dark {
+  --vp-c-brand-1: #60A5FA;
+  --vp-c-brand-2: #3B82F6;
+  --vp-c-brand-3: #93C5FD;
+  --vp-c-brand-soft: rgba(96, 165, 250, 0.16);
+
+  --vp-home-hero-name-background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 40%, #93C5FD 70%, #60A5FA 100%);
+  --vp-home-hero-image-background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(147, 197, 253, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(96, 165, 250, 0.15) 0%, transparent 40%),
+    radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+}
+
+/* Custom hero styling */
+.VPHero .name {
+  font-family: 'Architects Daughter', cursive !important;
+  font-size: 6rem !important;
+  letter-spacing: 3px;
+}
+
+.VPHero .text {
+  font-size: 1.5rem !important;
+}
+
+.VPHero .tagline {
+  font-size: 1rem !important;
+  color: var(--vp-c-text-2);
+}
+
+/* Prevent hero text from wrapping */
+.VPHero .main {
+  max-width: 100%;
+}
+
+.VPHero .main .text {
+  max-width: 100%;
+}
+
+.VPHero .tagline {
+  white-space: nowrap;
+}
+
+/* Feature cards with subtle sky blue accent */
+.VPFeature {
+  border-top: 2px solid var(--vp-c-brand-soft);
+  transition: border-color 0.3s, transform 0.2s;
+}
+
+.VPFeature:hover {
+  border-top-color: var(--vp-c-brand-1);
+  transform: translateY(-2px);
+}
+
+/* Code block accent */
+.vp-doc [class*='language-'] {
+  border-left: 3px solid var(--vp-c-brand-soft);
+}
+
+/* Unified code font for all code blocks */
+div[class*="language-"] code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace !important;
+  font-size: 0.875em;
+}
+
+/* Base code color for non-tokenized code */
+.vp-code code {
+  color: #24292e !important;
+}
+.dark .vp-code code {
+  color: #e1e4e8 !important;
+}
+
+/* Prism-style token colors (fallback for Shiki) */
+.vp-code .token.keyword { color: #d73a49 !important; }
+.vp-code .token.string { color: #032f62 !important; }
+.vp-code .token.comment { color: #6a737d !important; }
+.vp-code .token.operator { color: #d73a49 !important; }
+.vp-code .token.punctuation { color: #24292e !important; }
+.vp-code .token.function { color: #6f42c1 !important; }
+.vp-code .token.variable { color: #e36209 !important; }
+.vp-code .token.builtin { color: #005cc5 !important; }
+.vp-code .token.parameter { color: #032f62 !important; }
+.vp-code .token.property { color: #005cc5 !important; }
+.vp-code .token.number { color: #005cc5 !important; }
+.vp-code .token.class-name { color: #6f42c1 !important; }
+.vp-code .token.constant { color: #005cc5 !important; }
+.vp-code .token.boolean { color: #005cc5 !important; }
+
+.dark .vp-code .token.keyword { color: #f97583 !important; }
+.dark .vp-code .token.string { color: #9ecbff !important; }
+.dark .vp-code .token.comment { color: #6a737d !important; }
+.dark .vp-code .token.operator { color: #f97583 !important; }
+.dark .vp-code .token.punctuation { color: #e1e4e8 !important; }
+.dark .vp-code .token.function { color: #b392f0 !important; }
+.dark .vp-code .token.variable { color: #ffab70 !important; }
+.dark .vp-code .token.builtin { color: #79b8ff !important; }
+.dark .vp-code .token.parameter { color: #9ecbff !important; }
+.dark .vp-code .token.property { color: #79b8ff !important; }
+.dark .vp-code .token.number { color: #79b8ff !important; }
+.dark .vp-code .token.class-name { color: #b392f0 !important; }
+.dark .vp-code .token.constant { color: #79b8ff !important; }
+.dark .vp-code .token.boolean { color: #79b8ff !important; }
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
+/* Site title with tagline */
+.VPNavBarTitle {
+  display: flex;
+  align-items: center;
+}
+
+.VPNavBarTitle .title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.VPNavBarTitle .title::after {
+  content: 'Japanese Tokenizer for the Browser';
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+  letter-spacing: 0;
+}
+
+html[lang="ja"] .VPNavBarTitle .title::after {
+  content: 'ブラウザで動く日本語トークナイザー';
+}
+
+/* Language switcher: globe icon */
+.vpi-languages {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M17.9 17.39c-.26-.8-1.01-1.39-1.9-1.39h-1v-3a1 1 0 0 0-1-1H8v-2h2a1 1 0 0 0 1-1V7h2a2 2 0 0 0 2-2v-.41a7.984 7.984 0 0 1 2.9 12.8M11 19.93c-3.95-.49-7-3.85-7-7.93c0-.62.08-1.22.21-1.79L9 15v1a2 2 0 0 0 2 2m1-16A10 10 0 0 0 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2'/%3E%3C/svg%3E");
+}
+
+/* Info blocks - purple theme for glossary/term definitions */
+.vp-doc .custom-block.info {
+  border-color: #a78bfa;
+  background-color: rgba(139, 92, 246, 0.08);
+}
+
+.vp-doc .custom-block.info .custom-block-title {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.dark .vp-doc .custom-block.info {
+  border-color: #a78bfa;
+  background-color: rgba(139, 92, 246, 0.12);
+}
+
+.dark .vp-doc .custom-block.info .custom-block-title {
+  color: #a78bfa;
+}
+
+/* Common container width for home page components */
+:root {
+  --home-content-max-width: 1152px;
+}
+
+/* Override VitePress home page content width */
+#VPContent > div > div.vp-doc.container {
+  max-width: var(--home-content-max-width) !important;
+  margin: 0 auto !important;
+  padding: 0 24px !important;
+}
+
+#VPContent > div > div.vp-doc.container > div,
+#VPContent > div > div.vp-doc.container > div > div {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Reset VitePress default table styles */
+.vp-doc table {
+  display: table !important;
+  width: 100% !important;
+}
+
+.vp-doc thead,
+.vp-doc tbody {
+  display: table-header-group !important;
+  width: auto !important;
+}
+
+.vp-doc tbody {
+  display: table-row-group !important;
+}
+
+.vp-doc tr {
+  display: table-row !important;
+}
+
+.vp-doc th,
+.vp-doc td {
+  display: table-cell !important;
+}
+
+/* Fix aside overlapping header */
+.VPSidebar {
+  top: var(--vp-nav-height) !important;
+  height: calc(100vh - var(--vp-nav-height)) !important;
+}
