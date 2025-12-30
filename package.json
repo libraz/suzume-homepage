@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vitepress dev src",
-    "build": "node scripts/generate-og-image.mjs && vitepress build src",
+    "dev": "vitepress dev",
+    "build": "node scripts/generate-og-image.mjs && vitepress build",
     "build:og": "node scripts/generate-og-image.mjs",
-    "preview": "vitepress preview src",
-    "copy:wasm": "cp ../suzume/dist/suzume.js ../suzume/dist/suzume-wasm.wasm src/.vitepress/theme/wasm/ && ./scripts/update-wasm-meta.sh",
+    "preview": "vitepress preview",
+    "copy:wasm": "cp ../suzume/dist/suzume.js ../suzume/dist/suzume-wasm.wasm .vitepress/theme/wasm/ && ./scripts/update-wasm-meta.sh",
     "update": "yarn copy:wasm && yarn dev"
   },
   "devDependencies": {

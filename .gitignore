@@ -8,8 +8,8 @@
 !.yarn/cache
 #.pnp.*
 node_modules
-src/.vitepress/cache
-src/.vitepress/dist
+.vitepress/cache
+.vitepress/dist
 *.local
 
 # AI
