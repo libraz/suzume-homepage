@@ -1,8 +1,8 @@
 #!/bin/bash
 # Generate WASM metadata (size info)
 
-WASM_FILE="src/.vitepress/theme/wasm/suzume-wasm.wasm"
-META_FILE="src/.vitepress/theme/wasm/meta.json"
+WASM_FILE=".vitepress/theme/wasm/suzume-wasm.wasm"
+META_FILE=".vitepress/theme/wasm/meta.json"
 
 if [ -f "$WASM_FILE" ]; then
   SIZE=$(wc -c < "$WASM_FILE")

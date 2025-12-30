@@ -28,6 +28,10 @@ features:
     details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, and all modern browsers.
 ---
 
+::: danger 🚧 Alpha
+Suzume is in alpha and under active development (since December 25, 2025). The npm package has not yet been published.
+:::
+
 <WasmStats />
 
 <ComparisonTable />
