@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: Japanese Tokenizer That Actually Works in the Browser
-  tagline: Tired of MeCab's 50MB dictionary? Suzume brings lightweight Japanese tokenization to the frontend — under 200KB, no server required.
+  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 200KB — runs entirely in the browser, no server required.
   actions:
     - theme: brand
       text: Try It Now
@@ -22,16 +22,11 @@ features:
     details: Runs 100% in the browser. No Python backend, no API calls, no CORS headaches. Just JavaScript.
   - icon: 🔮
     title: Robust to Unknown Words
-    details: Unlike MeCab, Suzume doesn't break on new words. Brand names, slang, technical terms — stable tokenization without dictionaries.
+    details: No dictionary dependency means no breaking on new words. Brand names, slang, technical terms — stable tokenization every time.
   - icon: ⚡
     title: Production Ready
     details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, and all modern browsers.
 ---
-
-::: tip What Suzume Is
-**Suzume is not a dictionary-based morphological analyzer.**
-It is a lightweight, feature-driven tokenizer designed for real-world Japanese text on the web.
-:::
 
 <WasmStats />
 

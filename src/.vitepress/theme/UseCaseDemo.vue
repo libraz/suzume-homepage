@@ -61,12 +61,12 @@ const tagExamples = computed(() => {
   const isJa = lang.value === 'ja'
   return [
     {
-      label: isJa ? 'ブログ記事' : 'Blog Post',
-      text: '今日は東京で開催されたAIカンファレンスに参加してきました。機械学習や自然言語処理の最新トレンドについて学びました。'
+      label: isJa ? 'SNS投稿' : 'SNS Post',
+      text: '推しのライブがエモすぎて泣いた。歌が上手いし踊りもキレキレでマジで尊い。来年も絶対行く！'
     },
     {
-      label: isJa ? '商品説明' : 'Product',
-      text: '軽量で持ち運びに便利なワイヤレスイヤホン。ノイズキャンセリング機能搭載で、通勤や旅行に最適です。'
+      label: isJa ? 'ブログ記事' : 'Blog Post',
+      text: '今日は東京で開催されたAIカンファレンスに参加してきました。機械学習や自然言語処理の最新トレンドについて学びました。'
     }
   ]
 })
@@ -89,6 +89,10 @@ const analyzeExamples = computed(() => {
   const isJa = lang.value === 'ja'
   return [
     {
+      label: isJa ? '若者言葉' : 'Youth slang',
+      text: 'それな〜！マジでエモいしバズってるよね。推しが尊すぎてしんどい。'
+    },
+    {
       label: isJa ? '早口言葉' : 'Tongue twister',
       text: 'すもももももももものうち'
     },
@@ -107,7 +111,7 @@ const loading = ref(true)
 const copiedTags = ref(false)
 
 // Results (computed from watch)
-const extractedTags = ref<{ text: string; count: number }[]>([])
+const extractedTags = ref<{ text: string; count: number; type: 'noun' | 'verb' | 'adj' }[]>([])
 const baseFormResults = ref<{ surface: string; baseForm: string; posJa: string; pos: string }[]>([])
 const analyzedMorphemes = ref<Morpheme[]>([])
 
@@ -121,7 +125,7 @@ function analyzeForTags(text: string) {
   }
 
   const morphemes = suzume.analyze(text)
-  const tags: { text: string; count: number }[] = []
+  const tags: { text: string; count: number; type: 'noun' | 'verb' | 'adj' }[] = []
   const seen = new Set<string>()
 
   let i = 0
@@ -147,16 +151,29 @@ function analyzeForTags(text: string) {
 
       if (compound.length >= 2 && !seen.has(compound)) {
         seen.add(compound)
-        tags.push({ text: compound, count: 1 })
+        tags.push({ text: compound, count: 1, type: 'noun' })
       }
 
       i = j
-    } else {
+    }
+    // Add verb base forms
+    else if (pos === 'verb' && m.baseForm && m.baseForm.length >= 2 && !seen.has(m.baseForm)) {
+      seen.add(m.baseForm)
+      tags.push({ text: m.baseForm, count: 1, type: 'verb' })
+      i++
+    }
+    // Add adjective base forms
+    else if ((pos === 'adjective' || pos === 'adj') && m.baseForm && m.baseForm.length >= 2 && !seen.has(m.baseForm)) {
+      seen.add(m.baseForm)
+      tags.push({ text: m.baseForm, count: 1, type: 'adj' })
+      i++
+    }
+    else {
       i++
     }
   }
 
-  extractedTags.value = tags.sort((a, b) => b.text.length - a.text.length).slice(0, 10)
+  extractedTags.value = tags.slice(0, 12)
 }
 
 function analyzeForBaseForm(text: string) {
@@ -386,6 +403,7 @@ function getPosColor(pos: string): string {
               v-for="tag in extractedTags"
               :key="tag.text"
               class="tag"
+              :class="tag.type"
             >
               #{{ tag.text }}
             </span>
@@ -665,6 +683,24 @@ function getPosColor(pos: string): string {
   color: var(--vp-c-brand-1);
   border-radius: 100px;
   border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
+}
+
+.tag.noun {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
+}
+
+.tag.verb {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+.tag.adj {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+  border-color: rgba(220, 38, 38, 0.3);
 }
 
 .no-result {

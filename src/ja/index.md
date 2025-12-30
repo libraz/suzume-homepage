@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: ブラウザで動く軽量日本語トークナイザー
-  tagline: MeCabの50MB辞書に疲れたあなたへ。200KB以下でフロントエンド完結、サーバー構築不要。
+  tagline: 50MBの辞書ファイルはもう不要。200KB以下でフロントエンド完結、サーバー構築不要。
   actions:
     - theme: brand
       text: 今すぐ試す
@@ -22,16 +22,11 @@ features:
     details: 100%ブラウザで完結。Pythonバックエンド不要、APIコール不要、CORS問題なし。
   - icon: 🔮
     title: 未知語に強い
-    details: MeCabと違い、新語でも崩れない。ブランド名、スラング、専門用語も安定してトークン化。
+    details: 辞書に依存しないから新語でも崩れない。ブランド名、スラング、専門用語も安定してトークン化。
   - icon: ⚡
     title: 本番投入可能
     details: C++からWASMにコンパイル。TypeScript対応。Node.js、Deno、Bun、全ブラウザで動作。
 ---
-
-::: tip Suzume とは
-**Suzume は辞書ベースの形態素解析器ではありません。**
-Web上の実用的な日本語テキストのために設計された、軽量で特徴量ベースのトークナイザーです。
-:::
 
 <WasmStats />
 

@@ -21,8 +21,8 @@ const t = computed(() => {
   return {
     title: isJa ? 'なぜ Suzume?' : 'Why Suzume?',
     subtitle: isJa
-      ? 'サーバー構築不要。フロントエンドだけで日本語トークン化が完結します。'
-      : 'No server needed. Japanese tokenization entirely in the browser.',
+      ? 'TinySegmenterの軽量さとMeCabの高精度、両方のいいとこ取り。'
+      : 'The best of both worlds: TinySegmenter\'s lightness meets MeCab\'s accuracy.',
     // Table headers
     feature: isJa ? '機能' : 'Feature',
     browserRun: isJa ? 'ブラウザ動作' : 'Browser',
@@ -30,11 +30,16 @@ const t = computed(() => {
     bundleSize: isJa ? 'バンドルサイズ' : 'Bundle Size',
     serverFree: isJa ? 'サーバー不要' : 'Server-free',
     unknownWords: isJa ? '未知語対応' : 'Unknown Words',
+    posInfo: isJa ? '品詞情報' : 'POS Tagging',
+    lemma: isJa ? '原形復元' : 'Lemmatization',
+    compound: isJa ? '複合名詞判定' : 'Compound Nouns',
+    customDict: isJa ? 'カスタム辞書' : 'Custom Dictionary',
     // Values
     notRequired: isJa ? '不要' : 'Not required',
     required: isJa ? '必須' : 'Required',
     heavy: isJa ? '(重い)' : '(Heavy)',
     na: 'N/A',
+    tokenizeOnly: isJa ? '分かち書きのみ' : 'Tokenize only',
     // Benefits
     benefits: [
       {
@@ -62,36 +67,52 @@ const t = computed(() => {
   }
 })
 
-// Comparison data
-const tools = ['Suzume', 'MeCab', 'kuromoji', 'Sudachi']
+// Comparison data: TinySegmenter (lightweight) → Suzume (balanced) → MeCab-based (heavyweight)
+const tools = ['TinySegmenter', 'Suzume', 'kuromoji', 'MeCab']
 
 const features = computed(() => {
   const isJa = lang.value === 'ja'
   return [
     {
       name: t.value.browserRun,
-      values: ['yes', 'no', 'partial', 'no']
+      values: ['yes', 'yes', 'partial', 'no']
     },
     {
       name: t.value.dictionary,
       values: [
         t.value.notRequired,
-        t.value.required,
+        t.value.notRequired,
         t.value.required,
         t.value.required
       ]
     },
     {
       name: t.value.bundleSize,
-      values: [sizeLabel.value, t.value.na, '~20MB', t.value.na]
+      values: ['~10KB', sizeLabel.value, '~20MB', t.value.na]
     },
     {
       name: t.value.serverFree,
-      values: ['yes', 'no', 'partial', 'no']
+      values: ['yes', 'yes', 'partial', 'no']
+    },
+    {
+      name: t.value.posInfo,
+      values: ['no', 'yes', 'yes', 'yes']
+    },
+    {
+      name: t.value.lemma,
+      values: ['no', 'yes', 'yes', 'yes']
+    },
+    {
+      name: t.value.compound,
+      values: ['no', 'no', 'yes', 'yes']
+    },
+    {
+      name: t.value.customDict,
+      values: ['no', 'yes', 'yes', 'yes']
     },
     {
       name: t.value.unknownWords,
-      values: ['yes', 'partial', 'partial', 'partial']
+      values: ['partial', 'yes', 'partial', 'partial']
     }
   ]
 })
@@ -124,8 +145,10 @@ function getCellDisplay(value: string) {
         <thead>
           <tr>
             <th class="feature-col">{{ t.feature }}</th>
-            <th v-for="tool in tools" :key="tool" :class="{ highlight: tool === 'Suzume' }">
+            <th v-for="(tool, i) in tools" :key="tool" :class="{ highlight: tool === 'Suzume' }">
               {{ tool }}
+              <span v-if="i === 0" class="tool-tag light">{{ lang === 'ja' ? '軽量' : 'Light' }}</span>
+              <span v-else-if="i === tools.length - 1" class="tool-tag heavy">{{ lang === 'ja' ? '高精度' : 'Accurate' }}</span>
             </th>
           </tr>
         </thead>
@@ -135,7 +158,7 @@ function getCellDisplay(value: string) {
             <td
               v-for="(value, i) in feature.values"
               :key="i"
-              :class="[getCellClass(value), { highlight: i === 0 }]"
+              :class="[getCellClass(value), { highlight: i === 1 }]"
             >
               {{ getCellDisplay(value) }}
             </td>
@@ -226,6 +249,28 @@ function getCellDisplay(value: string) {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  position: relative;
+}
+
+.tool-tag {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+.tool-tag.light {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.tool-tag.heavy {
+  color: #7C3AED;
+  background: rgba(124, 58, 237, 0.1);
 }
 
 .comparison-table th.highlight {
