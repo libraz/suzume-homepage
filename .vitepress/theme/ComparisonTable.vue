@@ -364,4 +364,59 @@ function getCellDisplay(value: string) {
     font-size: 1.5rem;
   }
 }
+
+@media (max-width: 640px) {
+  .comparison-section {
+    margin: 2rem 0;
+  }
+
+  .section-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .table-wrapper {
+    margin: 0 -0.5rem 1.5rem -0.5rem;
+  }
+
+  .comparison-table {
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 0.4rem 0.35rem;
+    font-size: 0.7rem;
+  }
+
+  .comparison-table th {
+    font-size: 0.65rem;
+  }
+
+  .tool-tag {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.25rem;
+  }
+
+  .cell-yes {
+    font-size: 0.9rem;
+  }
+
+  .benefit-card {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .benefit-icon {
+    font-size: 1.5rem;
+  }
+
+  .benefit-content h3 {
+    font-size: 0.9rem;
+  }
+
+  .benefit-content p {
+    font-size: 0.8rem;
+  }
+}
 </style>

@@ -53,8 +53,30 @@
   max-width: 100%;
 }
 
-.VPHero .tagline {
-  white-space: nowrap;
+/* Mobile responsive hero */
+@media (max-width: 640px) {
+  .VPHero .name {
+    font-size: 3rem !important;
+    letter-spacing: 1px;
+  }
+
+  .VPHero .text {
+    font-size: 1.1rem !important;
+  }
+
+  .VPHero .tagline {
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .VPHero .name {
+    font-size: 2.5rem !important;
+  }
+
+  .VPHero .text {
+    font-size: 1rem !important;
+  }
 }
 
 /* Feature cards with subtle sky blue accent */
@@ -149,6 +171,13 @@ div[class*="language-"] code {
 
 html[lang="ja"] .VPNavBarTitle .title::after {
   content: 'ブラウザで動く日本語トークナイザー';
+}
+
+/* Hide navbar tagline on mobile */
+@media (max-width: 640px) {
+  .VPNavBarTitle .title::after {
+    display: none;
+  }
 }
 
 /* Language switcher: globe icon */

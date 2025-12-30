@@ -80,17 +80,26 @@ onMounted(async () => {
 
 @media (max-width: 640px) {
   .wasm-stats {
-    max-width: 80%;
     gap: 1rem;
     padding: 0.75rem 1.25rem;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .stat-value {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
   .stat-unit {
-    font-size: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .stat-divider {
+    height: 36px;
   }
 }
 </style>

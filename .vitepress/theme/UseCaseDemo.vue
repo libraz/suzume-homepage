@@ -817,17 +817,82 @@ function getPosColor(pos: string): string {
 
 /* Responsive */
 @media (max-width: 640px) {
+  .usecase-section {
+    margin: 2rem 0;
+  }
+
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.9rem;
+  }
+
   .tabs {
     flex-wrap: wrap;
+    gap: 0.375rem;
   }
 
   .tabs button {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.875rem;
     font-size: 0.8rem;
+    flex: 1;
+    min-width: 80px;
   }
 
   .demo-panel {
     padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .demo-header h3 {
+    font-size: 1rem;
+  }
+
+  .demo-header p {
+    font-size: 0.8rem;
+  }
+
+  .demo-input {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .result-section {
+    padding: 0.75rem;
+  }
+
+  .token-card {
+    min-width: auto;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .token-surface {
+    font-size: 1rem;
+  }
+
+  .token-pos {
+    font-size: 0.6rem;
+    padding: 1px 0.25rem;
+  }
+
+  .token-base {
+    font-size: 0.6rem;
+  }
+
+  .conversion-item {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .conversion-item .surface,
+  .conversion-item .base {
+    min-width: 60px;
+  }
+
+  .pos-badge {
+    margin-left: 0;
   }
 }
 </style>
