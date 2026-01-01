@@ -341,18 +341,19 @@ function getPosColor(pos: string): string {
           <div class="result-header">
             <span class="result-label">{{ analyzedMorphemes.length }} {{ t.tokens }}</span>
           </div>
-          <div class="tokens-flow" v-if="analyzedMorphemes.length > 0">
+          <div class="morpheme-strip" v-if="analyzedMorphemes.length > 0">
             <div
               v-for="(m, i) in analyzedMorphemes"
               :key="i"
-              class="token-card"
+              class="morpheme-block"
               :style="{ '--pos-color': getPosColor(m.pos) }"
             >
-              <div class="token-surface">{{ m.surface }}</div>
-              <div class="token-meta">
-                <span class="token-pos">{{ lang === 'ja' ? m.posJa : m.pos }}</span>
-                <span class="token-base" v-if="m.baseForm && m.baseForm !== m.surface">→{{ m.baseForm }}</span>
-              </div>
+              <span class="surface">{{ m.surface }}</span>
+              <span class="underline"></span>
+              <span class="chip">
+                <span class="pos">{{ lang === 'ja' ? m.posJa : m.pos }}</span>
+                <span class="base" v-if="m.baseForm && m.baseForm !== m.surface">→{{ m.baseForm }}</span>
+              </span>
             </div>
           </div>
           <div v-else class="no-result">{{ t.analyzePlaceholder }}</div>
@@ -542,7 +543,7 @@ function getPosColor(pos: string): string {
   padding: 1.5rem;
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-border);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 .demo-header {
@@ -761,58 +762,57 @@ function getPosColor(pos: string): string {
   color: #DC2626;
 }
 
-/* Token Flow (Analyze Tab) */
-.tokens-flow {
+/* Morpheme Strip (Analyze Tab) - matches TypewriterDemo style */
+.morpheme-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: flex-start;
+  gap: 0.125rem;
 }
 
-.token-card {
+.morpheme-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  min-width: 6.5rem;
-  padding: 0.5rem 0.75rem;
-  background: color-mix(in srgb, var(--pos-color) 10%, var(--vp-c-bg));
-  border: 1px solid color-mix(in srgb, var(--pos-color) 30%, transparent);
-  border-left: 3px solid var(--pos-color);
-  border-radius: 8px;
-  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.token-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--pos-color) 20%, transparent);
-}
-
-.token-surface {
-  font-size: 1.1rem;
-  font-weight: 600;
+.morpheme-block .surface {
+  font-size: 1.25rem;
+  font-weight: 500;
   color: var(--vp-c-text-1);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.3;
 }
 
-.token-meta {
+.morpheme-block .underline {
+  width: 100%;
+  height: 2px;
+  background: var(--pos-color);
+  margin: 0.2rem 0;
+}
+
+.morpheme-block .chip {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.15rem;
-}
-
-.token-pos {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--pos-color);
-  background: color-mix(in srgb, var(--pos-color) 15%, transparent);
-  padding: 2px 0.375rem;
+  gap: 0.2rem;
+  padding: 0.1rem 0.375rem;
+  background: color-mix(in srgb, var(--pos-color) 10%, var(--vp-c-bg));
+  border: 1px solid color-mix(in srgb, var(--pos-color) 25%, transparent);
   border-radius: 4px;
+  white-space: nowrap;
 }
 
-.token-base {
-  font-size: 0.65rem;
-  color: var(--vp-c-text-3);
+.morpheme-block .pos {
+  color: var(--pos-color);
   font-weight: 500;
+  font-size: 0.65rem;
+}
+
+.morpheme-block .base {
+  color: var(--vp-c-text-3);
+  font-size: 0.6rem;
 }
 
 /* Responsive */
@@ -843,7 +843,7 @@ function getPosColor(pos: string): string {
 
   .demo-panel {
     padding: 1rem;
-    border-radius: 12px;
+    border-radius: 10px;
   }
 
   .demo-header h3 {
@@ -863,22 +863,20 @@ function getPosColor(pos: string): string {
     padding: 0.75rem;
   }
 
-  .token-card {
-    min-width: auto;
-    padding: 0.375rem 0.5rem;
+  .morpheme-block .surface {
+    font-size: 1.1rem;
   }
 
-  .token-surface {
-    font-size: 1rem;
+  .morpheme-block .chip {
+    padding: 0.1rem 0.25rem;
   }
 
-  .token-pos {
+  .morpheme-block .pos {
     font-size: 0.6rem;
-    padding: 1px 0.25rem;
   }
 
-  .token-base {
-    font-size: 0.6rem;
+  .morpheme-block .base {
+    font-size: 0.55rem;
   }
 
   .conversion-item {

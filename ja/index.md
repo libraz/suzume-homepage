@@ -28,6 +28,8 @@ features:
     details: C++からWASMにコンパイル。TypeScript対応。Node.js、Deno、Bun、全ブラウザで動作。
 ---
 
+<TypewriterDemo />
+
 ::: danger 🚧 アルファ版
 Suzumeは2025年12月25日より開発中のアルファ版です。npmパッケージは未公開です。
 :::
