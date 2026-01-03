@@ -2,7 +2,7 @@
 
 ## Why So Small?
 
-The biggest question: **How can Suzume tokenize Japanese text in under 250KB when MeCab needs 50MB+?**
+The biggest question: **How can Suzume tokenize Japanese text in under 300KB when MeCab needs 50MB+?**
 
 ### The Short Answer
 
@@ -20,7 +20,7 @@ MeCab's dictionary is like a phone book with every person's name. Suzume is like
 
 ```mermaid
 flowchart LR
-    subgraph Size["Why < 250KB?"]
+    subgraph Size["Why < 300KB?"]
         A["1. Minimal Dictionary"]
         B["2. Rule-based Patterns"]
         C["3. On-the-fly Computation"]

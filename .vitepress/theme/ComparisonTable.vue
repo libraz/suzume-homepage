@@ -5,7 +5,7 @@ import { useData } from 'vitepress'
 const { lang } = useData()
 
 // Dynamic size label from WASM metadata
-const sizeLabel = ref('<250KB')
+const sizeLabel = ref('<300KB')
 onMounted(async () => {
   try {
     const meta = await import('./wasm/meta.json')

@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: Japanese Tokenizer That Actually Works in the Browser
-  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 200KB — runs entirely in the browser, no server required.
+  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 300KB — runs entirely in the browser, no server required.
   actions:
     - theme: brand
       text: Try It Now

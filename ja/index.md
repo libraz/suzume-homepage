@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: ブラウザで動く軽量日本語トークナイザー
-  tagline: 50MBの辞書ファイルはもう不要。200KB以下でフロントエンド完結、サーバー構築不要。
+  tagline: 50MBの辞書ファイルはもう不要。300KB以下でフロントエンド完結、サーバー構築不要。
   actions:
     - theme: brand
       text: 今すぐ試す

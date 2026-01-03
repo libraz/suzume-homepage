@@ -249,8 +249,8 @@ export default withMermaid(defineConfig({
     // Dynamically update tagline with current WASM size
     if (pageData.frontmatter?.hero?.tagline) {
       const tagline = pageData.frontmatter.hero.tagline as string
-      if (tagline.includes('200KB')) {
-        pageData.frontmatter.hero.tagline = tagline.replace(/200KB/g, sizeLabelText)
+      if (tagline.includes('300KB')) {
+        pageData.frontmatter.hero.tagline = tagline.replace(/300KB/g, sizeLabelText)
       }
     }
   },
