@@ -7,7 +7,7 @@
     "build": "node scripts/generate-og-image.mjs && vitepress build",
     "build:og": "node scripts/generate-og-image.mjs",
     "preview": "vitepress preview",
-    "copy:wasm": "cp ../suzume/dist/suzume.js ../suzume/dist/suzume-wasm.wasm .vitepress/theme/wasm/ && ./scripts/update-wasm-meta.sh",
+    "copy:wasm": "./scripts/copy-wasm.sh",
     "update": "yarn copy:wasm && yarn dev"
   },
   "devDependencies": {

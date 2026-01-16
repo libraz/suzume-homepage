@@ -40,8 +40,8 @@ export class Suzume {
 
   static async create(): Promise<Suzume> {
     // Import the Emscripten module and WASM
-    const createModule = (await import('./wasm/suzume.js')).default
-    const wasmUrl = (await import('./wasm/suzume-wasm.wasm?url')).default
+    const createModule = (await import('./suzume.js')).default
+    const wasmUrl = (await import('./suzume-wasm.wasm?url')).default
 
     const module: EmscriptenModule = await createModule({
       locateFile: (path: string) => {

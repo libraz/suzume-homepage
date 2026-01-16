@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { useData } from 'vitepress'
+import { useI18n } from '@/composables/useI18n'
 
-const { lang } = useData()
+const { t, isJa } = useI18n()
 
 // Dynamic size label from WASM metadata
 const sizeLabel = ref('<300KB')
 onMounted(async () => {
   try {
-    const meta = await import('./wasm/meta.json')
+    const meta = await import('@/wasm/meta.json')
     const size = Math.ceil(meta.gzipKB / 50) * 50
     sizeLabel.value = `<${size}KB`
   } catch {
@@ -16,106 +16,70 @@ onMounted(async () => {
   }
 })
 
-const t = computed(() => {
-  const isJa = lang.value === 'ja'
-  return {
-    title: isJa ? 'なぜ Suzume?' : 'Why Suzume?',
-    subtitle: isJa
-      ? 'TinySegmenterの軽量さとMeCabの高精度、両方のいいとこ取り。'
-      : 'The best of both worlds: TinySegmenter\'s lightness meets MeCab\'s accuracy.',
-    // Table headers
-    feature: isJa ? '機能' : 'Feature',
-    browserRun: isJa ? 'ブラウザ動作' : 'Browser',
-    dictionary: isJa ? '辞書ファイル' : 'Dictionary',
-    bundleSize: isJa ? 'バンドルサイズ' : 'Bundle Size',
-    serverFree: isJa ? 'サーバー不要' : 'Server-free',
-    unknownWords: isJa ? '未知語対応' : 'Unknown Words',
-    posInfo: isJa ? '品詞情報' : 'POS Tagging',
-    lemma: isJa ? '原形復元' : 'Lemmatization',
-    compound: isJa ? '複合名詞判定' : 'Compound Nouns',
-    customDict: isJa ? 'カスタム辞書' : 'Custom Dictionary',
-    // Values
-    notRequired: isJa ? '不要' : 'Not required',
-    required: isJa ? '必須' : 'Required',
-    heavy: isJa ? '(重い)' : '(Heavy)',
-    na: 'N/A',
-    tokenizeOnly: isJa ? '分かち書きのみ' : 'Tokenize only',
-    // Benefits
-    benefits: [
-      {
-        icon: '🖥️',
-        title: isJa ? 'フロントエンド完結' : 'Frontend Only',
-        desc: isJa
-          ? 'サーバー構築・運用コストゼロ。CDNから配信するだけ。'
-          : 'Zero server setup. Just serve from CDN.'
-      },
-      {
-        icon: '⚡',
-        title: isJa ? 'リアルタイム処理' : 'Real-time Processing',
-        desc: isJa
-          ? 'APIコール不要。レイテンシなしで即座に解析。'
-          : 'No API calls. Instant analysis with zero latency.'
-      },
-      {
-        icon: '🔒',
-        title: isJa ? 'プライバシー保護' : 'Privacy First',
-        desc: isJa
-          ? 'テキストデータがサーバーに送信されない。'
-          : 'Text data never leaves the user\'s browser.'
-      }
-    ]
+const benefits = computed(() => [
+  {
+    icon: '🖥️',
+    title: t('comparison.benefits.frontendOnly.title'),
+    desc: t('comparison.benefits.frontendOnly.desc')
+  },
+  {
+    icon: '⚡',
+    title: t('comparison.benefits.realtime.title'),
+    desc: t('comparison.benefits.realtime.desc')
+  },
+  {
+    icon: '🔒',
+    title: t('comparison.benefits.privacy.title'),
+    desc: t('comparison.benefits.privacy.desc')
   }
-})
+])
 
 // Comparison data: TinySegmenter (lightweight) → Suzume (balanced) → MeCab-based (heavyweight)
 const tools = ['TinySegmenter', 'Suzume', 'kuromoji', 'MeCab']
 
-const features = computed(() => {
-  const isJa = lang.value === 'ja'
-  return [
-    {
-      name: t.value.browserRun,
-      values: ['yes', 'yes', 'partial', 'no']
-    },
-    {
-      name: t.value.dictionary,
-      values: [
-        t.value.notRequired,
-        t.value.notRequired,
-        t.value.required,
-        t.value.required
-      ]
-    },
-    {
-      name: t.value.bundleSize,
-      values: ['~10KB', sizeLabel.value, '~20MB', t.value.na]
-    },
-    {
-      name: t.value.serverFree,
-      values: ['yes', 'yes', 'partial', 'no']
-    },
-    {
-      name: t.value.posInfo,
-      values: ['no', 'yes', 'yes', 'yes']
-    },
-    {
-      name: t.value.lemma,
-      values: ['no', 'yes', 'yes', 'yes']
-    },
-    {
-      name: t.value.compound,
-      values: ['no', 'no', 'yes', 'yes']
-    },
-    {
-      name: t.value.customDict,
-      values: ['no', 'yes', 'yes', 'yes']
-    },
-    {
-      name: t.value.unknownWords,
-      values: ['partial', 'yes', 'partial', 'partial']
-    }
-  ]
-})
+const features = computed(() => [
+  {
+    name: t('comparison.browserRun'),
+    values: ['yes', 'yes', 'partial', 'no']
+  },
+  {
+    name: t('comparison.dictionary'),
+    values: [
+      t('comparison.notRequired'),
+      t('comparison.notRequired'),
+      t('comparison.required'),
+      t('comparison.required')
+    ]
+  },
+  {
+    name: t('comparison.bundleSize'),
+    values: ['~10KB', sizeLabel.value, '~20MB', t('comparison.na')]
+  },
+  {
+    name: t('comparison.serverFree'),
+    values: ['yes', 'yes', 'partial', 'no']
+  },
+  {
+    name: t('comparison.posInfo'),
+    values: ['no', 'yes', 'yes', 'yes']
+  },
+  {
+    name: t('comparison.lemma'),
+    values: ['no', 'yes', 'yes', 'yes']
+  },
+  {
+    name: t('comparison.compound'),
+    values: ['no', 'no', 'yes', 'yes']
+  },
+  {
+    name: t('comparison.customDict'),
+    values: ['no', 'yes', 'yes', 'yes']
+  },
+  {
+    name: t('comparison.unknownWords'),
+    values: ['partial', 'yes', 'partial', 'partial']
+  }
+])
 
 function getCellClass(value: string) {
   if (value === 'yes') return 'cell-yes'
@@ -135,8 +99,8 @@ function getCellDisplay(value: string) {
 <template>
   <div class="comparison-section">
     <div class="section-header">
-      <h2>{{ t.title }}</h2>
-      <p class="section-subtitle">{{ t.subtitle }}</p>
+      <h2>{{ t('comparison.title') }}</h2>
+      <p class="section-subtitle">{{ t('comparison.subtitle') }}</p>
     </div>
 
     <!-- Comparison Table -->
@@ -144,11 +108,11 @@ function getCellDisplay(value: string) {
       <table class="comparison-table">
         <thead>
           <tr>
-            <th class="feature-col">{{ t.feature }}</th>
+            <th class="feature-col">{{ t('comparison.feature') }}</th>
             <th v-for="(tool, i) in tools" :key="tool" :class="{ highlight: tool === 'Suzume' }">
               {{ tool }}
-              <span v-if="i === 0" class="tool-tag light">{{ lang === 'ja' ? '軽量' : 'Light' }}</span>
-              <span v-else-if="i === tools.length - 1" class="tool-tag heavy">{{ lang === 'ja' ? '高精度' : 'Accurate' }}</span>
+              <span v-if="i === 0" class="tool-tag light">{{ t('comparison.light') }}</span>
+              <span v-else-if="i === tools.length - 1" class="tool-tag heavy">{{ t('comparison.accurate') }}</span>
             </th>
           </tr>
         </thead>
@@ -169,7 +133,7 @@ function getCellDisplay(value: string) {
 
     <!-- Benefits -->
     <div class="benefits-grid">
-      <div v-for="benefit in t.benefits" :key="benefit.title" class="benefit-card">
+      <div v-for="benefit in benefits" :key="benefit.title" class="benefit-card">
         <span class="benefit-icon">{{ benefit.icon }}</span>
         <div class="benefit-content">
           <h3>{{ benefit.title }}</h3>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useData } from 'vitepress'
-import { Suzume, type Morpheme } from './suzume'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+import { Suzume, type Morpheme } from '@/wasm'
 
-const { lang } = useData()
+const { t, isJa } = useI18n()
 
 // 吾輩は猫である - 第一章（。で区切った配列）
 const sentences = [
@@ -56,14 +56,6 @@ const sentences = [
   '仕方がないからとにかく明るくて暖かそうな方へ方へとあるいて行く。',
   '今から考えるとその時はすでに家の内に這入っておったのだ。',
 ]
-
-const t = computed(() => {
-  const isJa = lang.value === 'ja'
-  return {
-    title: isJa ? 'リアルタイム形態素解析' : 'Real-time Morphological Analysis',
-    source: isJa ? '夏目漱石「吾輩は猫である」より' : 'From "I Am a Cat" by Natsume Soseki',
-  }
-})
 
 const currentText = ref('')
 const displayedMorphemes = ref<Morpheme[]>([])
@@ -173,8 +165,8 @@ onUnmounted(() => {
 <template>
   <div class="typewriter-section">
     <div class="typewriter-header">
-      <h3>{{ t.title }}</h3>
-      <span class="source">{{ t.source }}</span>
+      <h3>{{ t('typewriter.title') }}</h3>
+      <span class="source">{{ t('typewriter.source') }}</span>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -192,7 +184,7 @@ onUnmounted(() => {
           <span class="surface">{{ m.surface }}</span>
           <span class="underline"></span>
           <span class="chip">
-            <span class="pos">{{ lang === 'ja' ? m.posJa : m.pos }}</span>
+            <span class="pos">{{ isJa() ? m.posJa : m.pos }}</span>
             <span class="base" v-if="m.baseForm && m.baseForm !== m.surface">→{{ m.baseForm }}</span>
           </span>
         </div>

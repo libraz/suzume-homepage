@@ -1,0 +1,85 @@
+{
+  "comparison": {
+    "title": "Why Suzume?",
+    "subtitle": "The best of both worlds: TinySegmenter's lightness meets MeCab's accuracy.",
+    "feature": "Feature",
+    "browserRun": "Browser",
+    "dictionary": "Dictionary",
+    "bundleSize": "Bundle Size",
+    "serverFree": "Server-free",
+    "unknownWords": "Unknown Words",
+    "posInfo": "POS Tagging",
+    "lemma": "Lemmatization",
+    "compound": "Compound Nouns",
+    "customDict": "Custom Dictionary",
+    "notRequired": "Not required",
+    "required": "Required",
+    "heavy": "(Heavy)",
+    "na": "N/A",
+    "tokenizeOnly": "Tokenize only",
+    "light": "Light",
+    "accurate": "Accurate",
+    "benefits": {
+      "frontendOnly": {
+        "title": "Frontend Only",
+        "desc": "Zero server setup. Just serve from CDN."
+      },
+      "realtime": {
+        "title": "Real-time Processing",
+        "desc": "No API calls. Instant analysis with zero latency."
+      },
+      "privacy": {
+        "title": "Privacy First",
+        "desc": "Text data never leaves the user's browser."
+      }
+    }
+  },
+  "useCase": {
+    "title": "Use Cases",
+    "subtitle": "Try real-time demos that run entirely in your browser",
+    "tagGen": "Tag Generation",
+    "baseFormTab": "Normalize",
+    "analyzeTab": "Tokenize",
+    "tagTitle": "Auto Keyword Extraction",
+    "tagDesc": "Auto-generate hashtags from blog posts or product descriptions",
+    "tagPlaceholder": "Enter text to extract keywords...",
+    "extractedTags": "Extracted Tags",
+    "noTags": "No tags found",
+    "copyTags": "Copy",
+    "copied": "Copied!",
+    "baseTitle": "Conjugated → Normalized Form",
+    "baseDesc": "Normalize verbs and adjectives to dictionary form for search indexing",
+    "basePlaceholder": "Enter text with conjugated words...",
+    "surface": "Surface",
+    "baseForm": "Normalized",
+    "pos": "POS",
+    "analyzeTitle": "Tokenization Demo",
+    "analyzeDesc": "Break Japanese text into linguistic tokens",
+    "analyzePlaceholder": "Enter Japanese text...",
+    "tokens": "tokens",
+    "reading": "Reading",
+    "loading": "Loading...",
+    "examples": "Examples",
+    "tagExamples": {
+      "sns": "SNS Post",
+      "blog": "Blog Post"
+    },
+    "baseExamples": {
+      "verb": "Verb Forms",
+      "adjective": "Adjectives"
+    },
+    "analyzeExamples": {
+      "youth": "Youth slang",
+      "tongue": "Tongue twister",
+      "botchan": "Botchan"
+    }
+  },
+  "typewriter": {
+    "title": "Real-time Tokenization",
+    "source": "From \"I Am a Cat\" by Natsume Soseki"
+  },
+  "wasmStats": {
+    "gzipped": "gzipped",
+    "raw": "raw"
+  }
+}

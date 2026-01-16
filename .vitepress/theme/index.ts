@@ -1,8 +1,8 @@
 import DefaultTheme from 'vitepress/theme'
-import WasmStats from './WasmStats.vue'
-import ComparisonTable from './ComparisonTable.vue'
-import UseCaseDemo from './UseCaseDemo.vue'
-import TypewriterDemo from './TypewriterDemo.vue'
+import WasmStats from '@/components/WasmStats.vue'
+import ComparisonTable from '@/components/ComparisonTable.vue'
+import UseCaseDemo from '@/components/UseCaseDemo.vue'
+import TypewriterDemo from '@/components/TypewriterDemo.vue'
 import './custom.css'
 
 export default {

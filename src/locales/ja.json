@@ -1,0 +1,85 @@
+{
+  "comparison": {
+    "title": "なぜ Suzume?",
+    "subtitle": "TinySegmenterの軽量さとMeCabの高精度、両方のいいとこ取り。",
+    "feature": "機能",
+    "browserRun": "ブラウザ動作",
+    "dictionary": "辞書ファイル",
+    "bundleSize": "バンドルサイズ",
+    "serverFree": "サーバー不要",
+    "unknownWords": "未知語対応",
+    "posInfo": "品詞情報",
+    "lemma": "原形復元",
+    "compound": "複合名詞判定",
+    "customDict": "カスタム辞書",
+    "notRequired": "不要",
+    "required": "必須",
+    "heavy": "(重い)",
+    "na": "N/A",
+    "tokenizeOnly": "分かち書きのみ",
+    "light": "軽量",
+    "accurate": "高精度",
+    "benefits": {
+      "frontendOnly": {
+        "title": "フロントエンド完結",
+        "desc": "サーバー構築・運用コストゼロ。CDNから配信するだけ。"
+      },
+      "realtime": {
+        "title": "リアルタイム処理",
+        "desc": "APIコール不要。レイテンシなしで即座に解析。"
+      },
+      "privacy": {
+        "title": "プライバシー保護",
+        "desc": "テキストデータがサーバーに送信されない。"
+      }
+    }
+  },
+  "useCase": {
+    "title": "ユースケース",
+    "subtitle": "サーバー不要でリアルタイムに動作するデモをお試しください",
+    "tagGen": "タグ生成",
+    "baseFormTab": "正規化",
+    "analyzeTab": "トークン化",
+    "tagTitle": "キーワード自動抽出",
+    "tagDesc": "ブログ記事や商品説明からハッシュタグを自動生成",
+    "tagPlaceholder": "文章を入力してください...",
+    "extractedTags": "抽出されたタグ",
+    "noTags": "タグが見つかりません",
+    "copyTags": "コピー",
+    "copied": "コピー済み",
+    "baseTitle": "活用形 → 正規化形",
+    "baseDesc": "動詞・形容詞を辞書形に正規化して検索インデックスに活用",
+    "basePlaceholder": "活用形を含む文章を入力...",
+    "surface": "表層形",
+    "baseForm": "正規化形",
+    "pos": "品詞",
+    "analyzeTitle": "トークン化デモ",
+    "analyzeDesc": "日本語テキストをトークン（言語単位）に分解",
+    "analyzePlaceholder": "日本語を入力してください...",
+    "tokens": "トークン",
+    "reading": "読み",
+    "loading": "読み込み中...",
+    "examples": "例文",
+    "tagExamples": {
+      "sns": "SNS投稿",
+      "blog": "ブログ記事"
+    },
+    "baseExamples": {
+      "verb": "動詞の活用",
+      "adjective": "形容詞"
+    },
+    "analyzeExamples": {
+      "youth": "若者言葉",
+      "tongue": "早口言葉",
+      "botchan": "坊っちゃん"
+    }
+  },
+  "typewriter": {
+    "title": "リアルタイムトークナイズ",
+    "source": "夏目漱石「吾輩は猫である」より"
+  },
+  "wasmStats": {
+    "gzipped": "gzip圧縮",
+    "raw": "非圧縮"
+  }
+}

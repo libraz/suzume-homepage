@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useData } from 'vitepress'
+import { useI18n } from '@/composables/useI18n'
 
-const { lang } = useData()
+const { t } = useI18n()
 
 const gzipKB = ref(0)
 const sizeKB = ref(0)
 
 onMounted(async () => {
   try {
-    const meta = await import('./wasm/meta.json')
+    const meta = await import('@/wasm/meta.json')
     gzipKB.value = meta.gzipKB
     sizeKB.value = meta.sizeKB
   } catch {
@@ -24,12 +24,12 @@ onMounted(async () => {
   <div class="wasm-stats" v-if="gzipKB > 0">
     <div class="stat-card">
       <div class="stat-value">{{ gzipKB }}<span class="stat-unit">KB</span></div>
-      <div class="stat-label">{{ lang === 'ja' ? 'gzip圧縮' : 'gzipped' }}</div>
+      <div class="stat-label">{{ t('wasmStats.gzipped') }}</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-card">
       <div class="stat-value">{{ sizeKB }}<span class="stat-unit">KB</span></div>
-      <div class="stat-label">{{ lang === 'ja' ? '非圧縮' : 'raw' }}</div>
+      <div class="stat-label">{{ t('wasmStats.raw') }}</div>
     </div>
   </div>
 </template>

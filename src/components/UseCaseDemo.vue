@@ -1,107 +1,47 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useData } from 'vitepress'
-import { Suzume, type Morpheme } from './suzume'
+import { useI18n } from '@/composables/useI18n'
+import { Suzume, type Morpheme } from '@/wasm'
 
-const { lang } = useData()
-
-const t = computed(() => {
-  const isJa = lang.value === 'ja'
-  return {
-    title: isJa ? 'ユースケース' : 'Use Cases',
-    subtitle: isJa
-      ? 'サーバー不要でリアルタイムに動作するデモをお試しください'
-      : 'Try real-time demos that run entirely in your browser',
-    // Tabs
-    tagGen: isJa ? 'タグ生成' : 'Tag Generation',
-    baseFormTab: isJa ? '正規化' : 'Normalize',
-    analyzeTab: isJa ? 'トークン化' : 'Tokenize',
-    // Tag generation
-    tagTitle: isJa ? 'キーワード自動抽出' : 'Auto Keyword Extraction',
-    tagDesc: isJa
-      ? 'ブログ記事や商品説明からハッシュタグを自動生成'
-      : 'Auto-generate hashtags from blog posts or product descriptions',
-    tagPlaceholder: isJa
-      ? '文章を入力してください...'
-      : 'Enter text to extract keywords...',
-    extractedTags: isJa ? '抽出されたタグ' : 'Extracted Tags',
-    noTags: isJa ? 'タグが見つかりません' : 'No tags found',
-    copyTags: isJa ? 'コピー' : 'Copy',
-    copied: isJa ? 'コピー済み' : 'Copied!',
-    // Normalize
-    baseTitle: isJa ? '活用形 → 正規化形' : 'Conjugated → Normalized Form',
-    baseDesc: isJa
-      ? '動詞・形容詞を辞書形に正規化して検索インデックスに活用'
-      : 'Normalize verbs and adjectives to dictionary form for search indexing',
-    basePlaceholder: isJa
-      ? '活用形を含む文章を入力...'
-      : 'Enter text with conjugated words...',
-    surface: isJa ? '表層形' : 'Surface',
-    baseForm: isJa ? '正規化形' : 'Normalized',
-    pos: isJa ? '品詞' : 'POS',
-    // Tokenize
-    analyzeTitle: isJa ? 'トークン化デモ' : 'Tokenization Demo',
-    analyzeDesc: isJa
-      ? '日本語テキストをトークン（言語単位）に分解'
-      : 'Break Japanese text into linguistic tokens',
-    analyzePlaceholder: isJa
-      ? '日本語を入力してください...'
-      : 'Enter Japanese text...',
-    tokens: isJa ? 'トークン' : 'tokens',
-    reading: isJa ? '読み' : 'Reading',
-    // Loading
-    loading: isJa ? '読み込み中...' : 'Loading...',
-    // Examples
-    examples: isJa ? '例文' : 'Examples',
-  }
-})
+const { t, isJa } = useI18n()
 
 // Example texts (always Japanese - Suzume is for Japanese text)
-const tagExamples = computed(() => {
-  const isJa = lang.value === 'ja'
-  return [
-    {
-      label: isJa ? 'SNS投稿' : 'SNS Post',
-      text: '推しのライブがエモすぎて泣いた。歌が上手いし踊りもキレキレでマジで尊い。来年も絶対行く！'
-    },
-    {
-      label: isJa ? 'ブログ記事' : 'Blog Post',
-      text: '今日は東京で開催されたAIカンファレンスに参加してきました。機械学習や自然言語処理の最新トレンドについて学びました。'
-    }
-  ]
-})
+const tagExamples = computed(() => [
+  {
+    label: t('useCase.tagExamples.sns'),
+    text: '推しのライブがエモすぎて泣いた。歌が上手いし踊りもキレキレでマジで尊い。来年も絶対行く！'
+  },
+  {
+    label: t('useCase.tagExamples.blog'),
+    text: '今日は東京で開催されたAIカンファレンスに参加してきました。機械学習や自然言語処理の最新トレンドについて学びました。'
+  }
+])
 
-const baseExamples = computed(() => {
-  const isJa = lang.value === 'ja'
-  return [
-    {
-      label: isJa ? '動詞の活用' : 'Verb Forms',
-      text: '彼女は走って、食べて、寝ている。昨日は映画を見た。'
-    },
-    {
-      label: isJa ? '形容詞' : 'Adjectives',
-      text: 'この料理は美味しくて、値段も安かった。店員さんも親切だった。'
-    }
-  ]
-})
+const baseExamples = computed(() => [
+  {
+    label: t('useCase.baseExamples.verb'),
+    text: '彼女は走って、食べて、寝ている。昨日は映画を見た。'
+  },
+  {
+    label: t('useCase.baseExamples.adjective'),
+    text: 'この料理は美味しくて、値段も安かった。店員さんも親切だった。'
+  }
+])
 
-const analyzeExamples = computed(() => {
-  const isJa = lang.value === 'ja'
-  return [
-    {
-      label: isJa ? '若者言葉' : 'Youth slang',
-      text: 'それな〜！マジでエモいしバズってるよね。推しが尊すぎてしんどい。'
-    },
-    {
-      label: isJa ? '早口言葉' : 'Tongue twister',
-      text: 'すもももももももものうち'
-    },
-    {
-      label: isJa ? '坊っちゃん' : 'Botchan',
-      text: '親譲りの無鉄砲で小供の時から損ばかりしている。小学校に居る時分学校の二階から飛び降りて一週間ほど腰を抜かした事がある。なぜそんな無闘をしたと聞く人があるかも知れぬ。別段深い理由でもない。'
-    }
-  ]
-})
+const analyzeExamples = computed(() => [
+  {
+    label: t('useCase.analyzeExamples.youth'),
+    text: 'それな〜！マジでエモいしバズってるよね。推しが尊すぎてしんどい。'
+  },
+  {
+    label: t('useCase.analyzeExamples.tongue'),
+    text: 'すもももももももものうち'
+  },
+  {
+    label: t('useCase.analyzeExamples.botchan'),
+    text: '親譲りの無鉄砲で小供の時から損ばかりしている。小学校に居る時分学校の二階から飛び降りて一週間ほど腰を抜かした事がある。なぜそんな無闘をしたと聞く人があるかも知れぬ。別段深い理由でもない。'
+  }
+])
 
 const activeTab = ref<'tag' | 'base' | 'analyze'>('analyze')
 const tagInput = ref('')
@@ -277,14 +217,14 @@ function getPosColor(pos: string): string {
 <template>
   <div class="usecase-section">
     <div class="section-header">
-      <h2>{{ t.title }}</h2>
-      <p class="section-subtitle">{{ t.subtitle }}</p>
+      <h2>{{ t('useCase.title') }}</h2>
+      <p class="section-subtitle">{{ t('useCase.subtitle') }}</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="loading-state">
       <span class="spinner"></span>
-      {{ t.loading }}
+      {{ t('useCase.loading') }}
     </div>
 
     <template v-else>
@@ -294,31 +234,31 @@ function getPosColor(pos: string): string {
           :class="{ active: activeTab === 'analyze' }"
           @click="activeTab = 'analyze'"
         >
-          {{ t.analyzeTab }}
+          {{ t('useCase.analyzeTab') }}
         </button>
         <button
           :class="{ active: activeTab === 'tag' }"
           @click="activeTab = 'tag'"
         >
-          {{ t.tagGen }}
+          {{ t('useCase.tagGen') }}
         </button>
         <button
           :class="{ active: activeTab === 'base' }"
           @click="activeTab = 'base'"
         >
-          {{ t.baseFormTab }}
+          {{ t('useCase.baseFormTab') }}
         </button>
       </div>
 
       <!-- Analyze Demo -->
       <div v-if="activeTab === 'analyze'" class="demo-panel">
         <div class="demo-header">
-          <h3>{{ t.analyzeTitle }}</h3>
-          <p>{{ t.analyzeDesc }}</p>
+          <h3>{{ t('useCase.analyzeTitle') }}</h3>
+          <p>{{ t('useCase.analyzeDesc') }}</p>
         </div>
 
         <div class="examples-row">
-          <span class="examples-label">{{ t.examples }}:</span>
+          <span class="examples-label">{{ t('useCase.examples') }}:</span>
           <button
             v-for="ex in analyzeExamples"
             :key="ex.label"
@@ -332,14 +272,14 @@ function getPosColor(pos: string): string {
 
         <textarea
           v-model="analyzeInput"
-          :placeholder="t.analyzePlaceholder"
+          :placeholder="t('useCase.analyzePlaceholder')"
           rows="2"
           class="demo-input"
         ></textarea>
 
         <div class="result-section">
           <div class="result-header">
-            <span class="result-label">{{ analyzedMorphemes.length }} {{ t.tokens }}</span>
+            <span class="result-label">{{ analyzedMorphemes.length }} {{ t('useCase.tokens') }}</span>
           </div>
           <div class="morpheme-strip" v-if="analyzedMorphemes.length > 0">
             <div
@@ -351,24 +291,24 @@ function getPosColor(pos: string): string {
               <span class="surface">{{ m.surface }}</span>
               <span class="underline"></span>
               <span class="chip">
-                <span class="pos">{{ lang === 'ja' ? m.posJa : m.pos }}</span>
+                <span class="pos">{{ isJa() ? m.posJa : m.pos }}</span>
                 <span class="base" v-if="m.baseForm && m.baseForm !== m.surface">→{{ m.baseForm }}</span>
               </span>
             </div>
           </div>
-          <div v-else class="no-result">{{ t.analyzePlaceholder }}</div>
+          <div v-else class="no-result">{{ t('useCase.analyzePlaceholder') }}</div>
         </div>
       </div>
 
       <!-- Tag Generation Demo -->
       <div v-if="activeTab === 'tag'" class="demo-panel">
         <div class="demo-header">
-          <h3>{{ t.tagTitle }}</h3>
-          <p>{{ t.tagDesc }}</p>
+          <h3>{{ t('useCase.tagTitle') }}</h3>
+          <p>{{ t('useCase.tagDesc') }}</p>
         </div>
 
         <div class="examples-row">
-          <span class="examples-label">{{ t.examples }}:</span>
+          <span class="examples-label">{{ t('useCase.examples') }}:</span>
           <button
             v-for="ex in tagExamples"
             :key="ex.label"
@@ -382,21 +322,21 @@ function getPosColor(pos: string): string {
 
         <textarea
           v-model="tagInput"
-          :placeholder="t.tagPlaceholder"
+          :placeholder="t('useCase.tagPlaceholder')"
           rows="3"
           class="demo-input"
         ></textarea>
 
         <div class="result-section">
           <div class="result-header">
-            <span class="result-label">{{ t.extractedTags }}</span>
+            <span class="result-label">{{ t('useCase.extractedTags') }}</span>
             <button
               v-if="extractedTags.length > 0"
               class="copy-btn"
               :class="{ copied: copiedTags }"
               @click="copyTags"
             >
-              {{ copiedTags ? t.copied : t.copyTags }}
+              {{ copiedTags ? t('useCase.copied') : t('useCase.copyTags') }}
             </button>
           </div>
           <div class="tags-container" v-if="extractedTags.length > 0">
@@ -409,19 +349,19 @@ function getPosColor(pos: string): string {
               #{{ tag.text }}
             </span>
           </div>
-          <div v-else class="no-result">{{ t.noTags }}</div>
+          <div v-else class="no-result">{{ t('useCase.noTags') }}</div>
         </div>
       </div>
 
       <!-- Base Form Demo -->
       <div v-if="activeTab === 'base'" class="demo-panel">
         <div class="demo-header">
-          <h3>{{ t.baseTitle }}</h3>
-          <p>{{ t.baseDesc }}</p>
+          <h3>{{ t('useCase.baseTitle') }}</h3>
+          <p>{{ t('useCase.baseDesc') }}</p>
         </div>
 
         <div class="examples-row">
-          <span class="examples-label">{{ t.examples }}:</span>
+          <span class="examples-label">{{ t('useCase.examples') }}:</span>
           <button
             v-for="ex in baseExamples"
             :key="ex.label"
@@ -435,7 +375,7 @@ function getPosColor(pos: string): string {
 
         <textarea
           v-model="baseInput"
-          :placeholder="t.basePlaceholder"
+          :placeholder="t('useCase.basePlaceholder')"
           rows="3"
           class="demo-input"
         ></textarea>
@@ -450,10 +390,10 @@ function getPosColor(pos: string): string {
               <span class="surface">{{ item.surface }}</span>
               <span class="arrow">→</span>
               <span class="base">{{ item.baseForm }}</span>
-              <span class="pos-badge" :class="item.pos">{{ lang === 'ja' ? item.posJa : item.pos }}</span>
+              <span class="pos-badge" :class="item.pos">{{ isJa() ? item.posJa : item.pos }}</span>
             </div>
           </div>
-          <div v-else class="no-result">{{ t.noTags }}</div>
+          <div v-else class="no-result">{{ t('useCase.noTags') }}</div>
         </div>
       </div>
 

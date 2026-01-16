@@ -9,7 +9,7 @@ const githubUrl = 'https://github.com/libraz/suzume'
 // Load WASM metadata and calculate size label
 let wasmMeta = { gzipKB: 211, sizeKB: 578 }
 try {
-  const metaPath = resolve(__dirname, 'theme/wasm/meta.json')
+  const metaPath = resolve(__dirname, '../src/wasm/meta.json')
   wasmMeta = JSON.parse(readFileSync(metaPath, 'utf-8'))
 } catch (e) {
   // Use fallback values
@@ -130,6 +130,9 @@ const faqJsonLd = {
 }
 
 export default withMermaid(defineConfig({
+  srcDir: 'src',
+  outDir: '.vitepress/build',
+
   title: 'Suzume - Japanese Tokenizer for the Browser',
   description: `Lightweight Japanese tokenizer that runs in the browser. No server, no large dictionary files. Under ${sizeLabelText}, robust to unknown words. MeCab alternative for frontend.`,
 
@@ -263,6 +266,12 @@ export default withMermaid(defineConfig({
   },
 
   vite: {
+    resolve: {
+      alias: {
+        '@/': resolve(__dirname, '../src') + '/',
+        '@theme/': resolve(__dirname, 'theme') + '/'
+      }
+    },
     optimizeDeps: {
       exclude: ['@libraz/suzume']
     },

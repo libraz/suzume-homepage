@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const publicDir = join(__dirname, '..', 'public')
+const publicDir = join(__dirname, '..', 'src', 'public')
 const fontsDir = join(__dirname, 'fonts')
 
 // Load font
