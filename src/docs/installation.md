@@ -37,7 +37,7 @@ For browser usage without a build step:
 
 ## Requirements
 
-- **Node.js**: 18.0 or later
+- **Node.js**: 16.0 or later
 - **Browser**: Any modern browser with WASM support (Chrome, Firefox, Safari, Edge)
 - **Deno**: 1.0 or later
 - **Bun**: 1.0 or later

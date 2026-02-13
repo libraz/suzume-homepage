@@ -4,17 +4,22 @@
 
 The main class for Japanese tokenization.
 
-### `Suzume.create(wasmPath?)`
+### `Suzume.create(options?)`
 
 Creates a new Suzume instance.
 
 ```typescript
-static async create(wasmPath?: string): Promise<Suzume>
+static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Suzume>
 ```
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `wasmPath` | `string` (optional) | Custom path to WASM file |
+**`SuzumeOptions`:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `wasmPath` | `string` | `undefined` | Custom path to WASM file |
+| `preserveVu` | `boolean` | `true` | Preserve ヴ (don't normalize to ビ etc.) |
+| `preserveCase` | `boolean` | `true` | Preserve case (don't lowercase ASCII) |
+| `preserveSymbols` | `boolean` | `false` | Preserve symbols/emoji in output |
 
 **Returns:** `Promise<Suzume>`
 
@@ -24,7 +29,13 @@ static async create(wasmPath?: string): Promise<Suzume>
 const suzume = await Suzume.create()
 
 // Custom WASM path
-const suzume = await Suzume.create('/path/to/suzume.wasm')
+const suzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
+
+// With options
+const suzume = await Suzume.create({
+  preserveSymbols: true,
+  preserveVu: false,
+})
 ```
 
 ---
@@ -49,11 +60,11 @@ const result = suzume.analyze('東京に行きました')
 
 // Result:
 // [
-//   { surface: '東京', pos: 'noun', posJa: '名詞', ... },
-//   { surface: 'に', pos: 'particle', posJa: '助詞', ... },
-//   { surface: '行き', pos: 'verb', posJa: '動詞', ... },
-//   { surface: 'まし', pos: 'aux', posJa: '助動詞', ... },
-//   { surface: 'た', pos: 'aux', posJa: '助動詞', ... }
+//   { surface: '東京', pos: 'NOUN', posJa: '名詞', ... },
+//   { surface: 'に', pos: 'PARTICLE', posJa: '助詞', ... },
+//   { surface: '行き', pos: 'VERB', posJa: '動詞', ... },
+//   { surface: 'まし', pos: 'AUX', posJa: '助動詞', ... },
+//   { surface: 'た', pos: 'AUX', posJa: '助動詞', ... }
 // ]
 ```
 
@@ -101,17 +112,17 @@ loadUserDictionary(data: string): boolean
 **Example:**
 ```typescript
 // Single entry
-suzume.loadUserDictionary('ChatGPT,noun')
+suzume.loadUserDictionary('ChatGPT,NOUN')
 
 // Multiple entries
 suzume.loadUserDictionary(`
-ChatGPT,noun
-スカイツリー,noun
-DeepL,noun
+ChatGPT,NOUN
+スカイツリー,NOUN
+DeepL,NOUN
 `)
 
 // With optional fields
-suzume.loadUserDictionary('走る,verb,5000,走る')
+suzume.loadUserDictionary('走る,VERB,5000,走る')
 ```
 
 ---
@@ -126,7 +137,7 @@ get version(): string
 
 **Example:**
 ```typescript
-console.log(suzume.version) // "1.0.0"
+console.log(suzume.version) // "0.1.0"
 ```
 
 ---
@@ -169,7 +180,7 @@ interface Morpheme {
 | Property | Type | Description | Example |
 |----------|------|-------------|---------|
 | `surface` | `string` | Surface form as it appears in text | `"食べ"` |
-| `pos` | `string` | Part of speech in English | `"verb"` |
+| `pos` | `string` | Part of speech in English | `"VERB"` |
 | `baseForm` | `string` | Dictionary/base form | `"食べる"` |
 | `reading` | `string` | Reading in katakana | `"タベ"` |
 | `posJa` | `string` | Part of speech in Japanese | `"動詞"` |
@@ -180,20 +191,20 @@ interface Morpheme {
 
 | `pos` | `posJa` | Description |
 |-------|---------|-------------|
-| `noun` | 名詞 | Nouns |
-| `verb` | 動詞 | Verbs |
-| `adj` | 形容詞 | Adjectives |
-| `adverb` | 副詞 | Adverbs |
-| `particle` | 助詞 | Particles |
-| `aux` | 助動詞 | Auxiliary verbs |
-| `pron` | 代名詞 | Pronouns |
-| `det` | 連体詞 | Adnominal adjectives |
-| `conj` | 接続詞 | Conjunctions |
-| `interjection` | 感動詞 | Interjections |
-| `prefix` | 接頭辞 | Prefixes |
-| `suffix` | 接尾辞 | Suffixes |
-| `symbol` | 記号 | Symbols |
-| `punct` | 句読点 | Punctuation |
+| `NOUN` | 名詞 | Nouns |
+| `VERB` | 動詞 | Verbs |
+| `ADJ` | 形容詞 | Adjectives |
+| `ADV` | 副詞 | Adverbs |
+| `PARTICLE` | 助詞 | Particles |
+| `AUX` | 助動詞 | Auxiliary verbs |
+| `PRON` | 代名詞 | Pronouns |
+| `DET` | 連体詞 | Adnominal adjectives |
+| `CONJ` | 接続詞 | Conjunctions |
+| `INTJ` | 感動詞 | Interjections |
+| `PREFIX` | 接頭辞 | Prefixes |
+| `SUFFIX` | 接尾辞 | Suffixes |
+| `SYMBOL` | 記号 | Symbols |
+| `OTHER` | その他 | Other/Unknown |
 
 ---
 

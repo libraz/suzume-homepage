@@ -74,8 +74,9 @@ const result = suzume.analyze('すもももももももものうち')
 
 console.log(result)
 // [
-//   { surface: 'すもも', pos: 'noun', posJa: '名詞', ... },
-//   { surface: 'も', pos: 'particle', posJa: '助詞', ... },
+//   { surface: 'すもも', pos: 'NOUN', posJa: '名詞', ... },
+//   { surface: 'も', pos: 'PARTICLE', posJa: '助詞', ... },
+//   { surface: 'もも', pos: 'NOUN', posJa: '名詞', ... },
 //   ...
 // ]
 ```

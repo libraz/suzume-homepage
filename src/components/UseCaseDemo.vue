@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { Suzume, type Morpheme } from '@/wasm'
+import { Suzume, type Morpheme } from '@/wasm/index.js'
 
 const { t, isJa } = useI18n()
 
@@ -152,7 +152,8 @@ watch(analyzeInput, (text) => analyzeText(text))
 
 onMounted(async () => {
   try {
-    suzume = await Suzume.create()
+    const wasmPath = new URL('../wasm/suzume-wasm.wasm', import.meta.url).href
+    suzume = await Suzume.create({ wasmPath })
     loading.value = false
     // Set default examples and analyze
     tagInput.value = tagExamples.value[0].text

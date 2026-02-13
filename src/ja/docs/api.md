@@ -4,17 +4,22 @@
 
 日本語トークン化のメインクラス。
 
-### `Suzume.create(wasmPath?)`
+### `Suzume.create(options?)`
 
 新しい Suzume インスタンスを作成します。
 
 ```typescript
-static async create(wasmPath?: string): Promise<Suzume>
+static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Suzume>
 ```
 
-| パラメータ | 型 | 説明 |
-|-----------|------|-------------|
-| `wasmPath` | `string` (省略可) | WASM ファイルのカスタムパス |
+**`SuzumeOptions`:**
+
+| オプション | 型 | デフォルト | 説明 |
+|-----------|------|---------|-------------|
+| `wasmPath` | `string` | `undefined` | WASM ファイルのカスタムパス |
+| `preserveVu` | `boolean` | `true` | ヴを保持（ビ等に正規化しない） |
+| `preserveCase` | `boolean` | `true` | 大文字小文字を保持（ASCII を小文字化しない） |
+| `preserveSymbols` | `boolean` | `false` | 記号・絵文字を出力に保持 |
 
 **戻り値:** `Promise<Suzume>`
 
@@ -24,7 +29,13 @@ static async create(wasmPath?: string): Promise<Suzume>
 const suzume = await Suzume.create()
 
 // カスタム WASM パス
-const suzume = await Suzume.create('/path/to/suzume.wasm')
+const suzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
+
+// オプション指定
+const suzume = await Suzume.create({
+  preserveSymbols: true,
+  preserveVu: false,
+})
 ```
 
 ---
@@ -49,11 +60,11 @@ const result = suzume.analyze('東京に行きました')
 
 // 結果:
 // [
-//   { surface: '東京', pos: 'noun', posJa: '名詞', ... },
-//   { surface: 'に', pos: 'particle', posJa: '助詞', ... },
-//   { surface: '行き', pos: 'verb', posJa: '動詞', ... },
-//   { surface: 'まし', pos: 'aux', posJa: '助動詞', ... },
-//   { surface: 'た', pos: 'aux', posJa: '助動詞', ... }
+//   { surface: '東京', pos: 'NOUN', posJa: '名詞', ... },
+//   { surface: 'に', pos: 'PARTICLE', posJa: '助詞', ... },
+//   { surface: '行き', pos: 'VERB', posJa: '動詞', ... },
+//   { surface: 'まし', pos: 'AUX', posJa: '助動詞', ... },
+//   { surface: 'た', pos: 'AUX', posJa: '助動詞', ... }
 // ]
 ```
 
@@ -101,13 +112,13 @@ loadUserDictionary(data: string): boolean
 **例:**
 ```typescript
 // 単一エントリ
-suzume.loadUserDictionary('ChatGPT,noun')
+suzume.loadUserDictionary('ChatGPT,NOUN')
 
 // 複数エントリ
 suzume.loadUserDictionary(`
-ChatGPT,noun
-スカイツリー,noun
-DeepL,noun
+ChatGPT,NOUN
+スカイツリー,NOUN
+DeepL,NOUN
 `)
 ```
 
@@ -123,7 +134,7 @@ get version(): string
 
 **例:**
 ```typescript
-console.log(suzume.version) // "1.0.0"
+console.log(suzume.version) // "0.1.0"
 ```
 
 ---
@@ -166,7 +177,7 @@ interface Morpheme {
 | プロパティ | 型 | 説明 | 例 |
 |----------|------|-------------|---------|
 | `surface` | `string` | テキスト中の表層形 | `"食べ"` |
-| `pos` | `string` | 品詞（英語） | `"verb"` |
+| `pos` | `string` | 品詞（英語） | `"VERB"` |
 | `baseForm` | `string` | 辞書形/基本形 | `"食べる"` |
 | `reading` | `string` | カタカナ読み | `"タベ"` |
 | `posJa` | `string` | 品詞（日本語） | `"動詞"` |
@@ -177,20 +188,20 @@ interface Morpheme {
 
 | `pos` | `posJa` | 説明 |
 |-------|---------|-------------|
-| `noun` | 名詞 | 名詞 |
-| `verb` | 動詞 | 動詞 |
-| `adj` | 形容詞 | 形容詞 |
-| `adverb` | 副詞 | 副詞 |
-| `particle` | 助詞 | 助詞 |
-| `aux` | 助動詞 | 助動詞 |
-| `pron` | 代名詞 | 代名詞 |
-| `det` | 連体詞 | 連体詞 |
-| `conj` | 接続詞 | 接続詞 |
-| `interjection` | 感動詞 | 感動詞 |
-| `prefix` | 接頭辞 | 接頭辞 |
-| `suffix` | 接尾辞 | 接尾辞 |
-| `symbol` | 記号 | 記号 |
-| `punct` | 句読点 | 句読点 |
+| `NOUN` | 名詞 | 名詞 |
+| `VERB` | 動詞 | 動詞 |
+| `ADJ` | 形容詞 | 形容詞 |
+| `ADV` | 副詞 | 副詞 |
+| `PARTICLE` | 助詞 | 助詞 |
+| `AUX` | 助動詞 | 助動詞 |
+| `PRON` | 代名詞 | 代名詞 |
+| `DET` | 連体詞 | 連体詞 |
+| `CONJ` | 接続詞 | 接続詞 |
+| `INTJ` | 感動詞 | 感動詞 |
+| `PREFIX` | 接頭辞 | 接頭辞 |
+| `SUFFIX` | 接尾辞 | 接尾辞 |
+| `SYMBOL` | 記号 | 記号 |
+| `OTHER` | その他 | その他/不明 |
 
 ---
 

@@ -1,13 +1,30 @@
 #!/bin/bash
 WASM_FILE="src/wasm/suzume-wasm.wasm"
 META_FILE="src/wasm/meta.json"
+SUZUME_DIR="../suzume"
 
 if [ -f "$WASM_FILE" ]; then
-  SIZE=$(stat -c%s "$WASM_FILE")
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    SIZE=$(stat -f%z "$WASM_FILE")
+    MD5=$(md5 -q "$WASM_FILE")
+  else
+    # Linux
+    SIZE=$(stat -c%s "$WASM_FILE")
+    MD5=$(md5sum "$WASM_FILE" | cut -d' ' -f1)
+  fi
   SIZE_KB=$((SIZE / 1024))
   GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
   GZIP_KB=$((GZIP_SIZE / 1024))
-  MD5=$(md5sum "$WASM_FILE" | cut -d' ' -f1)
+
+  # Get build date (ISO 8601)
+  BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  # Get commit hash from suzume repo
+  COMMIT_HASH=""
+  if [ -d "$SUZUME_DIR/.git" ]; then
+    COMMIT_HASH=$(git -C "$SUZUME_DIR" rev-parse --short HEAD)
+  fi
 
   # Get old MD5 if meta.json exists
   OLD_MD5=""
@@ -21,24 +38,28 @@ if [ -f "$WASM_FILE" ]; then
   "sizeKB": $SIZE_KB,
   "gzipSize": $GZIP_SIZE,
   "gzipKB": $GZIP_KB,
-  "md5": "$MD5"
+  "md5": "$MD5",
+  "buildDate": "$BUILD_DATE",
+  "commitHash": "$COMMIT_HASH"
 }
 EOF
 
   # Compare MD5 and show result
   if [ -z "$OLD_MD5" ]; then
-    echo "Created $META_FILE: ${SIZE_KB}KB (${GZIP_KB}KB gzipped)"
+    echo "✨ Created $META_FILE: ${SIZE_KB}KB (${GZIP_KB}KB gzipped)"
     echo "   MD5: $MD5"
   elif [ "$OLD_MD5" = "$MD5" ]; then
-    echo "No change: WASM is identical (${SIZE_KB}KB)"
+    echo "📦 No change: WASM is identical (${SIZE_KB}KB)"
     echo "   MD5: $MD5"
   else
-    echo "Updated: WASM has changed!"
+    echo "🔄 Updated: WASM has changed!"
     echo "   Old: $OLD_MD5"
     echo "   New: $MD5"
     echo "   Size: ${SIZE_KB}KB (${GZIP_KB}KB gzipped)"
   fi
+  echo "   Build: $BUILD_DATE"
+  [ -n "$COMMIT_HASH" ] && echo "   Commit: $COMMIT_HASH"
 else
-  echo "WASM file not found: $WASM_FILE"
+  echo "❌ WASM file not found: $WASM_FILE"
   exit 1
 fi

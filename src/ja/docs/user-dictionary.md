@@ -10,13 +10,13 @@
 const suzume = await Suzume.create()
 
 // 単語を1つ追加
-suzume.loadUserDictionary('ChatGPT,noun')
+suzume.loadUserDictionary('ChatGPT,NOUN')
 
 // 複数の単語を追加
 suzume.loadUserDictionary(`
-スカイツリー,noun
-ポケモン,noun
-DeepL,noun
+スカイツリー,NOUN
+ポケモン,NOUN
+DeepL,NOUN
 `)
 ```
 
@@ -48,49 +48,60 @@ DeepL,noun
 
 ## 品詞の値
 
-| 値 | 説明 | 日本語 |
+| 値 | 説明 | 日本語名 |
 |-------|-------------|----------|
-| `noun` | 名詞、固有名詞 | 名詞 |
-| `verb` | 動詞 | 動詞 |
-| `adj` | 形容詞 | 形容詞 |
-| `adverb` | 副詞 | 副詞 |
-| `prefix` | 接頭辞 | 接頭辞 |
-| `suffix` | 接尾辞 | 接尾辞 |
+| `NOUN` | 名詞、固有名詞 | 名詞 |
+| `VERB` | 動詞 | 動詞 |
+| `ADJ` | 形容詞 | 形容詞 |
+| `ADV` | 副詞 | 副詞 |
+| `PARTICLE` | 助詞 | 助詞 |
+| `AUX` | 助動詞 | 助動詞 |
+| `PRON` | 代名詞 | 代名詞 |
+| `DET` | 連体詞 | 連体詞 |
+| `CONJ` | 接続詞 | 接続詞 |
+| `INTJ` | 感動詞 | 感動詞 |
+| `PREFIX` | 接頭辞 | 接頭辞 |
+| `SUFFIX` | 接尾辞 | 接尾辞 |
+| `SYMBOL` | 記号 | 記号 |
+
+::: tip 日本語の品詞名
+英語の値の代わりに日本語の品詞名（例：`名詞`、`動詞`、`形容詞`）も使用できます。
+:::
 
 ## 例
 
 ### IT用語
 
 ```csv
-ChatGPT,noun
-GitHub,noun
-TypeScript,noun
-WebAssembly,noun
-Kubernetes,noun
+ChatGPT,NOUN
+GitHub,NOUN
+TypeScript,NOUN
+WebAssembly,NOUN
+Kubernetes,NOUN
 ```
 
 ### ブランド名
 
 ```csv
-スカイツリー,noun
-ポケモン,noun
-任天堂,noun
-ソニー,noun
+スカイツリー,NOUN
+ポケモン,NOUN
+任天堂,NOUN
+ソニー,NOUN
 ```
 
 ### 複合語
 
 ```csv
-形態素解析,noun
-機械学習,noun
-自然言語処理,noun
+形態素解析,NOUN
+機械学習,NOUN
+自然言語処理,NOUN
 ```
 
 ### 活用のある動詞
 
 ```csv
-ググる,verb,5000,ググる
-バズる,verb,5000,バズる
+ググる,VERB,5000,ググる
+バズる,VERB,5000,バズる
 ```
 
 ## コストの調整
@@ -104,10 +115,10 @@ Kubernetes,noun
 
 ```csv
 # "東京" + "都" より "東京都" を優先
-東京都,noun,5000
+東京都,NOUN,5000
 
 # あまり一般的でない複合語
-超電磁砲,noun,9000
+超電磁砲,NOUN,9000
 ```
 
 ## ユースケース
@@ -117,9 +128,9 @@ Kubernetes,noun
 ```typescript
 // ドメイン固有の用語を追加してトークン化を改善
 suzume.loadUserDictionary(`
-React,noun
-Next.js,noun
-Tailwind,noun
+React,NOUN
+Next.js,NOUN
+Tailwind,NOUN
 `)
 
 const tags = suzume.generateTags('Next.jsでReactアプリを作成')
@@ -131,9 +142,9 @@ const tags = suzume.generateTags('Next.jsでReactアプリを作成')
 ```typescript
 // スラングや新語を追加
 suzume.loadUserDictionary(`
-草,interjection
-ワロタ,interjection
-エモい,adj
+草,INTJ
+ワロタ,INTJ
+エモい,ADJ
 `)
 ```
 
@@ -142,16 +153,16 @@ suzume.loadUserDictionary(`
 ```typescript
 // 製品名やブランドを追加
 suzume.loadUserDictionary(`
-iPhone,noun
-MacBook,noun
-AirPods,noun
+iPhone,NOUN
+MacBook,NOUN
+AirPods,NOUN
 `)
 ```
 
 ## ベストプラクティス
 
 1. **エントリは最小限に** - 誤ってトークン化される単語のみ追加
-2. **小文字の品詞を使用** - `NOUN` ではなく `noun`
+2. **大文字の品詞を使用** - `noun` ではなく `NOUN`（日本語名の `名詞` も可）
 3. **段階的にテスト** - 数語追加して結果を確認
 4. **複合語を考慮** - 1トークンにしたい場合は `東京都` を追加
 

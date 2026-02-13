@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { fileURLToPath, URL } from 'node:url'
 
 const siteUrl = 'https://suzume.libraz.net'
 const githubUrl = 'https://github.com/libraz/suzume'
@@ -9,7 +9,7 @@ const githubUrl = 'https://github.com/libraz/suzume'
 // Load WASM metadata and calculate size label
 let wasmMeta = { gzipKB: 211, sizeKB: 578 }
 try {
-  const metaPath = resolve(__dirname, '../src/wasm/meta.json')
+  const metaPath = fileURLToPath(new URL('../src/wasm/meta.json', import.meta.url))
   wasmMeta = JSON.parse(readFileSync(metaPath, 'utf-8'))
 } catch (e) {
   // Use fallback values
@@ -131,7 +131,6 @@ const faqJsonLd = {
 
 export default withMermaid(defineConfig({
   srcDir: 'src',
-  outDir: '.vitepress/build',
 
   title: 'Suzume - Japanese Tokenizer for the Browser',
   description: `Lightweight Japanese tokenizer that runs in the browser. No server, no large dictionary files. Under ${sizeLabelText}, robust to unknown words. MeCab alternative for frontend.`,
@@ -204,6 +203,7 @@ export default withMermaid(defineConfig({
               items: [
                 { text: 'API リファレンス', link: '/ja/docs/api' },
                 { text: '仕組み', link: '/ja/docs/how-it-works' },
+                { text: 'MeCab との違い', link: '/ja/docs/mecab-comparison' },
               ]
             }
           ]
@@ -234,6 +234,7 @@ export default withMermaid(defineConfig({
           items: [
             { text: 'API Reference', link: '/docs/api' },
             { text: 'How It Works', link: '/docs/how-it-works' },
+            { text: 'Differences from MeCab', link: '/docs/mecab-comparison' },
           ]
         }
       ]
@@ -268,8 +269,8 @@ export default withMermaid(defineConfig({
   vite: {
     resolve: {
       alias: {
-        '@/': resolve(__dirname, '../src') + '/',
-        '@theme/': resolve(__dirname, 'theme') + '/'
+        '@': fileURLToPath(new URL('../src', import.meta.url)),
+        '@theme': fileURLToPath(new URL('./theme', import.meta.url))
       }
     },
     optimizeDeps: {

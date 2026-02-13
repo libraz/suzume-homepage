@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { Suzume, type Morpheme } from '@/wasm'
+import { Suzume, type Morpheme } from '@/wasm/index.js'
 
 const { t, isJa } = useI18n()
 
@@ -144,7 +144,8 @@ function stopTyping() {
 
 onMounted(async () => {
   try {
-    suzume = await Suzume.create()
+    const wasmPath = new URL('../wasm/suzume-wasm.wasm', import.meta.url).href
+    suzume = await Suzume.create({ wasmPath })
     preAnalyze()
     loading.value = false
     scheduleNextMorpheme()

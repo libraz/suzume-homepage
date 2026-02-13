@@ -37,7 +37,7 @@ bun add @libraz/suzume
 
 ## 動作要件
 
-- **Node.js**: 18.0以上
+- **Node.js**: 16.0以上
 - **ブラウザ**: WASM対応のモダンブラウザ（Chrome、Firefox、Safari、Edge）
 - **Deno**: 1.0以上
 - **Bun**: 1.0以上
