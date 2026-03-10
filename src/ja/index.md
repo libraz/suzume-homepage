@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: ブラウザで動く軽量日本語トークナイザー
-  tagline: 50MBの辞書ファイルはもう不要。300KB以下でフロントエンド完結、サーバー構築不要。
+  tagline: 50MBの辞書ファイルはもう不要。400KB以下でフロントエンド完結、サーバー構築不要。
   actions:
     - theme: brand
       text: 今すぐ試す
@@ -14,9 +14,9 @@ hero:
       link: /ja/docs/getting-started
 
 features:
-  - icon: 🚫
-    title: 辞書地獄からの解放
-    details: 50MB超の辞書ファイル管理は不要。特徴量ベースモデルで驚異的なコンパクトさ。
+  - icon: 🪶
+    title: 超軽量
+    details: WASM＋最小限の内蔵辞書で合計400KB以下。外部辞書ファイルの管理は不要。
   - icon: 🖥️
     title: 真のクライアントサイド
     details: 100%ブラウザで完結。Pythonバックエンド不要、APIコール不要、CORS問題なし。
@@ -30,8 +30,8 @@ features:
 
 <TypewriterDemo />
 
-::: danger 🚧 アルファ版
-Suzumeは2025年12月25日より開発中のアルファ版です。npmパッケージは未公開です。
+::: warning 🚧 ベータ版
+Suzumeは2025年12月25日より開発中のベータ版です。不具合を見つけた場合は、再現できる例文を添えて[GitHub Issue](https://github.com/libraz/suzume/issues)を起票してください。
 :::
 
 <WasmStats />

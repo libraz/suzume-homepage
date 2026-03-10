@@ -44,6 +44,8 @@
     "tagDesc": "Auto-generate hashtags from blog posts or product descriptions",
     "tagPlaceholder": "Enter text to extract keywords...",
     "extractedTags": "Extracted Tags",
+    "excludeBasic": "Exclude basic verbs",
+    "excludeBasicTip": "Filters out common verbs with hiragana-only lemma (する, いる, ある...)",
     "noTags": "No tags found",
     "copyTags": "Copy",
     "copied": "Copied!",

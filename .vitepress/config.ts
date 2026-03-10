@@ -245,7 +245,7 @@ export default withMermaid(defineConfig({
     ],
 
     footer: {
-      message: 'Released under the Apache 2.0 License.'
+      message: 'a personal project by <a href="https://libraz.net" target="_blank" rel="noopener">libraz</a>'
     }
   },
 
@@ -253,8 +253,8 @@ export default withMermaid(defineConfig({
     // Dynamically update tagline with current WASM size
     if (pageData.frontmatter?.hero?.tagline) {
       const tagline = pageData.frontmatter.hero.tagline as string
-      if (tagline.includes('300KB')) {
-        pageData.frontmatter.hero.tagline = tagline.replace(/300KB/g, sizeLabelText)
+      if (tagline.includes('400KB')) {
+        pageData.frontmatter.hero.tagline = tagline.replace(/400KB/g, sizeLabelText)
       }
     }
   },

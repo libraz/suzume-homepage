@@ -44,6 +44,8 @@
     "tagDesc": "ブログ記事や商品説明からハッシュタグを自動生成",
     "tagPlaceholder": "文章を入力してください...",
     "extractedTags": "抽出されたタグ",
+    "excludeBasic": "基本動詞を除外",
+    "excludeBasicTip": "ひらがなのみの原形を持つ基本動詞を除外（する、いる、ある…）",
     "noTags": "タグが見つかりません",
     "copyTags": "コピー",
     "copied": "コピー済み",

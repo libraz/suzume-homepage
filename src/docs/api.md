@@ -70,26 +70,102 @@ const result = suzume.analyze('東京に行きました')
 
 ---
 
-### `generateTags(text)`
+### `generateTags(text, options?)`
 
-Extracts meaningful tags (nouns, proper nouns) from text. Useful for search indexing and classification.
+Extracts meaningful tags from text. Useful for search indexing, classification, and content analysis. By default extracts content words (nouns, verbs, adjectives, adverbs) while filtering out particles, auxiliaries, formal nouns, and low-information words.
 
 ```typescript
-generateTags(text: string): string[]
+generateTags(text: string, options?: TagOptions): Tag[]
 ```
+
+**`Tag`:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tag` | `string` | Tag text (surface or lemma depending on `useLemma`) |
+| `pos` | `string` | Part of speech (`Noun`, `Verb`, `Adjective`, `Adverb`, etc.) |
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `text` | `string` | Japanese text to extract tags from |
+| `options` | `TagOptions` | Optional tag generation settings |
 
-**Returns:** `string[]`
+**`TagOptions`:**
 
-**Example:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `pos` | `('noun' \| 'verb' \| 'adjective' \| 'adverb')[]` | all | POS categories to include |
+| `excludeBasic` | `boolean` | `false` | Exclude basic verbs/words with hiragana-only lemma |
+| `useLemma` | `boolean` | `true` | Use lemma (dictionary form) instead of surface form |
+| `minLength` | `number` | `2` | Minimum tag length in characters |
+| `maxTags` | `number` | `0` | Maximum number of tags (0 = unlimited) |
+
+**Returns:** `Tag[]`
+
+**Examples:**
+
 ```typescript
+// Basic usage
 const tags = suzume.generateTags('東京スカイツリーに行きました')
-console.log(tags)
-// ['東京', 'スカイツリー']
+// [{ tag: '東京', pos: 'Noun' },
+//  { tag: 'スカイツリー', pos: 'Noun' },
+//  { tag: '行く', pos: 'Verb' }]
+
+// Nouns only
+const nouns = suzume.generateTags('美しい花が静かに咲いている', {
+  pos: ['noun']
+})
+// [{ tag: '花', pos: 'Noun' }]
+
+// Exclude basic verbs (hiragana-only lemma like する, いる, ある, なる...)
+const tags2 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
+  excludeBasic: false
+})
+// [{ tag: '新しい', pos: 'Adjective' },
+//  { tag: 'プロジェクト', pos: 'Noun' },
+//  { tag: '開始', pos: 'Noun' },
+//  { tag: '管理', pos: 'Noun' },
+//  { tag: 'する', pos: 'Verb' }]
+
+const tags3 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
+  excludeBasic: true
+})
+// [{ tag: '新しい', pos: 'Adjective' },
+//  { tag: 'プロジェクト', pos: 'Noun' },
+//  { tag: '開始', pos: 'Noun' },
+//  { tag: '管理', pos: 'Noun' }]
+// 'する' is excluded (lemma is hiragana-only)
+
+// Limit results
+const top3 = suzume.generateTags('東京タワーと東京スカイツリーを見学しました', {
+  maxTags: 3
+})
+// [{ tag: '東京タワー', pos: 'Noun' },
+//  { tag: '東京スカイツリー', pos: 'Noun' },
+//  { tag: '見学', pos: 'Noun' }]
 ```
+
+::: tip excludeBasic
+`excludeBasic: true` filters out words whose lemma (dictionary form) is written entirely in hiragana. This removes common basic verbs like する, いる, ある, なる, いく, くる etc., while keeping kanji-containing verbs like 開始, 管理, 確認. Useful when you want only content-bearing tags.
+:::
+
+<details>
+<summary>Filter pipeline</summary>
+
+The tag generator applies these filters in order:
+
+1. **Particles** — excluded (は, が, を, に, etc.)
+2. **Auxiliaries** — excluded (です, ます, た, etc.)
+3. **Formal nouns** — excluded (こと, もの, ため, etc.)
+4. **Low-info words** — excluded (words marked as low information)
+5. **Conjunctions** — always excluded
+6. **Symbols** — always excluded
+7. **POS filter** — if `pos` is set, only matching categories pass
+8. **Basic words** — if `excludeBasic: true`, words with hiragana-only lemma are excluded
+9. **Min length** — tags shorter than `minLength` characters are excluded
+10. **Deduplication** — duplicate tags are removed
+
+</details>
 
 ---
 

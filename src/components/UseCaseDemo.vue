@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { Suzume, type Morpheme } from '@/wasm/index.js'
+import { Suzume, type Morpheme, type Tag } from '@/wasm/index.js'
 
 const { t, isJa } = useI18n()
 
@@ -49,9 +49,10 @@ const baseInput = ref('')
 const analyzeInput = ref('')
 const loading = ref(true)
 const copiedTags = ref(false)
+const excludeBasic = ref(false)
 
 // Results (computed from watch)
-const extractedTags = ref<{ text: string; count: number; type: 'noun' | 'verb' | 'adj' }[]>([])
+const extractedTags = ref<Tag[]>([])
 const baseFormResults = ref<{ surface: string; baseForm: string; posJa: string; pos: string }[]>([])
 const analyzedMorphemes = ref<Morpheme[]>([])
 
@@ -64,56 +65,10 @@ function analyzeForTags(text: string) {
     return
   }
 
-  const morphemes = suzume.analyze(text)
-  const tags: { text: string; count: number; type: 'noun' | 'verb' | 'adj' }[] = []
-  const seen = new Set<string>()
-
-  let i = 0
-  while (i < morphemes.length) {
-    const m = morphemes[i]
-    const pos = m.pos.toLowerCase()
-
-    // Check for noun chains (compound nouns)
-    if (pos === 'noun' || pos === 'prefix') {
-      let compound = m.surface
-      let j = i + 1
-
-      while (j < morphemes.length) {
-        const next = morphemes[j]
-        const nextPos = next.pos.toLowerCase()
-        if (nextPos === 'noun' || nextPos === 'suffix') {
-          compound += next.surface
-          j++
-        } else {
-          break
-        }
-      }
-
-      if (compound.length >= 2 && !seen.has(compound)) {
-        seen.add(compound)
-        tags.push({ text: compound, count: 1, type: 'noun' })
-      }
-
-      i = j
-    }
-    // Add verb base forms
-    else if (pos === 'verb' && m.baseForm && m.baseForm.length >= 2 && !seen.has(m.baseForm)) {
-      seen.add(m.baseForm)
-      tags.push({ text: m.baseForm, count: 1, type: 'verb' })
-      i++
-    }
-    // Add adjective base forms
-    else if ((pos === 'adjective' || pos === 'adj') && m.baseForm && m.baseForm.length >= 2 && !seen.has(m.baseForm)) {
-      seen.add(m.baseForm)
-      tags.push({ text: m.baseForm, count: 1, type: 'adj' })
-      i++
-    }
-    else {
-      i++
-    }
-  }
-
-  extractedTags.value = tags.slice(0, 12)
+  extractedTags.value = suzume.generateTags(text, {
+    excludeBasic: excludeBasic.value,
+    maxTags: 12
+  })
 }
 
 function analyzeForBaseForm(text: string) {
@@ -147,6 +102,7 @@ function analyzeText(text: string) {
 
 // Watch for input changes
 watch(tagInput, (text) => analyzeForTags(text))
+watch(excludeBasic, () => analyzeForTags(tagInput.value))
 watch(baseInput, (text) => analyzeForBaseForm(text))
 watch(analyzeInput, (text) => analyzeText(text))
 
@@ -176,7 +132,7 @@ onUnmounted(() => {
 })
 
 async function copyTags() {
-  const tagText = extractedTags.value.map(t => `#${t.text}`).join(' ')
+  const tagText = extractedTags.value.map(t => `#${t.tag}`).join(' ')
   await navigator.clipboard.writeText(tagText)
   copiedTags.value = true
   setTimeout(() => {
@@ -331,23 +287,29 @@ function getPosColor(pos: string): string {
         <div class="result-section">
           <div class="result-header">
             <span class="result-label">{{ t('useCase.extractedTags') }}</span>
-            <button
-              v-if="extractedTags.length > 0"
-              class="copy-btn"
-              :class="{ copied: copiedTags }"
-              @click="copyTags"
-            >
-              {{ copiedTags ? t('useCase.copied') : t('useCase.copyTags') }}
-            </button>
+            <div class="result-actions">
+              <label class="exclude-basic-toggle" :title="t('useCase.excludeBasicTip')">
+                <input type="checkbox" v-model="excludeBasic" />
+                <span>{{ t('useCase.excludeBasic') }}</span>
+              </label>
+              <button
+                v-if="extractedTags.length > 0"
+                class="copy-btn"
+                :class="{ copied: copiedTags }"
+                @click="copyTags"
+              >
+                {{ copiedTags ? t('useCase.copied') : t('useCase.copyTags') }}
+              </button>
+            </div>
           </div>
           <div class="tags-container" v-if="extractedTags.length > 0">
             <span
               v-for="tag in extractedTags"
-              :key="tag.text"
+              :key="tag.tag"
               class="tag"
-              :class="tag.type"
+              :class="tag.pos.toLowerCase()"
             >
-              #{{ tag.text }}
+              #{{ tag.tag }}
             </span>
           </div>
           <div v-else class="no-result">{{ t('useCase.noTags') }}</div>
@@ -587,6 +549,27 @@ function getPosColor(pos: string): string {
   letter-spacing: 0.05em;
 }
 
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.exclude-basic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.exclude-basic-toggle input[type="checkbox"] {
+  accent-color: var(--vp-c-brand-1);
+  cursor: pointer;
+}
+
 .copy-btn {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
@@ -627,7 +610,7 @@ function getPosColor(pos: string): string {
   border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
 }
 
-.tag.noun {
+.tag.noun, .tag.pronoun {
   background: var(--vp-c-brand-soft);
   color: var(--vp-c-brand-1);
   border-color: color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
@@ -639,10 +622,16 @@ function getPosColor(pos: string): string {
   border-color: rgba(5, 150, 105, 0.3);
 }
 
-.tag.adj {
+.tag.adjective {
   background: rgba(220, 38, 38, 0.1);
   color: #DC2626;
   border-color: rgba(220, 38, 38, 0.3);
+}
+
+.tag.adverb {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7C3AED;
+  border-color: rgba(124, 58, 237, 0.3);
 }
 
 .no-result {

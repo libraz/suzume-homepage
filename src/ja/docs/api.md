@@ -70,26 +70,102 @@ const result = suzume.analyze('東京に行きました')
 
 ---
 
-### `generateTags(text)`
+### `generateTags(text, options?)`
 
-テキストから意味のあるタグ（名詞、固有名詞）を抽出します。検索インデックスや分類に便利です。
+テキストから意味のあるタグを抽出します。検索インデックス、分類、コンテンツ分析に便利です。デフォルトでは内容語（名詞、動詞、形容詞、副詞）を抽出し、助詞、助動詞、形式名詞、低情報語を除外します。
 
 ```typescript
-generateTags(text: string): string[]
+generateTags(text: string, options?: TagOptions): Tag[]
 ```
+
+**`Tag`:**
+
+| プロパティ | 型 | 説明 |
+|----------|------|-------------|
+| `tag` | `string` | タグテキスト（`useLemma` 設定に応じて表層形または原形） |
+| `pos` | `string` | 品詞（`Noun`, `Verb`, `Adjective`, `Adverb` 等） |
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
 | `text` | `string` | タグを抽出する日本語テキスト |
+| `options` | `TagOptions` | タグ生成のオプション設定 |
 
-**戻り値:** `string[]`
+**`TagOptions`:**
+
+| オプション | 型 | デフォルト | 説明 |
+|-----------|------|---------|-------------|
+| `pos` | `('noun' \| 'verb' \| 'adjective' \| 'adverb')[]` | 全て | 抽出する品詞カテゴリ |
+| `excludeBasic` | `boolean` | `false` | ひらがなのみの原形を持つ基本動詞等を除外 |
+| `useLemma` | `boolean` | `true` | 表層形の代わりに原形（辞書形）を使用 |
+| `minLength` | `number` | `2` | タグの最小文字数 |
+| `maxTags` | `number` | `0` | タグの最大数（0 = 無制限） |
+
+**戻り値:** `Tag[]`
 
 **例:**
+
 ```typescript
+// 基本的な使い方
 const tags = suzume.generateTags('東京スカイツリーに行きました')
-console.log(tags)
-// ['東京', 'スカイツリー']
+// [{ tag: '東京', pos: 'Noun' },
+//  { tag: 'スカイツリー', pos: 'Noun' },
+//  { tag: '行く', pos: 'Verb' }]
+
+// 名詞のみ
+const nouns = suzume.generateTags('美しい花が静かに咲いている', {
+  pos: ['noun']
+})
+// [{ tag: '花', pos: 'Noun' }]
+
+// 基本動詞の除外（する、いる、ある、なる等のひらがなのみの原形を持つ語）
+const tags2 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
+  excludeBasic: false
+})
+// [{ tag: '新しい', pos: 'Adjective' },
+//  { tag: 'プロジェクト', pos: 'Noun' },
+//  { tag: '開始', pos: 'Noun' },
+//  { tag: '管理', pos: 'Noun' },
+//  { tag: 'する', pos: 'Verb' }]
+
+const tags3 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
+  excludeBasic: true
+})
+// [{ tag: '新しい', pos: 'Adjective' },
+//  { tag: 'プロジェクト', pos: 'Noun' },
+//  { tag: '開始', pos: 'Noun' },
+//  { tag: '管理', pos: 'Noun' }]
+// 'する' は除外される（原形がひらがなのみ）
+
+// 結果数を制限
+const top3 = suzume.generateTags('東京タワーと東京スカイツリーを見学しました', {
+  maxTags: 3
+})
+// [{ tag: '東京タワー', pos: 'Noun' },
+//  { tag: '東京スカイツリー', pos: 'Noun' },
+//  { tag: '見学', pos: 'Noun' }]
 ```
+
+::: tip excludeBasic
+`excludeBasic: true` は原形（辞書形）がすべてひらがなで書かれた語を除外します。する、いる、ある、なる、いく、くる等の基本動詞が除外される一方、開始、管理、確認等の漢字を含む動詞は保持されます。内容を表すタグのみが必要な場合に有用です。
+:::
+
+<details>
+<summary>フィルタパイプライン</summary>
+
+タグジェネレーターは以下の順序でフィルタを適用します：
+
+1. **助詞** — 除外（は、が、を、に 等）
+2. **助動詞** — 除外（です、ます、た 等）
+3. **形式名詞** — 除外（こと、もの、ため 等）
+4. **低情報語** — 除外（低情報としてマークされた語）
+5. **接続詞** — 常に除外
+6. **記号** — 常に除外
+7. **品詞フィルタ** — `pos` が設定されている場合、一致するカテゴリのみ通過
+8. **基本語** — `excludeBasic: true` の場合、ひらがなのみの原形を持つ語を除外
+9. **最小文字数** — `minLength` 文字未満のタグを除外
+10. **重複排除** — 重複タグを削除
+
+</details>
 
 ---
 

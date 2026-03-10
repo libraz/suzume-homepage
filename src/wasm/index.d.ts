@@ -41,16 +41,43 @@ export interface Morpheme {
     conjForm: string | null;
 }
 /**
+ * Tag entry with POS information
+ */
+export interface Tag {
+    /** Tag text (surface or lemma) */
+    tag: string;
+    /** Part of speech (English) */
+    pos: string;
+}
+/**
+ * Options for tag generation
+ */
+export interface TagOptions {
+    /** POS categories to include (default: all content words) */
+    pos?: ('noun' | 'verb' | 'adjective' | 'adverb')[];
+    /** Exclude basic/common words with hiragana-only lemma (default: false) */
+    excludeBasic?: boolean;
+    /** Use lemma instead of surface form (default: true) */
+    useLemma?: boolean;
+    /** Minimum tag length in characters (default: 2) */
+    minLength?: number;
+    /** Maximum number of tags, 0 for unlimited (default: 0) */
+    maxTags?: number;
+}
+/**
  * Suzume instance for Japanese morphological analysis
  */
 export declare class Suzume {
     private module;
     private handle;
+    private cleanupRef;
     private _analyze;
     private _resultFree;
     private _generateTags;
+    private _generateTagsWithOptions;
     private _tagsFree;
     private _loadUserDict;
+    private _loadBinaryDict;
     private _version;
     private constructor();
     /**
@@ -73,9 +100,10 @@ export declare class Suzume {
      * Generate tags from Japanese text
      *
      * @param text - UTF-8 encoded Japanese text
-     * @returns Array of tag strings
+     * @param options - Optional tag generation options
+     * @returns Array of tag entries with POS information
      */
-    generateTags(text: string): string[];
+    generateTags(text: string, options?: TagOptions): Tag[];
     /**
      * Load user dictionary from string data
      *
@@ -84,11 +112,20 @@ export declare class Suzume {
      */
     loadUserDictionary(data: string): boolean;
     /**
+     * Load binary dictionary from buffer data (as user dictionary)
+     *
+     * @param data - Binary dictionary data (.dic format)
+     * @returns true on success
+     */
+    loadBinaryDictionary(data: Uint8Array): boolean;
+    /**
      * Get Suzume version string
      */
     get version(): string;
     /**
-     * Destroy the Suzume instance and free resources
+     * Destroy the Suzume instance and free resources.
+     * Called automatically via FinalizationRegistry when garbage collected,
+     * but can be called explicitly for immediate cleanup.
      */
     destroy(): void;
     private parseResult;
