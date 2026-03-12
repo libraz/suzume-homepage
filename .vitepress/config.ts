@@ -204,6 +204,8 @@ export default withMermaid(defineConfig({
                 { text: 'API リファレンス', link: '/ja/docs/api' },
                 { text: '仕組み', link: '/ja/docs/how-it-works' },
                 { text: 'MeCab との違い', link: '/ja/docs/mecab-comparison' },
+              { text: 'ネイティブビルド & CLI', link: '/ja/docs/native-build' },
+              { text: 'テストガイド', link: '/ja/docs/testing' },
               ]
             }
           ]
@@ -235,6 +237,8 @@ export default withMermaid(defineConfig({
             { text: 'API Reference', link: '/docs/api' },
             { text: 'How It Works', link: '/docs/how-it-works' },
             { text: 'Differences from MeCab', link: '/docs/mecab-comparison' },
+            { text: 'Native Build & CLI', link: '/docs/native-build' },
+            { text: 'Testing Guide', link: '/docs/testing' },
           ]
         }
       ]

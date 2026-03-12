@@ -166,6 +166,50 @@ AirPods,NOUN
 3. **Test incrementally** - Add a few words and verify results
 4. **Consider compounds** - Add `東京都` if you want it as one token
 
+## Binary Dictionary
+
+For faster loading, dictionaries can be pre-compiled to binary format (.dic) using the `suzume-cli` tool:
+
+```bash
+# Compile TSV to binary
+suzume-cli dict compile user.tsv   # → user.dic
+```
+
+Then load the binary dictionary at runtime:
+
+```typescript
+// Node.js
+import { readFile } from 'fs/promises'
+const dictData = new Uint8Array(await readFile('user.dic'))
+suzume.loadBinaryDictionary(dictData)
+
+// Browser
+const response = await fetch('/dictionaries/user.dic')
+const dictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(dictData)
+```
+
+::: tip Performance
+Binary dictionaries load significantly faster than CSV format, making them ideal for production deployments with large custom vocabularies.
+:::
+
+### .dic Format Overview
+
+The binary dictionary is a compact format with the following layout:
+
+```
+[Header (40 bytes, magic: "SZMD")]
+[Double-Array Trie]
+[Entry Array (12 bytes each)]
+[String Pool (UTF-8)]
+```
+
+- **Double-array trie** — Enables fast common-prefix lookup of surface forms (O(m) per query)
+- **Entry array** — Each entry stores string pool offsets for surface/lemma, POS, and flags
+- **String pool** — Concatenated, deduplicated UTF-8 strings
+
+During compilation, verbs and adjectives are expanded into their conjugated forms, and all entries are sorted before being packed into the trie.
+
 ## Persistence
 
 Dictionary entries are stored in memory and lost when the instance is destroyed. To persist:

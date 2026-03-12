@@ -56,6 +56,7 @@ interface Morpheme {
   posJa: string        // 品詞（日本語）
   conjType: string | null  // 活用型
   conjForm: string | null  // 活用形
+  extendedPos: string  // 拡張品詞サブカテゴリ（例: "VerbRenyokei"）
 }
 ```
 

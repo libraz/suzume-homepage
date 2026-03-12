@@ -218,6 +218,39 @@ console.log(suzume.version) // "0.1.0"
 
 ---
 
+### `loadBinaryDictionary(data)`
+
+Loads a pre-compiled binary dictionary (.dic format) at runtime.
+
+```typescript
+loadBinaryDictionary(data: Uint8Array): boolean
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `data` | `Uint8Array` | Binary dictionary data (.dic format) |
+
+**Returns:** `boolean` - `true` on success
+
+**Example:**
+```typescript
+// Load from file (Node.js)
+import { readFile } from 'fs/promises'
+const dictData = new Uint8Array(await readFile('custom.dic'))
+suzume.loadBinaryDictionary(dictData)
+
+// Load from URL (Browser)
+const response = await fetch('/dictionaries/custom.dic')
+const dictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(dictData)
+```
+
+::: tip Binary vs CSV dictionaries
+Binary dictionaries (.dic) load faster than CSV format. Use the `suzume-cli dict compile` command to compile a TSV dictionary into binary format.
+:::
+
+---
+
 ### `destroy()`
 
 Frees WASM memory and resources. Call this when done using the instance.
@@ -226,11 +259,15 @@ Frees WASM memory and resources. Call this when done using the instance.
 destroy(): void
 ```
 
+::: info Automatic cleanup via FinalizationRegistry
+Suzume registers a `FinalizationRegistry` callback, so resources will be freed automatically when the instance is garbage collected. However, calling `destroy()` explicitly is recommended for immediate cleanup — especially in Node.js where GC timing is unpredictable and WASM memory is not visible to the GC's heap pressure heuristics.
+:::
+
 **Example:**
 ```typescript
 const suzume = await Suzume.create()
 // ... use suzume ...
-suzume.destroy() // Free resources
+suzume.destroy() // Free resources immediately
 ```
 
 ---
@@ -248,6 +285,7 @@ interface Morpheme {
   posJa: string        // Part of speech (Japanese)
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
+  extendedPos: string  // Extended POS subcategory (English)
 }
 ```
 
@@ -262,6 +300,7 @@ interface Morpheme {
 | `posJa` | `string` | Part of speech in Japanese | `"動詞"` |
 | `conjType` | `string \| null` | Conjugation type (for verbs/adjectives) | `"一段"` |
 | `conjForm` | `string \| null` | Conjugation form | `"連用形"` |
+| `extendedPos` | `string` | Extended POS subcategory | `"VerbRenyokei"` |
 
 ### Part of Speech Values
 
@@ -282,6 +321,107 @@ interface Morpheme {
 | `SYMBOL` | 記号 | Symbols |
 | `OTHER` | その他 | Other/Unknown |
 
+### Extended POS Values
+
+The `extendedPos` property provides fine-grained subcategories beyond the basic `pos` tag. This is useful when you need to distinguish conjugation forms, particle roles, auxiliary functions, or noun subtypes.
+
+**Verb forms:**
+
+| Value | Description | Example |
+|-------|-------------|---------|
+| `VerbShuushikei` | 終止形: dictionary form | 食べる, 書く |
+| `VerbRenyokei` | 連用形: continuative form | 食べ, 書き |
+| `VerbMizenkei` | 未然形: irrealis form | 食べ-, 書か- |
+| `VerbOnbinkei` | 音便形: euphonic change | 書い-, 泳い- |
+| `VerbTeForm` | て形 | 食べて, 書いて |
+| `VerbKateikei` | 仮定形: conditional | 食べれば, 書けば |
+| `VerbMeireikei` | 命令形: imperative | 食べろ, 書け |
+| `VerbRentaikei` | 連体形: attributive | (same as shuushi in modern Japanese) |
+| `VerbTaForm` | た形: past | 食べた, 書いた |
+| `VerbTaraForm` | たら形: conditional past | 食べたら, 書いたら |
+
+**Adjective forms:**
+
+| Value | Description | Example |
+|-------|-------------|---------|
+| `AdjBasic` | 終止形: basic form | 美しい, 高い |
+| `AdjRenyokei` | 連用形(く): adverbial | 美しく, 高く |
+| `AdjStem` | 語幹: stem (ガル接続) | 美し-, 高- |
+| `AdjKatt` | かっ形: past stem | 美しかっ-, 高かっ- |
+| `AdjKeForm` | け形: conditional stem | 美しけれ- |
+| `AdjNaAdj` | ナ形容詞: na-adjective stem | 静か, 綺麗 |
+
+**Auxiliaries:**
+
+| Value | Description | Example |
+|-------|-------------|---------|
+| `AuxTenseTa` | 過去: past tense | た, だ |
+| `AuxTenseMasu` | 丁寧: polite | ます, まし, ませ |
+| `AuxNegativeNai` | 否定 | ない, なかっ |
+| `AuxNegativeNu` | 否定(古語) | ぬ, ん |
+| `AuxDesireTai` | 願望 | たい, たかっ |
+| `AuxVolitional` | 意志/推量 | う, よう |
+| `AuxPassive` | 受身 | れる, られる |
+| `AuxCausative` | 使役 | せる, させる |
+| `AuxPotential` | 可能 | れる, られる |
+| `AuxAspectIru` | 継続 | いる, い, おる |
+| `AuxAspectShimau` | 完了 | しまう, ちゃう |
+| `AuxAspectOku` | 準備 | おく, とく |
+| `AuxAspectMiru` | 試行 | みる |
+| `AuxAspectIku` | 進行方向 | いく |
+| `AuxAspectKuru` | 接近 | くる |
+| `AuxAppearanceSou` | 様態 | そう |
+| `AuxConjectureRashii` | 推定 | らしい |
+| `AuxConjectureMitai` | 推定 | みたい |
+| `AuxCopulaDa` | 断定 | だ, で, な, なら |
+| `AuxCopulaDesu` | 丁寧断定 | です, でし |
+| `AuxHonorific` | 尊敬 | れる, られる |
+| `AuxGozaru` | 丁重 | ござる |
+| `AuxExcessive` | 過度 | すぎる |
+| `AuxGaru` | ガル接続 | がる |
+
+**Particles:**
+
+| Value | Description | Example |
+|-------|-------------|---------|
+| `ParticleCase` | 格助詞 | が, を, に, で, へ, と, から, まで, より |
+| `ParticleTopic` | 係助詞 | は, も |
+| `ParticleFinal` | 終助詞 | ね, よ, わ, な, か |
+| `ParticleConj` | 接続助詞 | て, で, ば, ながら, たり, けど |
+| `ParticleQuote` | 引用助詞 | と（引用） |
+| `ParticleAdverbial` | 副助詞 | ばかり, だけ, ほど, しか, など |
+| `ParticleNo` | 準体助詞 | の |
+| `ParticleBinding` | 係結び | こそ, さえ, すら |
+
+**Nouns:**
+
+| Value | Description | Example |
+|-------|-------------|---------|
+| `Noun` | 普通名詞 | 東京, 天気 |
+| `NounFormal` | 形式名詞 | こと, もの, ところ, わけ |
+| `NounVerbal` | 連用形転成名詞 | 読み, 書き |
+| `NounProper` | 固有名詞 | — |
+| `NounProperFamily` | 固有名詞(姓) | 田中, 鈴木 |
+| `NounProperGiven` | 固有名詞(名) | 太郎 |
+| `NounNumber` | 数詞 | 一, 100 |
+
+**Other:**
+
+| Value | Description |
+|-------|-------------|
+| `Pronoun` | 代名詞 |
+| `PronounInterrogative` | 疑問詞 (何, 誰, どこ) |
+| `Adverb` | 副詞 |
+| `AdverbQuotative` | 引用副詞 (そう, こう) |
+| `Conjunction` | 接続詞 |
+| `Determiner` | 連体詞 |
+| `Prefix` | 接頭辞 |
+| `Suffix` | 接尾辞 |
+| `Symbol` | 記号 |
+| `Interjection` | 感動詞 |
+| `Other` | その他 |
+| `Unknown` | 不明 |
+
 ---
 
 ## Error Handling
@@ -301,7 +441,7 @@ try {
 
 ## Memory Management
 
-Suzume uses WebAssembly which requires manual memory management. Always call `destroy()` when done:
+Suzume uses WebAssembly which allocates memory outside the JavaScript heap. A `FinalizationRegistry` ensures cleanup on GC, but explicit `destroy()` is strongly recommended — especially in Node.js where GC timing is unpredictable and WASM memory is invisible to the GC's heap pressure heuristics.
 
 ```typescript
 // Good: Clean up when done
@@ -331,3 +471,7 @@ class MyApp {
   }
 }
 ```
+
+::: warning Node.js
+In Node.js, WASM memory is not tracked by V8's heap size. If you create many instances without calling `destroy()`, memory usage will grow even though the GC sees no pressure. Always call `destroy()` explicitly in server-side code.
+:::

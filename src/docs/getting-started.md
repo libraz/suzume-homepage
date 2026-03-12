@@ -56,6 +56,7 @@ interface Morpheme {
   posJa: string        // Part of speech (Japanese)
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
+  extendedPos: string  // Extended POS subcategory (e.g. "VerbRenyokei")
 }
 ```
 

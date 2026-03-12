@@ -166,6 +166,50 @@ AirPods,NOUN
 3. **段階的にテスト** - 数語追加して結果を確認
 4. **複合語を考慮** - 1トークンにしたい場合は `東京都` を追加
 
+## バイナリ辞書
+
+より高速な読み込みのため、辞書を `suzume-cli` ツールでバイナリ形式（.dic）にプリコンパイルできます：
+
+```bash
+# TSVをバイナリにコンパイル
+suzume-cli dict compile user.tsv   # → user.dic
+```
+
+バイナリ辞書を実行時に読み込み：
+
+```typescript
+// Node.js
+import { readFile } from 'fs/promises'
+const dictData = new Uint8Array(await readFile('user.dic'))
+suzume.loadBinaryDictionary(dictData)
+
+// ブラウザ
+const response = await fetch('/dictionaries/user.dic')
+const dictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(dictData)
+```
+
+::: tip パフォーマンス
+バイナリ辞書はCSV形式よりも大幅に高速に読み込めます。大規模なカスタム語彙を使用する本番環境に最適です。
+:::
+
+### .dic フォーマット概要
+
+バイナリ辞書は以下の構造を持つコンパクトな形式です：
+
+```
+[ヘッダー (40 bytes, マジック: "SZMD")]
+[ダブル配列トライ]
+[エントリ配列 (各 12 bytes)]
+[文字列プール (UTF-8)]
+```
+
+- **ダブル配列トライ** — 表層形の高速な共通接頭辞検索に使用（O(m) ルックアップ）
+- **エントリ配列** — 各エントリに表層形・原形の文字列プールオフセット、品詞、フラグを格納
+- **文字列プール** — 重複排除された UTF-8 文字列の連結
+
+コンパイル時に動詞・形容詞は活用形に展開され、全エントリがソートされた上でトライに格納されます。
+
 ## 永続化
 
 辞書エントリはメモリに保存され、インスタンスが破棄されると失われます。永続化するには：

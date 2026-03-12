@@ -215,19 +215,56 @@ console.log(suzume.version) // "0.1.0"
 
 ---
 
+### `loadBinaryDictionary(data)`
+
+コンパイル済みバイナリ辞書（.dic形式）を実行時に読み込みます。
+
+```typescript
+loadBinaryDictionary(data: Uint8Array): boolean
+```
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `data` | `Uint8Array` | バイナリ辞書データ（.dic形式） |
+
+**戻り値:** `boolean` - 成功時 `true`
+
+**例:**
+```typescript
+// ファイルから読み込み（Node.js）
+import { readFile } from 'fs/promises'
+const dictData = new Uint8Array(await readFile('custom.dic'))
+suzume.loadBinaryDictionary(dictData)
+
+// URLから読み込み（ブラウザ）
+const response = await fetch('/dictionaries/custom.dic')
+const dictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(dictData)
+```
+
+::: tip バイナリ辞書 vs CSV辞書
+バイナリ辞書（.dic）はCSV形式よりも高速に読み込めます。`suzume-cli dict compile` コマンドでTSV辞書をバイナリ形式にコンパイルできます。
+:::
+
+---
+
 ### `destroy()`
 
-WASM メモリとリソースを解放します。インスタンスの使用が終わったら必ず呼び出してください。
+WASM メモリとリソースを解放します。インスタンスの使用が終わったら呼び出してください。
 
 ```typescript
 destroy(): void
 ```
 
+::: info FinalizationRegistry による自動クリーンアップ
+Suzume は `FinalizationRegistry` コールバックを登録しているため、インスタンスがガベージコレクションされるとリソースは自動的に解放されます。ただし、`destroy()` を明示的に呼び出して即座にクリーンアップすることを推奨します。特に Node.js では GC のタイミングが不定で、WASM メモリは GC のヒープ使用量に反映されず、メモリ逼迫と判断されにくいためです。
+:::
+
 **例:**
 ```typescript
 const suzume = await Suzume.create()
 // ... suzume を使用 ...
-suzume.destroy() // リソースを解放
+suzume.destroy() // 即座にリソースを解放
 ```
 
 ---
@@ -245,6 +282,7 @@ interface Morpheme {
   posJa: string        // 品詞（日本語）
   conjType: string | null  // 活用型
   conjForm: string | null  // 活用形
+  extendedPos: string  // 拡張品詞サブカテゴリ（英語）
 }
 ```
 
@@ -259,6 +297,7 @@ interface Morpheme {
 | `posJa` | `string` | 品詞（日本語） | `"動詞"` |
 | `conjType` | `string \| null` | 活用型（動詞/形容詞） | `"一段"` |
 | `conjForm` | `string \| null` | 活用形 | `"連用形"` |
+| `extendedPos` | `string` | 拡張品詞サブカテゴリ | `"VerbRenyokei"` |
 
 ### 品詞一覧
 
@@ -279,6 +318,107 @@ interface Morpheme {
 | `SYMBOL` | 記号 | 記号 |
 | `OTHER` | その他 | その他/不明 |
 
+### 拡張品詞（extendedPos）
+
+`extendedPos` プロパティは基本の `pos` タグを超えた詳細なサブカテゴリを提供します。活用形の区別、助詞の役割、助動詞の機能、名詞のサブタイプなどを識別する場合に有用です。
+
+**動詞の活用形:**
+
+| 値 | 説明 | 例 |
+|----|------|-----|
+| `VerbShuushikei` | 終止形 | 食べる, 書く |
+| `VerbRenyokei` | 連用形 | 食べ, 書き |
+| `VerbMizenkei` | 未然形 | 食べ-, 書か- |
+| `VerbOnbinkei` | 音便形 | 書い-, 泳い- |
+| `VerbTeForm` | て形 | 食べて, 書いて |
+| `VerbKateikei` | 仮定形 | 食べれば, 書けば |
+| `VerbMeireikei` | 命令形 | 食べろ, 書け |
+| `VerbRentaikei` | 連体形 | （現代語では終止形と同形） |
+| `VerbTaForm` | た形 | 食べた, 書いた |
+| `VerbTaraForm` | たら形 | 食べたら, 書いたら |
+
+**形容詞の活用形:**
+
+| 値 | 説明 | 例 |
+|----|------|-----|
+| `AdjBasic` | 終止形 | 美しい, 高い |
+| `AdjRenyokei` | 連用形（く） | 美しく, 高く |
+| `AdjStem` | 語幹（ガル接続） | 美し-, 高- |
+| `AdjKatt` | かっ形 | 美しかっ-, 高かっ- |
+| `AdjKeForm` | け形（仮定） | 美しけれ- |
+| `AdjNaAdj` | ナ形容詞語幹 | 静か, 綺麗 |
+
+**助動詞:**
+
+| 値 | 説明 | 例 |
+|----|------|-----|
+| `AuxTenseTa` | 過去 | た, だ |
+| `AuxTenseMasu` | 丁寧 | ます, まし, ませ |
+| `AuxNegativeNai` | 否定 | ない, なかっ |
+| `AuxNegativeNu` | 否定（古語） | ぬ, ん |
+| `AuxDesireTai` | 願望 | たい, たかっ |
+| `AuxVolitional` | 意志/推量 | う, よう |
+| `AuxPassive` | 受身 | れる, られる |
+| `AuxCausative` | 使役 | せる, させる |
+| `AuxPotential` | 可能 | れる, られる |
+| `AuxAspectIru` | 継続 | いる, い, おる |
+| `AuxAspectShimau` | 完了 | しまう, ちゃう |
+| `AuxAspectOku` | 準備 | おく, とく |
+| `AuxAspectMiru` | 試行 | みる |
+| `AuxAspectIku` | 進行方向 | いく |
+| `AuxAspectKuru` | 接近 | くる |
+| `AuxAppearanceSou` | 様態 | そう |
+| `AuxConjectureRashii` | 推定 | らしい |
+| `AuxConjectureMitai` | 推定 | みたい |
+| `AuxCopulaDa` | 断定 | だ, で, な, なら |
+| `AuxCopulaDesu` | 丁寧断定 | です, でし |
+| `AuxHonorific` | 尊敬 | れる, られる |
+| `AuxGozaru` | 丁重 | ござる |
+| `AuxExcessive` | 過度 | すぎる |
+| `AuxGaru` | ガル接続 | がる |
+
+**助詞:**
+
+| 値 | 説明 | 例 |
+|----|------|-----|
+| `ParticleCase` | 格助詞 | が, を, に, で, へ, と, から, まで, より |
+| `ParticleTopic` | 係助詞 | は, も |
+| `ParticleFinal` | 終助詞 | ね, よ, わ, な, か |
+| `ParticleConj` | 接続助詞 | て, で, ば, ながら, たり, けど |
+| `ParticleQuote` | 引用助詞 | と（引用） |
+| `ParticleAdverbial` | 副助詞 | ばかり, だけ, ほど, しか, など |
+| `ParticleNo` | 準体助詞 | の |
+| `ParticleBinding` | 係結び | こそ, さえ, すら |
+
+**名詞:**
+
+| 値 | 説明 | 例 |
+|----|------|-----|
+| `Noun` | 普通名詞 | 東京, 天気 |
+| `NounFormal` | 形式名詞 | こと, もの, ところ, わけ |
+| `NounVerbal` | 連用形転成名詞 | 読み, 書き |
+| `NounProper` | 固有名詞 | — |
+| `NounProperFamily` | 固有名詞（姓） | 田中, 鈴木 |
+| `NounProperGiven` | 固有名詞（名） | 太郎 |
+| `NounNumber` | 数詞 | 一, 100 |
+
+**その他:**
+
+| 値 | 説明 |
+|----|------|
+| `Pronoun` | 代名詞 |
+| `PronounInterrogative` | 疑問詞（何, 誰, どこ） |
+| `Adverb` | 副詞 |
+| `AdverbQuotative` | 引用副詞（そう, こう） |
+| `Conjunction` | 接続詞 |
+| `Determiner` | 連体詞 |
+| `Prefix` | 接頭辞 |
+| `Suffix` | 接尾辞 |
+| `Symbol` | 記号 |
+| `Interjection` | 感動詞 |
+| `Other` | その他 |
+| `Unknown` | 不明 |
+
 ---
 
 ## エラーハンドリング
@@ -298,7 +438,7 @@ try {
 
 ## メモリ管理
 
-Suzume は手動メモリ管理が必要な WebAssembly を使用します。使用後は必ず `destroy()` を呼び出してください：
+Suzume は JavaScript ヒープ外にメモリを確保する WebAssembly を使用します。`FinalizationRegistry` により GC 時にクリーンアップされますが、明示的な `destroy()` を強く推奨します。特に Node.js では GC のタイミングが不定で、WASM メモリは GC のヒープ使用量に反映されず、メモリ逼迫と判断されにくいためです。
 
 ```typescript
 // 良い例：使用後にクリーンアップ
@@ -328,3 +468,7 @@ class MyApp {
   }
 }
 ```
+
+::: warning Node.js での注意
+Node.js では WASM メモリは V8 のヒープサイズに追跡されません。`destroy()` を呼ばずに多くのインスタンスを作成すると、GC からは圧力が見えないためメモリ使用量が増加し続けます。サーバーサイドコードでは必ず明示的に `destroy()` を呼び出してください。
+:::

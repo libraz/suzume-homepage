@@ -181,7 +181,7 @@ Input: お母さん
 Suzume: お母さん(NOUN)            (kept — family term)
 ```
 
-Inseparable exceptions include: お金, お前, おかず, おでん, おもちゃ, and family terms (お母さん, お父さん, お兄ちゃん, お姉さん, etc.)
+Inseparable exceptions include: お金, お前, おかず, おでん, おもちゃ, おすすめ, おいら, おっぱい, おしっこ, おもらし, おっさん, お疲れ様, お出で/おいで, and family terms (お母さん, お父さん, お兄ちゃん, お姉さん, おじさん, おばさん, おじいさん, おばあさん, etc.)
 
 **Why:** In most contexts, お/ご are grammatical prefixes that should be separated. But some words have lexicalized with the prefix and splitting them would be incorrect.
 
@@ -279,17 +279,147 @@ Suzume: 次(NOUN) / に(PARTICLE)  (2 tokens)
 
 **Kanji + katakana compound nouns:**
 ```
-Input: 二次エロ (without user dictionary)
-Suzume: 二次 / エロ        (2 tokens)
+Input: 量子コンピュータ (without user dictionary)
+Suzume: 量子 / コンピュータ  (2 tokens)
 ```
 
-## Where Suzume Improves on MeCab
+### 15. Causative-Passive Split
 
-In some cases, Suzume produces better results than MeCab due to MeCab dictionary bugs or grammatical inconsistencies. Suzume applies 100+ rule-based corrections.
+MeCab sometimes merges godan verb 未然形 + causative さ into one token. Suzume normalizes this inconsistency.
+
+```
+Input: 飲まされた
+MeCab:  飲まさ / れ / た    (merged causative)
+Suzume: 飲ま / さ / れ / た  (split: verb + causative + passive + past)
+```
+
+**Why:** MeCab is inconsistent — it splits some causative-passive forms (読ま + さ + れた) but merges others (飲まさ + れた). Suzume normalizes all cases.
+
+### 16. Kango + として Adverb Split
+
+MeCab treats kango + として as a single adverb. Suzume splits it into the adverb form + する conjugation.
+
+```
+Input: 依然として
+MeCab:  依然として          (1 token, adverb)
+Suzume: 依然と / し / て     (adverb + verb + auxiliary)
+```
+
+**Why:** These are taru-adjective adverb forms (漢語 + と) followed by する conjugation. Splitting provides more accurate grammatical structure.
+
+### 17. Prefecture + City Split
+
+Prefecture-city compound nouns are split at administrative boundaries.
+
+```
+Input: 神奈川県横浜市 (when MeCab produces single token)
+Suzume: 神奈川県 / 横浜市     (split at 県/市 boundary)
+```
+
+Note: This split rule applies only to the `県+市` pattern. Other combinations like `都+区` (東京都新宿区) or `府+市` (大阪府大阪市) are merged into single tokens by the proper noun merging rule in §22.
+
+**Why:** Prefecture and city are distinct administrative levels, and splitting at their boundary is useful for search and geocoding.
+
+### 18. Copula Negation Split
+
+MeCab sometimes treats じゃない as a single auxiliary. Suzume splits it.
+
+```
+Input: じゃない
+MeCab:  じゃない            (1 token, auxiliary)
+Suzume: じゃ / ない          (auxiliary + auxiliary)
+```
+
+**Why:** Splitting copula and negation allows for more granular grammatical analysis.
+
+### 19. Technical Text Merging
+
+Technical identifiers are merged into single tokens.
+
+**Snake_case identifiers:**
+```
+Input: user_name
+Suzume: user_name            (1 token)
+```
+
+**Version numbers:**
+```
+Input: v1.2.3
+Suzume: v1.2.3               (1 token)
+```
+
+**Brand + number:**
+```
+Input: iPhone15
+Suzume: iPhone15              (1 token)
+```
+
+**ASCII dot notation:**
+```
+Input: console.log
+Suzume: console.log           (1 token)
+```
+
+**Why:** These are atomic identifiers in technical text. Splitting them provides no benefit.
+
+### 20. Noun + Suffix Merging
+
+Nouns followed by single-character suffixes are merged.
+
+```
+Input: 報告書
+Suzume: 報告書               (1 token)
+
+Input: 成功率
+Suzume: 成功率               (1 token)
+```
+
+Applies to suffixes: 書, 誌, 時, 率, 性
+
+**Why:** These noun + suffix combinations function as single lexical units.
+
+### 21. Particle Merging
+
+Certain multi-particle sequences are merged.
+
+**か + も → かも:**
+```
+Input: 行くかもしれない
+Suzume: 行く / かも / しれ / ない
+```
+
+**の + に → のに (after past tense):**
+```
+Input: 行ったのに
+Suzume: 行っ / た / のに
+```
+
+**ず + に → ずに:**
+```
+Input: 食べずに
+Suzume: 食べ / ずに
+```
+
+**Why:** These particle combinations function as compound particles and are more useful as single units.
+
+### 22. Proper Noun + Region Merging
+
+Consecutive proper nouns with region suffixes are merged.
+
+```
+Input: 東京都新宿区
+Suzume: 東京都新宿区         (1 token — place name)
+```
+
+**Why:** Place names consisting of multiple geographic components should be treated as single entities for search and display.
+
+## POS Classification Differences
+
+MeCab and Suzume use different POS classification strategies, resulting in different labels for the same words. Suzume applies 150+ rules for its own POS classification system.
 
 ### Adjective Continuative Form (連用形)
 
-MeCab often misclassifies adjective 連用形 (〜く form) as adverbs. Suzume corrects all such cases:
+MeCab classifies adjective 連用形 (〜く form) as adverbs. Suzume treats these as adjectives:
 
 ```
 Input: よくある質問
@@ -307,7 +437,7 @@ Any word ending in く whose lemma ends in い, or a kanji-containing surface, i
 
 ### Pronoun Recognition
 
-MeCab classifies many pronouns as plain nouns. Suzume corrects these to Pronoun:
+MeCab classifies many pronouns as plain nouns. Suzume treats these as Pronoun:
 
 ```
 Input: みんなで行こう
@@ -315,7 +445,7 @@ MeCab:  みんな(名詞) / で / 行こう
 Suzume: みんな(PRONOUN) / で / 行こう
 ```
 
-Corrected words include: あなた, あんた, みんな, みな, 皆, 某, 拙者, 我輩, 彼女, 彼氏, 奴, 我, わし, いくら (interrogative)
+Applies to: あなた, あんた, みんな, みな, 皆, 某, 拙者, 我輩, 彼女, 彼氏, 奴, 我, わし, いくら (interrogative)
 
 ### Na-Adjective Recognition
 
@@ -327,13 +457,13 @@ MeCab:  きれい(名詞) / な / 花
 Suzume: きれい(ADJ) / な / 花
 ```
 
-Corrected words include: きれい, しずか, おだやか, げんき, しんちょう, ありきたり, 無限, 滅多
+Applies to: きれい, しずか, おだやか, げんき, しんちょう, ありきたり, 無限, 滅多
 
-Note: Some 形容動詞語幹 are intentionally kept as Noun: マジ, 不安, 不要, 乙, 不便, 公式, 可能, 容易, 積極, 健康
+Note: Some 形容動詞語幹 are intentionally kept as Noun: マジ, 不安, 不要, 乙, 不便, 公式, 可能, 容易, 積極, 健康, 傍若無人
 
-### じゃ Conjugation Fixes
+### じゃ Conjugation
 
-MeCab inconsistently classifies じゃ (colloquial copula). Suzume consistently treats it as auxiliary (助動詞) and corrects the following ない/なかっ/な accordingly:
+MeCab classifies じゃ (colloquial copula) inconsistently across contexts. Suzume consistently treats it as auxiliary (助動詞) and classifies the following ない/なかっ/な accordingly:
 
 ```
 Input: そうじゃない
@@ -341,9 +471,9 @@ MeCab:  そう / じゃ(助詞) / ない(形容詞)
 Suzume: そう / じゃ(AUX) / ない(AUX)
 ```
 
-### て-Form Auxiliary Corrections
+### て-Form Auxiliary Classification
 
-After て/で, subsidiary verbs like いる are corrected to Auxiliary:
+After て/で, subsidiary verbs like いる are classified as Auxiliary:
 
 ```
 Input: 食べている
@@ -351,11 +481,11 @@ MeCab:  食べ / て / いる(動詞)
 Suzume: 食べ / て(AUX) / いる(AUX)
 ```
 
-Additionally, て/で after verbs and adjectives are reclassified from Particle to Auxiliary.
+Additionally, て/で after verbs and adjectives are classified as Auxiliary rather than Particle.
 
 ### Context-Dependent POS
 
-Suzume applies context-aware corrections for several ambiguous words:
+Suzume applies context-aware POS classification for several ambiguous words:
 
 **そう:** Classified as Adjective before copula (そうだ = hearsay), Auxiliary after Auxiliary (しまいそう = appearance), Adverb otherwise.
 
@@ -377,9 +507,9 @@ Suzume: エモい(ADJ) / 曲(NOUN)
 
 Suzume recognizes modern adjective patterns (エモい, キモい, ウザい, ダサい, イタい, エロい) and handles their conjugated forms correctly (エモかった, エモくない, etc.). Modern verb patterns (バズる, ググる, パクる) are also supported.
 
-### Particle Misclassification
+### Particle Classification
 
-MeCab occasionally misclassifies particles as nouns in certain contexts. Suzume applies context-aware corrections for 30+ particles:
+MeCab classifies certain particles as nouns in some contexts. Suzume applies context-aware classification for 30+ particles:
 
 ```
 Input: 行くのは大変
@@ -387,7 +517,7 @@ MeCab:  行く / の(名詞,非自立) / は / 大変
 Suzume: 行く / の(PARTICLE) / は / 大変
 ```
 
-The nominalizer の functions as a particle here, not a noun. Suzume corrects such systematic MeCab issues.
+The nominalizer の functions as a particle here, not a noun. Suzume classifies such cases as particles.
 
 ### Katakana Onomatopoeia
 
@@ -407,9 +537,52 @@ MeCab:  どき / っと / する
 Suzume: どきっと(ADV) / する
 ```
 
-### Specific Word Corrections
+### いい Classification
 
-Suzume fixes various individual MeCab misclassifications:
+MeCab sometimes classifies いい as Verb (lemma: いう). Suzume treats it as Adjective when not followed by another verb:
+
+```
+Input: いい天気
+MeCab:  いい(動詞,いう) / 天気
+Suzume: いい(ADJ) / 天気
+```
+
+### で+ある Copula Handling
+
+Suzume applies context-aware classification for the copula である pattern:
+
+```
+Input: 重要である
+Suzume: 重要 / で(AUX,だ) / ある(VERB)
+
+Input: 問題であった
+Suzume: 問題 / で(PARTICLE) / あっ(VERB) / た
+```
+
+### ない Context-Dependent Classification
+
+Suzume classifies ない/なく/なかっ as Adjective (rather than Auxiliary) when functioning as an existence adjective:
+
+```
+Input: 時間がない
+Suzume: 時間 / が / ない(ADJ)    ← existence negation
+
+Input: 食べない
+Suzume: 食べ / ない(AUX)         ← negation auxiliary
+```
+
+### なら + ない Classification
+
+When なら is followed by ない/なく/なかっ, Suzume classifies it as Verb (なる):
+
+```
+Input: ならない
+Suzume: なら(VERB,なる) / ない(AUX)
+```
+
+### Per-Word POS Differences
+
+The following words are classified differently between MeCab and Suzume:
 
 | Word | MeCab | Suzume | Reason |
 |------|-------|--------|--------|
@@ -420,16 +593,31 @@ Suzume fixes various individual MeCab misclassifications:
 | 大変 | 名詞 | ADV | Adverb usage |
 | 超 | 接頭詞 | NOUN | Modern usage |
 | びっくり | 名詞 | ADV | Adverb |
-| なるほど | — | ADV | Adverb override |
-| たくさん | — | ADV | Adverb override |
-| いずれ | — | ADV | Adverb override |
+| なるほど | — | ADV | Adverb |
+| たくさん | — | ADV | Adverb |
+| いずれ | — | ADV | Adverb |
 | お疲れ様 | — | INTJ | Interjection |
 | よろしく | — | ADV | Adverb |
 | おめでとう | 感動詞 | ADV | Adverb |
 | じゃん | 助動詞 | PARTICLE | Sentence-final particle |
 | や | 助動詞 | PARTICLE | Kansai copula → particle |
-| よう | 助動詞 | NOUN | Formal noun |
+| よう | 助動詞 | AUX | Auxiliary (様) |
 | 時々 | 副詞 | NOUN | Noun usage |
+| 遥か | 副詞 | ADJ | Na-adjective |
+| どう | 副詞 | ADJ | Na-adjective |
+| まじ | 助動詞 | ADJ | Adjective (katakana マジ stays NOUN) |
+| なんて | 副詞 | PARTICLE | Particle |
+| っていう | 助詞 | DET | Determiner |
+| という | 助詞 | DET | Determiner |
+| まして | 副詞 | CONJ | Conjunction |
+| いわば | 副詞 | CONJ | Conjunction (言わば) |
+| 寒し | 形容詞 | NOUN | Archaic noun form |
+| 付け | 接尾 | NOUN | Noun |
+| 得 (before する) | 名詞 | VERB | Ichidan verb 得る |
+| むしろ | 副詞 | OTHER | Other |
+| その後 | — | ADV | Adverb |
+| しどろもどろ | — | ADV | Adverb |
+| 無い/無く | 助動詞 | ADJ | Kanji ない adjective |
 
 ## Constraints
 
@@ -511,9 +699,9 @@ Suzume: 行か / なけれ(VERB) / ば
 
 ### POS Granularity
 
-Suzume uses a simpler POS tag set than MeCab's detailed subcategories.
+Suzume's basic POS (`pos`) uses a simpler tag set than MeCab's detailed subcategories.
 
-| MeCab | Suzume |
+| MeCab | Suzume `pos` |
 |-------|--------|
 | 名詞,一般 | NOUN |
 | 名詞,固有名詞,地域 | NOUN |
@@ -522,7 +710,23 @@ Suzume uses a simpler POS tag set than MeCab's detailed subcategories.
 | 動詞,自立 | VERB |
 | 動詞,非自立 | VERB |
 
-MeCab provides fine-grained subcategories (固有名詞, サ変接続, etc.) that Suzume does not distinguish. If your application requires subcategory-level POS, MeCab may be more suitable.
+However, the `extendedPos` field provides finer-grained subcategories:
+
+| MeCab subcategory | Suzume `extendedPos` |
+|-------------------|---------------------|
+| 名詞,固有名詞 | `NounProper` |
+| 名詞,固有名詞,人名 | `NounProperGiven` / `NounProperFamily` |
+| 名詞,数 | `NounNumber` |
+| 名詞,サ変接続 | `NounVerbal` |
+| 名詞,形式名詞 | `NounFormal` |
+| 動詞,連用形 | `VerbRenyokei` |
+| 動詞,未然形 | `VerbMizenkei` |
+| 形容詞,連用形 | `AdjRenyokei` |
+| 形容動詞語幹 | `NaAdjectiveStem` |
+| 助詞,格助詞 | `ParticleCase` |
+| 助詞,係助詞 | `ParticleBinding` |
+
+When MeCab-level subcategories are needed, `extendedPos` covers many of these cases. See the [API Reference](/docs/api) ExtendedPOS section for the full list.
 
 ## When to Use Which
 
