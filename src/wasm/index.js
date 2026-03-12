@@ -258,7 +258,7 @@ export class Suzume {
         const morphemesPtr = HEAPU32[resultPtr >> 2];
         const count = HEAPU32[(resultPtr >> 2) + 1];
         const morphemes = [];
-        // suzume_morpheme_t layout (7 pointers = 28 bytes on wasm32):
+        // suzume_morpheme_t layout (8 pointers = 32 bytes on wasm32):
         // - surface: pointer
         // - pos: pointer
         // - base_form: pointer
@@ -266,7 +266,8 @@ export class Suzume {
         // - pos_ja: pointer
         // - conj_type: pointer
         // - conj_form: pointer
-        const MORPHEME_SIZE = 28;
+        // - extended_pos: pointer
+        const MORPHEME_SIZE = 32;
         for (let idx = 0; idx < count; idx++) {
             const morphPtr = morphemesPtr + idx * MORPHEME_SIZE;
             const surfacePtr = HEAPU32[morphPtr >> 2];
@@ -276,6 +277,7 @@ export class Suzume {
             const posJaPtr = HEAPU32[(morphPtr >> 2) + 4];
             const conjTypePtr = HEAPU32[(morphPtr >> 2) + 5];
             const conjFormPtr = HEAPU32[(morphPtr >> 2) + 6];
+            const extendedPosPtr = HEAPU32[(morphPtr >> 2) + 7];
             morphemes.push({
                 surface: this.module.UTF8ToString(surfacePtr),
                 pos: this.module.UTF8ToString(posPtr),
@@ -284,6 +286,7 @@ export class Suzume {
                 posJa: this.module.UTF8ToString(posJaPtr),
                 conjType: conjTypePtr !== 0 ? this.module.UTF8ToString(conjTypePtr) : null,
                 conjForm: conjFormPtr !== 0 ? this.module.UTF8ToString(conjFormPtr) : null,
+                extendedPos: this.module.UTF8ToString(extendedPosPtr),
             });
         }
         return morphemes;

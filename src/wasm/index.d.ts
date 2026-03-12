@@ -39,6 +39,8 @@ export interface Morpheme {
     conjType: string | null;
     /** Conjugation form (Japanese, e.g., "連用形", "終止形") - null for non-conjugating words */
     conjForm: string | null;
+    /** Extended POS subcategory (English, e.g., "VerbRenyokei", "AuxTenseTa") */
+    extendedPos: string;
 }
 /**
  * Tag entry with POS information

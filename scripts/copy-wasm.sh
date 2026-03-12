@@ -62,35 +62,90 @@ if [ ${#missing_js[@]} -gt 0 ]; then
   exit 1
 fi
 
-# Copy files
-echo "   Copying WASM files..."
-for file in "${WASM_FILES[@]}"; do
-  cp "$DIST_DIR/$file" "$DEST_DIR/"
-  echo "   ✓ $file"
-done
+# Check if WASM has changed by comparing MD5
+SRC_WASM="$DIST_DIR/suzume-wasm.wasm"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  NEW_MD5=$(md5 -q "$SRC_WASM")
+else
+  NEW_MD5=$(md5sum "$SRC_WASM" | cut -d' ' -f1)
+fi
 
-echo "   Copying JS API files..."
+OLD_MD5=""
+META_FILE="$DEST_DIR/meta.json"
+if [ -f "$META_FILE" ]; then
+  OLD_MD5=$(grep -o '"md5": *"[^"]*"' "$META_FILE" | cut -d'"' -f4)
+fi
+
+WASM_CHANGED=false
+JS_CHANGED=false
+
+if [ "$OLD_MD5" != "$NEW_MD5" ] || [ -z "$OLD_MD5" ]; then
+  WASM_CHANGED=true
+fi
+
+# Check if JS files have changed
 for file in "${JS_FILES[@]}"; do
-  cp "$DIST_DIR/$file" "$DEST_DIR/"
-  echo "   ✓ $file"
-done
-
-# Remove sourceMappingURL from JS/DTS files (not needed in homepage)
-for target in "$DEST_DIR/index.js" "$DEST_DIR/index.d.ts"; do
-  if [ -f "$target" ]; then
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      # macOS (BSD sed requires '' after -i)
-      sed -i '' '/^\/\/# sourceMappingURL=/d' "$target"
-    else
-      # Linux (GNU sed)
-      sed -i '/^\/\/# sourceMappingURL=/d' "$target"
-    fi
+  if [ ! -f "$DEST_DIR/$file" ] || ! cmp -s "$DIST_DIR/$file" "$DEST_DIR/$file"; then
+    JS_CHANGED=true
+    break
   fi
 done
 
-# Update meta.json
-echo ""
-./scripts/update-wasm-meta.sh
+if ! $WASM_CHANGED && ! $JS_CHANGED; then
+  echo ""
+  echo "✅ No changes detected — all files are identical"
+  echo "   WASM MD5: $NEW_MD5"
+  exit 0
+fi
+
+# Copy WASM files if changed
+if $WASM_CHANGED; then
+  echo "   Copying WASM files..."
+  for file in "${WASM_FILES[@]}"; do
+    cp "$DIST_DIR/$file" "$DEST_DIR/"
+    echo "   ✓ $file"
+  done
+else
+  echo "   WASM unchanged, skipping (MD5: $NEW_MD5)"
+fi
+
+# Copy JS files if changed
+if $JS_CHANGED; then
+  echo "   Copying JS API files..."
+  for file in "${JS_FILES[@]}"; do
+    cp "$DIST_DIR/$file" "$DEST_DIR/"
+    echo "   ✓ $file"
+  done
+
+  # Remove sourceMappingURL from JS/DTS files (not needed in homepage)
+  for target in "$DEST_DIR/index.js" "$DEST_DIR/index.d.ts"; do
+    if [ -f "$target" ]; then
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' '/^\/\/# sourceMappingURL=/d' "$target"
+      else
+        sed -i '/^\/\/# sourceMappingURL=/d' "$target"
+      fi
+    fi
+  done
+else
+  echo "   JS API unchanged, skipping"
+fi
+
+# Update meta.json if WASM changed
+if $WASM_CHANGED; then
+  echo ""
+  ./scripts/update-wasm-meta.sh
+fi
 
 echo ""
-echo "✅ WASM files copied successfully!"
+if $WASM_CHANGED && $JS_CHANGED; then
+  echo "✅ WASM + JS API updated!"
+  [ -n "$OLD_MD5" ] && echo "   Old MD5: $OLD_MD5"
+  echo "   New MD5: $NEW_MD5"
+elif $WASM_CHANGED; then
+  echo "✅ WASM updated! (JS API unchanged)"
+  [ -n "$OLD_MD5" ] && echo "   Old MD5: $OLD_MD5"
+  echo "   New MD5: $NEW_MD5"
+else
+  echo "✅ JS API updated! (WASM unchanged)"
+fi
