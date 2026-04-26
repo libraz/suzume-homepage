@@ -180,7 +180,7 @@ suzume-cli dict -i user.tsv
 
 | コマンド | 説明 |
 |---------|-------------|
-| `add <surface> <pos> [reading] [cost]` | エントリを追加 |
+| `add <surface> <pos>` | エントリを追加 |
 | `remove <surface> [pos]` | エントリを削除 |
 | `list [--pos=POS] [--limit=N]` | エントリを一覧表示 |
 | `search <pattern>` | エントリを検索 |
@@ -207,10 +207,12 @@ Suzume は階層型辞書システムを採用しています：
 辞書ソースファイルは TSV フォーマットを使用します：
 
 ```tsv
-surface	pos	reading	cost	conj_type
-東京	NOUN	とうきょう	0.5
-食べる	VERB	たべる	0.3	ICHIDAN
+surface	pos	conj_type
+東京	NOUN
+食べる	VERB	ICHIDAN
 ```
+
+`conj_type` 列は動詞・形容詞のみ必要です。
 
 **品詞（POS）:** `NOUN`, `PROPN`, `VERB`, `ADJECTIVE`, `ADVERB`, `PARTICLE`, `AUXILIARY`, `SYMBOL`, `OTHER`
 

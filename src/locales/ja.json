@@ -59,7 +59,6 @@
     "analyzeDesc": "日本語テキストをトークン（言語単位）に分解",
     "analyzePlaceholder": "日本語を入力してください...",
     "tokens": "トークン",
-    "reading": "読み",
     "loading": "読み込み中...",
     "examples": "例文",
     "tagExamples": {

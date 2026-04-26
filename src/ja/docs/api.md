@@ -278,7 +278,6 @@ interface Morpheme {
   surface: string      // 表層形（テキスト中の表記）
   pos: string          // 品詞（英語）
   baseForm: string     // 基本形/辞書形
-  reading: string      // 読み（カタカナ）
   posJa: string        // 品詞（日本語）
   conjType: string | null  // 活用型
   conjForm: string | null  // 活用形
@@ -293,7 +292,6 @@ interface Morpheme {
 | `surface` | `string` | テキスト中の表層形 | `"食べ"` |
 | `pos` | `string` | 品詞（英語） | `"VERB"` |
 | `baseForm` | `string` | 辞書形/基本形 | `"食べる"` |
-| `reading` | `string` | カタカナ読み | `"タベ"` |
 | `posJa` | `string` | 品詞（日本語） | `"動詞"` |
 | `conjType` | `string \| null` | 活用型（動詞/形容詞） | `"一段"` |
 | `conjForm` | `string \| null` | 活用形 | `"連用形"` |

@@ -180,7 +180,7 @@ Interactive commands:
 
 | Command | Description |
 |---------|-------------|
-| `add <surface> <pos> [reading] [cost]` | Add entry |
+| `add <surface> <pos>` | Add entry |
 | `remove <surface> [pos]` | Remove entry |
 | `list [--pos=POS] [--limit=N]` | List entries |
 | `search <pattern>` | Search entries |
@@ -207,10 +207,12 @@ Suzume uses a layered dictionary system:
 Dictionary source files use TSV format:
 
 ```tsv
-surface	pos	reading	cost	conj_type
-東京	NOUN	とうきょう	0.5
-食べる	VERB	たべる	0.3	ICHIDAN
+surface	pos	conj_type
+東京	NOUN
+食べる	VERB	ICHIDAN
 ```
+
+The `conj_type` column is required only for verbs and adjectives.
 
 **POS values:** `NOUN`, `PROPN`, `VERB`, `ADJECTIVE`, `ADVERB`, `PARTICLE`, `AUXILIARY`, `SYMBOL`, `OTHER`
 

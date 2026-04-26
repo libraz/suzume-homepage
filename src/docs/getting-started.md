@@ -36,7 +36,7 @@ const suzume = await Suzume.create()
 const morphemes = suzume.analyze('今日は良い天気ですね')
 
 for (const m of morphemes) {
-  console.log(`${m.surface} [${m.posJa}] - ${m.reading}`)
+  console.log(`${m.surface} [${m.posJa}] - ${m.baseForm}`)
 }
 
 // Free resources when done
@@ -52,7 +52,6 @@ interface Morpheme {
   surface: string      // Surface form
   pos: string          // Part of speech (English)
   baseForm: string     // Base/dictionary form
-  reading: string      // Reading in katakana
   posJa: string        // Part of speech (Japanese)
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form

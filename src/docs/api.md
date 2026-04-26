@@ -281,7 +281,6 @@ interface Morpheme {
   surface: string      // Surface form (as appears in text)
   pos: string          // Part of speech (English)
   baseForm: string     // Base/dictionary form
-  reading: string      // Reading in katakana
   posJa: string        // Part of speech (Japanese)
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
@@ -296,7 +295,6 @@ interface Morpheme {
 | `surface` | `string` | Surface form as it appears in text | `"食べ"` |
 | `pos` | `string` | Part of speech in English | `"VERB"` |
 | `baseForm` | `string` | Dictionary/base form | `"食べる"` |
-| `reading` | `string` | Reading in katakana | `"タベ"` |
 | `posJa` | `string` | Part of speech in Japanese | `"動詞"` |
 | `conjType` | `string \| null` | Conjugation type (for verbs/adjectives) | `"一段"` |
 | `conjForm` | `string \| null` | Conjugation form | `"連用形"` |

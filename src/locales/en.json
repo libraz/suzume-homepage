@@ -59,7 +59,6 @@
     "analyzeDesc": "Break Japanese text into linguistic tokens",
     "analyzePlaceholder": "Enter Japanese text...",
     "tokens": "tokens",
-    "reading": "Reading",
     "loading": "Loading...",
     "examples": "Examples",
     "tagExamples": {

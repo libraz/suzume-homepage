@@ -31,8 +31,6 @@ export interface Morpheme {
     pos: string;
     /** Base/dictionary form */
     baseForm: string;
-    /** Reading in katakana */
-    reading: string;
     /** Part of speech (Japanese) */
     posJa: string;
     /** Conjugation type (Japanese, e.g., "一段", "五段・カ行") - null for non-conjugating words */
