@@ -5,7 +5,7 @@ import { useI18n } from '@/composables/useI18n'
 const { t, isJa } = useI18n()
 
 // Dynamic size label from WASM metadata
-const sizeLabel = ref('<400KB')
+const sizeLabel = ref('<450KB')
 onMounted(async () => {
   try {
     const meta = await import('@/wasm/meta.json')
@@ -147,6 +147,13 @@ function getCellDisplay(value: string) {
 <style scoped>
 .comparison-section {
   margin: 3rem 0;
+  --c-ok: #059669;
+  --c-warn: #B45309;
+}
+
+.dark .comparison-section {
+  --c-ok: #34D399;
+  --c-warn: #FBBF24;
 }
 
 .section-header {
@@ -227,24 +234,24 @@ function getCellDisplay(value: string) {
   border-radius: 4px;
 }
 
-.tool-tag.light {
-  color: #059669;
-  background: rgba(5, 150, 105, 0.1);
-}
-
+.tool-tag.light,
 .tool-tag.heavy {
-  color: #7C3AED;
-  background: rgba(124, 58, 237, 0.1);
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-default-soft, var(--vp-c-bg-soft));
 }
 
 .comparison-table th.highlight {
   color: var(--vp-c-brand-1);
   background: var(--vp-c-brand-soft);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent),
+    inset -1px 0 0 color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
 }
 
 .comparison-table td.highlight {
   background: var(--vp-c-brand-soft);
   font-weight: 600;
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent),
+    inset -1px 0 0 color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
 }
 
 
@@ -255,18 +262,18 @@ function getCellDisplay(value: string) {
 }
 
 .cell-yes {
-  color: #059669;
+  color: var(--c-ok);
   font-weight: 700;
   font-size: 1.1rem;
 }
 
 .cell-no {
-  color: #DC2626;
-  font-weight: 500;
+  color: var(--vp-c-text-3);
+  font-weight: 400;
 }
 
 .cell-partial {
-  color: #D97706;
+  color: var(--c-warn);
   font-weight: 500;
 }
 
@@ -289,8 +296,9 @@ function getCellDisplay(value: string) {
 }
 
 .benefit-card:hover {
-  border-color: var(--vp-c-brand-1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 42%, var(--vp-c-border));
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--vp-c-brand-1) 45%, transparent);
 }
 
 .benefit-icon {

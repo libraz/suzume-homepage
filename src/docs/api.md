@@ -20,6 +20,9 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `preserveVu` | `boolean` | `true` | Preserve ヴ (don't normalize to ビ etc.) |
 | `preserveCase` | `boolean` | `true` | Preserve case (don't lowercase ASCII) |
 | `preserveSymbols` | `boolean` | `false` | Preserve symbols/emoji in output |
+| `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | Analysis mode. Use `search` or `split` for search-oriented segmentation |
+| `lemmatize` | `boolean` | `true` | Return dictionary forms where available |
+| `mergeCompounds` | `boolean` | `false` | Merge consecutive noun compounds where possible |
 
 **Returns:** `Promise<Suzume>`
 
@@ -35,6 +38,8 @@ const suzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
 const suzume = await Suzume.create({
   preserveSymbols: true,
   preserveVu: false,
+  mode: 'search',
+  mergeCompounds: true,
 })
 ```
 
@@ -99,6 +104,11 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | `useLemma` | `boolean` | `true` | Use lemma (dictionary form) instead of surface form |
 | `minLength` | `number` | `2` | Minimum tag length in characters |
 | `maxTags` | `number` | `0` | Maximum number of tags (0 = unlimited) |
+| `excludeParticles` | `boolean` | `true` | Exclude particles |
+| `excludeAuxiliaries` | `boolean` | `true` | Exclude auxiliaries |
+| `excludeFormalNouns` | `boolean` | `true` | Exclude formal nouns such as こと and もの |
+| `excludeLowInfo` | `boolean` | `true` | Exclude low-information words |
+| `removeDuplicates` | `boolean` | `true` | Remove duplicate tags |
 
 **Returns:** `Tag[]`
 
@@ -107,42 +117,42 @@ generateTags(text: string, options?: TagOptions): Tag[]
 ```typescript
 // Basic usage
 const tags = suzume.generateTags('東京スカイツリーに行きました')
-// [{ tag: '東京', pos: 'Noun' },
-//  { tag: 'スカイツリー', pos: 'Noun' },
-//  { tag: '行く', pos: 'Verb' }]
+// [{ tag: '東京', pos: 'NOUN' },
+//  { tag: 'スカイツリー', pos: 'NOUN' },
+//  { tag: '行く', pos: 'VERB' }]
 
 // Nouns only
 const nouns = suzume.generateTags('美しい花が静かに咲いている', {
   pos: ['noun']
 })
-// [{ tag: '花', pos: 'Noun' }]
+// [{ tag: '花', pos: 'NOUN' }]
 
 // Exclude basic verbs (hiragana-only lemma like する, いる, ある, なる...)
 const tags2 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
   excludeBasic: false
 })
-// [{ tag: '新しい', pos: 'Adjective' },
-//  { tag: 'プロジェクト', pos: 'Noun' },
-//  { tag: '開始', pos: 'Noun' },
-//  { tag: '管理', pos: 'Noun' },
-//  { tag: 'する', pos: 'Verb' }]
+// [{ tag: '新しい', pos: 'ADJ' },
+//  { tag: 'プロジェクト', pos: 'NOUN' },
+//  { tag: '開始', pos: 'NOUN' },
+//  { tag: '管理', pos: 'NOUN' },
+//  { tag: 'する', pos: 'VERB' }]
 
 const tags3 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
   excludeBasic: true
 })
-// [{ tag: '新しい', pos: 'Adjective' },
-//  { tag: 'プロジェクト', pos: 'Noun' },
-//  { tag: '開始', pos: 'Noun' },
-//  { tag: '管理', pos: 'Noun' }]
+// [{ tag: '新しい', pos: 'ADJ' },
+//  { tag: 'プロジェクト', pos: 'NOUN' },
+//  { tag: '開始', pos: 'NOUN' },
+//  { tag: '管理', pos: 'NOUN' }]
 // 'する' is excluded (lemma is hiragana-only)
 
 // Limit results
 const top3 = suzume.generateTags('東京タワーと東京スカイツリーを見学しました', {
   maxTags: 3
 })
-// [{ tag: '東京タワー', pos: 'Noun' },
-//  { tag: '東京スカイツリー', pos: 'Noun' },
-//  { tag: '見学', pos: 'Noun' }]
+// [{ tag: '東京タワー', pos: 'NOUN' },
+//  { tag: '東京スカイツリー', pos: 'NOUN' },
+//  { tag: '見学', pos: 'NOUN' }]
 ```
 
 ::: tip excludeBasic
@@ -203,6 +213,18 @@ suzume.loadUserDictionary('走る,VERB,5000,走る')
 
 ---
 
+### `loadUserDictionaryOrThrow(data)`
+
+Loads a CSV user dictionary and throws an error with C API details when loading fails.
+
+```typescript
+loadUserDictionaryOrThrow(data: string): void
+```
+
+Use this form during setup or tests when a malformed dictionary should fail fast.
+
+---
+
 ### `version`
 
 Gets the Suzume version string.
@@ -213,7 +235,7 @@ get version(): string
 
 **Example:**
 ```typescript
-console.log(suzume.version) // "0.1.0"
+console.log(suzume.version) // "0.9.3"
 ```
 
 ---
@@ -251,6 +273,36 @@ Binary dictionaries (.dic) load faster than CSV format. Use the `suzume-cli dict
 
 ---
 
+### `loadBinaryDictionaryOrThrow(data)`
+
+Loads a compiled binary dictionary and throws an error with C API details when loading fails.
+
+```typescript
+loadBinaryDictionaryOrThrow(data: Uint8Array): void
+```
+
+---
+
+### `lastError`
+
+Returns the last C API error for the current thread, or an empty string if the last C API call succeeded.
+
+```typescript
+get lastError(): string
+```
+
+---
+
+### `dictionaryWarnings`
+
+Returns warnings produced while dictionaries were loaded during construction.
+
+```typescript
+get dictionaryWarnings(): string[]
+```
+
+---
+
 ### `destroy()`
 
 Frees WASM memory and resources. Call this when done using the instance.
@@ -285,6 +337,14 @@ interface Morpheme {
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
   extendedPos: string  // Extended POS subcategory (English)
+  start: number        // Start character offset in normalized text
+  end: number          // End character offset in normalized text
+  isUserDict: boolean
+  isFormalNoun: boolean
+  isLowInfo: boolean
+  isUnknown: boolean
+  isFromDictionary: boolean
+  score: number
 }
 ```
 
@@ -299,6 +359,14 @@ interface Morpheme {
 | `conjType` | `string \| null` | Conjugation type (for verbs/adjectives) | `"一段"` |
 | `conjForm` | `string \| null` | Conjugation form | `"連用形"` |
 | `extendedPos` | `string` | Extended POS subcategory | `"VerbRenyokei"` |
+| `start` | `number` | Start character offset in normalized text | `0` |
+| `end` | `number` | End character offset in normalized text | `2` |
+| `isUserDict` | `boolean` | True when matched from a user dictionary | `false` |
+| `isFormalNoun` | `boolean` | True for formal nouns such as こと and もの | `false` |
+| `isLowInfo` | `boolean` | True when marked as low information for tag generation | `false` |
+| `isUnknown` | `boolean` | True when generated as an unknown-word candidate | `false` |
+| `isFromDictionary` | `boolean` | True when matched from any dictionary | `true` |
+| `score` | `number` | Candidate score/cost used by the analyzer | `12.5` |
 
 ### Part of Speech Values
 

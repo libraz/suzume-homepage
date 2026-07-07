@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="330" viewBox="0 0 920 330" role="img" aria-labelledby="title desc">
+  <title id="title">Suzumeの解析パイプライン</title>
+  <desc id="desc">入力文を前処理、候補生成、ラティス、Viterbi、出力へ流す。</desc>
+  <rect width="920" height="330" rx="18" fill="#f8fafc"/>
+  <text x="48" y="48" fill="#0f172a" font-family="system-ui, sans-serif" font-size="24" font-weight="700">解析パイプライン</text>
+  <text x="48" y="78" fill="#475569" font-family="system-ui, sans-serif" font-size="15">例: 東京スカイツリーに行きました</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="122" width="150" height="78" rx="14" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="123" y="154" text-anchor="middle" fill="#1e3a8a" font-size="15" font-weight="700">1. 前処理</text>
+    <text x="123" y="178" text-anchor="middle" fill="#475569" font-size="13">URL・メール・数値</text>
+    <rect x="250" y="122" width="170" height="78" rx="14" fill="#dcfce7" stroke="#86efac"/>
+    <text x="335" y="154" text-anchor="middle" fill="#166534" font-size="15" font-weight="700">2. 候補生成</text>
+    <text x="335" y="178" text-anchor="middle" fill="#475569" font-size="13">辞書 + パターン</text>
+    <rect x="472" y="122" width="170" height="78" rx="14" fill="#fef3c7" stroke="#fcd34d"/>
+    <text x="557" y="154" text-anchor="middle" fill="#92400e" font-size="15" font-weight="700">3. ラティス</text>
+    <text x="557" y="178" text-anchor="middle" fill="#475569" font-size="13">可能な経路を構築</text>
+    <rect x="694" y="122" width="170" height="78" rx="14" fill="#ede9fe" stroke="#c4b5fd"/>
+    <text x="779" y="154" text-anchor="middle" fill="#5b21b6" font-size="15" font-weight="700">4. Viterbi</text>
+    <text x="779" y="178" text-anchor="middle" fill="#475569" font-size="13">最良経路を選択</text>
+  </g>
+  <g stroke="#94a3b8" stroke-width="2" stroke-linecap="round" fill="none">
+    <path d="M204 161h34"/>
+    <path d="M232 155l10 6-10 6"/>
+    <path d="M426 161h34"/>
+    <path d="M454 155l10 6-10 6"/>
+    <path d="M648 161h34"/>
+    <path d="M676 155l10 6-10 6"/>
+  </g>
+  <rect x="152" y="246" width="616" height="44" rx="22" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="460" y="274" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="16" font-weight="700">東京 / スカイツリー / に / 行き / まし / た</text>
+  <path d="M779 205v22c0 12-10 22-22 22" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+</svg>

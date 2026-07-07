@@ -20,6 +20,9 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `preserveVu` | `boolean` | `true` | ヴを保持（ビ等に正規化しない） |
 | `preserveCase` | `boolean` | `true` | 大文字小文字を保持（ASCII を小文字化しない） |
 | `preserveSymbols` | `boolean` | `false` | 記号・絵文字を出力に保持 |
+| `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | 解析モード。検索向けの分割には `search` または `split` を使用 |
+| `lemmatize` | `boolean` | `true` | 可能な場合に辞書形へ正規化 |
+| `mergeCompounds` | `boolean` | `false` | 連続する名詞複合を可能な範囲で結合 |
 
 **戻り値:** `Promise<Suzume>`
 
@@ -35,6 +38,8 @@ const suzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
 const suzume = await Suzume.create({
   preserveSymbols: true,
   preserveVu: false,
+  mode: 'search',
+  mergeCompounds: true,
 })
 ```
 
@@ -99,6 +104,11 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | `useLemma` | `boolean` | `true` | 表層形の代わりに原形（辞書形）を使用 |
 | `minLength` | `number` | `2` | タグの最小文字数 |
 | `maxTags` | `number` | `0` | タグの最大数（0 = 無制限） |
+| `excludeParticles` | `boolean` | `true` | 助詞を除外 |
+| `excludeAuxiliaries` | `boolean` | `true` | 助動詞を除外 |
+| `excludeFormalNouns` | `boolean` | `true` | こと、もの等の形式名詞を除外 |
+| `excludeLowInfo` | `boolean` | `true` | 低情報語を除外 |
+| `removeDuplicates` | `boolean` | `true` | 重複タグを削除 |
 
 **戻り値:** `Tag[]`
 
@@ -107,42 +117,42 @@ generateTags(text: string, options?: TagOptions): Tag[]
 ```typescript
 // 基本的な使い方
 const tags = suzume.generateTags('東京スカイツリーに行きました')
-// [{ tag: '東京', pos: 'Noun' },
-//  { tag: 'スカイツリー', pos: 'Noun' },
-//  { tag: '行く', pos: 'Verb' }]
+// [{ tag: '東京', pos: 'NOUN' },
+//  { tag: 'スカイツリー', pos: 'NOUN' },
+//  { tag: '行く', pos: 'VERB' }]
 
 // 名詞のみ
 const nouns = suzume.generateTags('美しい花が静かに咲いている', {
   pos: ['noun']
 })
-// [{ tag: '花', pos: 'Noun' }]
+// [{ tag: '花', pos: 'NOUN' }]
 
 // 基本動詞の除外（する、いる、ある、なる等のひらがなのみの原形を持つ語）
 const tags2 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
   excludeBasic: false
 })
-// [{ tag: '新しい', pos: 'Adjective' },
-//  { tag: 'プロジェクト', pos: 'Noun' },
-//  { tag: '開始', pos: 'Noun' },
-//  { tag: '管理', pos: 'Noun' },
-//  { tag: 'する', pos: 'Verb' }]
+// [{ tag: '新しい', pos: 'ADJ' },
+//  { tag: 'プロジェクト', pos: 'NOUN' },
+//  { tag: '開始', pos: 'NOUN' },
+//  { tag: '管理', pos: 'NOUN' },
+//  { tag: 'する', pos: 'VERB' }]
 
 const tags3 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
   excludeBasic: true
 })
-// [{ tag: '新しい', pos: 'Adjective' },
-//  { tag: 'プロジェクト', pos: 'Noun' },
-//  { tag: '開始', pos: 'Noun' },
-//  { tag: '管理', pos: 'Noun' }]
+// [{ tag: '新しい', pos: 'ADJ' },
+//  { tag: 'プロジェクト', pos: 'NOUN' },
+//  { tag: '開始', pos: 'NOUN' },
+//  { tag: '管理', pos: 'NOUN' }]
 // 'する' は除外される（原形がひらがなのみ）
 
 // 結果数を制限
 const top3 = suzume.generateTags('東京タワーと東京スカイツリーを見学しました', {
   maxTags: 3
 })
-// [{ tag: '東京タワー', pos: 'Noun' },
-//  { tag: '東京スカイツリー', pos: 'Noun' },
-//  { tag: '見学', pos: 'Noun' }]
+// [{ tag: '東京タワー', pos: 'NOUN' },
+//  { tag: '東京スカイツリー', pos: 'NOUN' },
+//  { tag: '見学', pos: 'NOUN' }]
 ```
 
 ::: tip excludeBasic
@@ -196,7 +206,22 @@ ChatGPT,NOUN
 スカイツリー,NOUN
 DeepL,NOUN
 `)
+
+// オプションフィールド付き
+suzume.loadUserDictionary('走る,VERB,5000,走る')
 ```
+
+---
+
+### `loadUserDictionaryOrThrow(data)`
+
+CSVユーザー辞書を読み込み、失敗時にC API由来の詳細を含むエラーを投げます。
+
+```typescript
+loadUserDictionaryOrThrow(data: string): void
+```
+
+セットアップ処理やテストで、不正な辞書を即座に失敗させたい場合に使います。
 
 ---
 
@@ -210,7 +235,7 @@ get version(): string
 
 **例:**
 ```typescript
-console.log(suzume.version) // "0.1.0"
+console.log(suzume.version) // "0.9.3"
 ```
 
 ---
@@ -248,6 +273,36 @@ suzume.loadBinaryDictionary(dictData)
 
 ---
 
+### `loadBinaryDictionaryOrThrow(data)`
+
+コンパイル済みバイナリ辞書を読み込み、失敗時にC API由来の詳細を含むエラーを投げます。
+
+```typescript
+loadBinaryDictionaryOrThrow(data: Uint8Array): void
+```
+
+---
+
+### `lastError`
+
+現在のスレッドにおける最後のC APIエラーを返します。直前のC API呼び出しが成功していれば空文字列です。
+
+```typescript
+get lastError(): string
+```
+
+---
+
+### `dictionaryWarnings`
+
+インスタンス作成時の辞書読み込みで発生した警告を返します。
+
+```typescript
+get dictionaryWarnings(): string[]
+```
+
+---
+
 ### `destroy()`
 
 WASM メモリとリソースを解放します。インスタンスの使用が終わったら呼び出してください。
@@ -282,6 +337,14 @@ interface Morpheme {
   conjType: string | null  // 活用型
   conjForm: string | null  // 活用形
   extendedPos: string  // 拡張品詞サブカテゴリ（英語）
+  start: number        // 正規化後テキスト内の開始文字位置
+  end: number          // 正規化後テキスト内の終了文字位置
+  isUserDict: boolean
+  isFormalNoun: boolean
+  isLowInfo: boolean
+  isUnknown: boolean
+  isFromDictionary: boolean
+  score: number
 }
 ```
 
@@ -296,6 +359,14 @@ interface Morpheme {
 | `conjType` | `string \| null` | 活用型（動詞/形容詞） | `"一段"` |
 | `conjForm` | `string \| null` | 活用形 | `"連用形"` |
 | `extendedPos` | `string` | 拡張品詞サブカテゴリ | `"VerbRenyokei"` |
+| `start` | `number` | 正規化後テキスト内の開始文字位置 | `0` |
+| `end` | `number` | 正規化後テキスト内の終了文字位置 | `2` |
+| `isUserDict` | `boolean` | ユーザー辞書に一致した場合 `true` | `false` |
+| `isFormalNoun` | `boolean` | こと、もの等の形式名詞なら `true` | `false` |
+| `isLowInfo` | `boolean` | タグ生成で低情報語として扱われる場合 `true` | `false` |
+| `isUnknown` | `boolean` | 未知語候補として生成された場合 `true` | `false` |
+| `isFromDictionary` | `boolean` | いずれかの辞書に一致した場合 `true` | `true` |
+| `score` | `number` | 解析器が使う候補スコア/コスト | `12.5` |
 
 ### 品詞一覧
 

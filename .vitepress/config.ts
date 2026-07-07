@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitepress'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 import { readFileSync } from 'fs'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -7,7 +6,7 @@ const siteUrl = 'https://suzume.libraz.net'
 const githubUrl = 'https://github.com/libraz/suzume'
 
 // Load WASM metadata and calculate size label
-let wasmMeta = { gzipKB: 211, sizeKB: 578 }
+let wasmMeta = { gzipKB: 435, sizeKB: 1121 }
 try {
   const metaPath = fileURLToPath(new URL('../src/wasm/meta.json', import.meta.url))
   wasmMeta = JSON.parse(readFileSync(metaPath, 'utf-8'))
@@ -129,7 +128,7 @@ const faqJsonLd = {
   ]
 }
 
-export default withMermaid(defineConfig({
+export default defineConfig({
   srcDir: 'src',
 
   title: 'Suzume - Japanese Tokenizer for the Browser',
@@ -257,8 +256,8 @@ export default withMermaid(defineConfig({
     // Dynamically update tagline with current WASM size
     if (pageData.frontmatter?.hero?.tagline) {
       const tagline = pageData.frontmatter.hero.tagline as string
-      if (tagline.includes('400KB')) {
-        pageData.frontmatter.hero.tagline = tagline.replace(/400KB/g, sizeLabelText)
+      if (/\d+KB/.test(tagline)) {
+        pageData.frontmatter.hero.tagline = tagline.replace(/\d+KB/g, sizeLabelText)
       }
     }
   },
@@ -287,4 +286,4 @@ export default withMermaid(defineConfig({
       noExternal: ['@libraz/suzume']
     }
   }
-}))
+})

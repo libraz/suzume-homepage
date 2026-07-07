@@ -11,7 +11,7 @@ MeCab is a morphological analyzer — its goal is to decompose text into morphem
 | | MeCab | Suzume |
 |--|-------|--------|
 | **Approach** | Dictionary-driven | Feature-driven |
-| **Dictionary** | 50MB+ (required) | Minimal (~400KB total with WASM) |
+| **Dictionary** | 50MB+ (required) | Minimal (~435KB gzipped, WASM included) |
 | **Unknown words** | Falls back to character types | Pattern-based candidate generation |
 | **Compound handling** | Splits per dictionary | Merges by character type heuristics |
 | **Target** | Server-side, academic | Browser, real-time, client-side |

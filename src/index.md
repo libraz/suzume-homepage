@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: Japanese Tokenizer That Actually Works in the Browser
-  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 400KB — runs entirely in the browser, no server required.
+  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 450KB gzipped — runs entirely in the browser, no server required.
   actions:
     - theme: brand
       text: Try It Now
@@ -16,7 +16,7 @@ hero:
 features:
   - icon: 🪶
     title: Ultra Lightweight
-    details: WASM + minimal built-in dictionary, all under 400KB. No external dictionary files to manage.
+    details: WASM + minimal built-in dictionary, all under 450KB gzipped. No external dictionary files to manage.
   - icon: 🖥️
     title: True Client-Side
     details: Runs 100% in the browser. No Python backend, no API calls, no CORS headaches. Just JavaScript.
@@ -30,9 +30,10 @@ features:
 
 <TypewriterDemo />
 
-::: warning 🚧 Beta
-Suzume is in beta and under active development (since December 25, 2025). If you find any bugs, please [open a GitHub issue](https://github.com/libraz/suzume/issues) with an example sentence that reproduces the problem.
-:::
+<div class="beta-notice">
+  <span class="beta-badge">Beta</span>
+  <span>Suzume is in beta and under active development (since December 25, 2025). If you find any bugs, please <a href="https://github.com/libraz/suzume/issues" target="_blank" rel="noopener">open a GitHub issue</a> with an example sentence that reproduces the problem.</span>
+</div>
 
 <WasmStats />
 

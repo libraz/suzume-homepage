@@ -20,6 +20,12 @@ export interface SuzumeOptions {
     preserveCase?: boolean;
     /** Preserve symbols/emoji in output, default: false */
     preserveSymbols?: boolean;
+    /** Analysis mode, default: normal */
+    mode?: 'normal' | 'search' | 'split';
+    /** Apply lemmatization, default: true */
+    lemmatize?: boolean;
+    /** Merge consecutive noun compounds, default: false */
+    mergeCompounds?: boolean;
 }
 /**
  * Morpheme - A single unit of morphological analysis
@@ -39,6 +45,22 @@ export interface Morpheme {
     conjForm: string | null;
     /** Extended POS subcategory (English, e.g., "VerbRenyokei", "AuxTenseTa") */
     extendedPos: string;
+    /** Start character offset in normalized text */
+    start: number;
+    /** End character offset in normalized text */
+    end: number;
+    /** True if matched from a user dictionary */
+    isUserDict: boolean;
+    /** True if the morpheme is a formal noun */
+    isFormalNoun: boolean;
+    /** True if the morpheme is low information for tag generation */
+    isLowInfo: boolean;
+    /** True if generated as an unknown word */
+    isUnknown: boolean;
+    /** True if matched from any dictionary */
+    isFromDictionary: boolean;
+    /** Candidate score/cost */
+    score: number;
 }
 /**
  * Tag entry with POS information
@@ -63,6 +85,16 @@ export interface TagOptions {
     minLength?: number;
     /** Maximum number of tags, 0 for unlimited (default: 0) */
     maxTags?: number;
+    /** Exclude particles (default: true) */
+    excludeParticles?: boolean;
+    /** Exclude auxiliaries (default: true) */
+    excludeAuxiliaries?: boolean;
+    /** Exclude formal nouns (default: true) */
+    excludeFormalNouns?: boolean;
+    /** Exclude low information words (default: true) */
+    excludeLowInfo?: boolean;
+    /** Remove duplicate tags (default: true) */
+    removeDuplicates?: boolean;
 }
 /**
  * Suzume instance for Japanese morphological analysis
@@ -79,7 +111,13 @@ export declare class Suzume {
     private _loadUserDict;
     private _loadBinaryDict;
     private _version;
+    private _lastError;
+    private _dictionaryWarningCount;
+    private _dictionaryWarning;
+    private layouts;
+    private unregisterToken;
     private constructor();
+    private static loadCLayouts;
     /**
      * Create a new Suzume instance
      *
@@ -112,6 +150,12 @@ export declare class Suzume {
      */
     loadUserDictionary(data: string): boolean;
     /**
+     * Load user dictionary from string data, throwing with C API details on failure.
+     *
+     * @param data - Dictionary data in CSV format
+     */
+    loadUserDictionaryOrThrow(data: string): void;
+    /**
      * Load binary dictionary from buffer data (as user dictionary)
      *
      * @param data - Binary dictionary data (.dic format)
@@ -119,15 +163,30 @@ export declare class Suzume {
      */
     loadBinaryDictionary(data: Uint8Array): boolean;
     /**
+     * Load binary dictionary from buffer data, throwing with C API details on failure.
+     *
+     * @param data - Binary dictionary data (.dic format)
+     */
+    loadBinaryDictionaryOrThrow(data: Uint8Array): void;
+    /**
      * Get Suzume version string
      */
     get version(): string;
+    /**
+     * Last C API error for this thread, or empty string if the last C API call succeeded.
+     */
+    get lastError(): string;
+    /**
+     * Dictionary warnings produced while auto-loading dictionaries at construction.
+     */
+    get dictionaryWarnings(): string[];
     /**
      * Destroy the Suzume instance and free resources.
      * Called automatically via FinalizationRegistry when garbage collected,
      * but can be called explicitly for immediate cleanup.
      */
     destroy(): void;
+    private ensureAlive;
     private parseResult;
     private parseTags;
 }

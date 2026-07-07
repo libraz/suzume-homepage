@@ -1,6 +1,8 @@
 # Getting Started
 
-Suzume is a lightweight Japanese tokenizer. It runs on WASM, so it works in browsers and Node.js alike.
+Suzume is a lightweight Japanese tokenizer. It runs on WASM, so it works in browsers and Node.js alike. Use it when you want Japanese tokenization, base forms, or keyword extraction without running a server.
+
+<TokenizerPlayground />
 
 ## Installation
 
@@ -43,6 +45,37 @@ for (const m of morphemes) {
 suzume.destroy()
 ```
 
+## Common Tasks
+
+### Extract Search Keywords
+
+```typescript
+const tags = suzume.generateTags('東京スカイツリーで夜景を撮影しました', {
+  excludeBasic: true,
+  maxTags: 5,
+})
+
+console.log(tags)
+// [
+//   { tag: '東京', pos: 'NOUN' },
+//   { tag: 'スカイツリー', pos: 'NOUN' },
+//   { tag: '夜景', pos: 'NOUN' },
+//   { tag: '撮影', pos: 'NOUN' }
+// ]
+```
+
+### Normalize Conjugated Words
+
+```typescript
+const morphemes = suzume.analyze('食べさせられなかった')
+
+for (const m of morphemes) {
+  if (m.surface !== m.baseForm) {
+    console.log(`${m.surface} -> ${m.baseForm}`)
+  }
+}
+```
+
 ## Output Format
 
 `analyze()` returns an array of `Morpheme` objects:
@@ -56,6 +89,10 @@ interface Morpheme {
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
   extendedPos: string  // Extended POS subcategory (e.g. "VerbRenyokei")
+  start: number        // Start character offset
+  end: number          // End character offset
+  isUnknown: boolean   // Generated as an unknown word candidate
+  isFromDictionary: boolean
 }
 ```
 

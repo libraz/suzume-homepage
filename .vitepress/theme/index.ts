@@ -4,6 +4,7 @@ import WasmStats from '@/components/WasmStats.vue'
 import ComparisonTable from '@/components/ComparisonTable.vue'
 import UseCaseDemo from '@/components/UseCaseDemo.vue'
 import TypewriterDemo from '@/components/TypewriterDemo.vue'
+import TokenizerPlayground from '@/components/TokenizerPlayground.vue'
 import './custom.css'
 
 export default {
@@ -13,5 +14,6 @@ export default {
     app.component('ComparisonTable', ComparisonTable)
     app.component('UseCaseDemo', UseCaseDemo)
     app.component('TypewriterDemo', TypewriterDemo)
+    app.component('TokenizerPlayground', TokenizerPlayground)
   }
 } satisfies Theme

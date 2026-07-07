@@ -1,6 +1,8 @@
 # はじめに
 
-Suzumeは軽量な日本語トークナイザーです。WASMで動作するため、ブラウザでもNode.jsでも使えます。
+Suzumeは軽量な日本語トークナイザーです。WASMで動作するため、ブラウザでもNode.jsでも使えます。サーバーを立てずに、日本語の分割、原形復元、キーワード抽出をしたい場合に使えます。
+
+<TokenizerPlayground />
 
 ## インストール
 
@@ -43,6 +45,37 @@ for (const m of morphemes) {
 suzume.destroy()
 ```
 
+## よく使う実例
+
+### 検索キーワードを抽出する
+
+```typescript
+const tags = suzume.generateTags('東京スカイツリーで夜景を撮影しました', {
+  excludeBasic: true,
+  maxTags: 5,
+})
+
+console.log(tags)
+// [
+//   { tag: '東京', pos: 'NOUN' },
+//   { tag: 'スカイツリー', pos: 'NOUN' },
+//   { tag: '夜景', pos: 'NOUN' },
+//   { tag: '撮影', pos: 'NOUN' }
+// ]
+```
+
+### 活用形を原形に戻す
+
+```typescript
+const morphemes = suzume.analyze('食べさせられなかった')
+
+for (const m of morphemes) {
+  if (m.surface !== m.baseForm) {
+    console.log(`${m.surface} -> ${m.baseForm}`)
+  }
+}
+```
+
 ## 出力形式
 
 `analyze()` は `Morpheme` オブジェクトの配列を返します：
@@ -56,6 +89,10 @@ interface Morpheme {
   conjType: string | null  // 活用型
   conjForm: string | null  // 活用形
   extendedPos: string  // 拡張品詞サブカテゴリ（例: "VerbRenyokei"）
+  start: number        // 開始文字位置
+  end: number          // 終了文字位置
+  isUnknown: boolean   // 未知語候補として生成されたか
+  isFromDictionary: boolean
 }
 ```
 

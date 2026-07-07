@@ -2,7 +2,7 @@
 
 ## Why So Small?
 
-The biggest question: **How can Suzume tokenize Japanese text in under 400KB when MeCab needs 50MB+?**
+The biggest question: **How can Suzume tokenize Japanese text in under 450KB gzipped when traditional analyzers often need tens of megabytes of dictionaries?**
 
 ### The Short Answer
 
@@ -18,18 +18,10 @@ MeCab's dictionary is like a phone book with every person's name. Suzume is like
 
 ### The Three Pillars
 
-```mermaid
-flowchart LR
-    subgraph Size["Why < 400KB?"]
-        A["1. Minimal Dictionary"]
-        B["2. Rule-based Patterns"]
-        C["3. On-the-fly Computation"]
-    end
-
-    A --> Result["Small but Capable"]
-    B --> Result
-    C --> Result
-```
+<figure class="doc-diagram">
+  <img src="/diagrams/pillars-en.svg" alt="Suzume uses a minimal dictionary, grammar patterns, and dynamic scoring to stay small." />
+  <figcaption>Suzume keeps the shipped data small and moves more of the analysis into compact grammar and scoring code.</figcaption>
+</figure>
 
 ::: info What is Tokenization?
 Breaking text into meaningful units (tokens) and identifying their parts of speech. For Japanese, this means segmenting continuous text like "東京に行く" into "東京 / に / 行く".
@@ -44,7 +36,7 @@ Traditional analyzers store exhaustive word lists:
 東京,noun,proper,place,*,*,*,東京,トウキョウ,トーキョー,0/3,C1
 ```
 
-Suzume stores only high-frequency function words and particles. For content words, it relies on patterns.
+Suzume stores high-frequency function words, particles, auxiliaries, and selected exceptions. For many content words, it relies on character patterns and grammar rules instead of shipping every possible surface form.
 
 | Category | MeCab | Suzume |
 |----------|-------|--------|
@@ -53,25 +45,14 @@ Suzume stores only high-frequency function words and particles. For content word
 | Nouns | ~200,000 entries | Pattern-based |
 | Proper nouns | ~100,000 entries | Pattern-based |
 
-## 2. Rule-based Pattern Recognition
+## 2. Pattern Recognition
 
 Instead of storing every word, Suzume recognizes patterns:
 
-```mermaid
-flowchart TB
-    Input["スカイツリー"]
-
-    Check1{"In dictionary?"}
-    Check2{"Katakana sequence?"}
-    Check3{"Length > 2?"}
-
-    Input --> Check1
-    Check1 -->|No| Check2
-    Check2 -->|Yes| Check3
-    Check3 -->|Yes| Result["→ Noun candidate"]
-
-    style Result fill:#d4edda
-```
+<figure class="doc-diagram">
+  <img src="/diagrams/pattern-recognition-en.svg" alt="Unknown word candidate generation for スカイツリー." />
+  <figcaption>For example, a katakana sequence that is not in the dictionary can still become a noun candidate.</figcaption>
+</figure>
 
 | Pattern | Rule | Result |
 |---------|------|--------|
@@ -84,7 +65,11 @@ flowchart TB
 Japanese has regular patterns. Katakana words are almost always nouns (loanwords). Kanji compounds are usually nouns. This regularity lets us infer POS without storing each word.
 :::
 
-## 3. On-the-fly Computation
+Try it with your own text:
+
+<TokenizerPlayground />
+
+## 3. Dynamic Connection Scoring
 
 MeCab pre-computes a huge connection cost matrix:
 
@@ -96,23 +81,17 @@ particle → noun: cost 50
 ...millions of combinations
 ```
 
-Suzume computes these costs dynamically using simple rules:
+Suzume computes connection scores dynamically using compact rules:
 
-```mermaid
-flowchart LR
-    A["Previous: 名詞"]
-    B["Current: を"]
-
-    A --> Rule["noun + を = natural (low cost)"]
-    Rule --> Cost["Cost: 10"]
-
-    style Cost fill:#d4edda
-```
+<figure class="doc-diagram">
+  <img src="/diagrams/dynamic-scoring-en.svg" alt="A noun followed by を gets a low connection cost." />
+  <figcaption>A natural POS transition gets a low cost; unlikely transitions get higher costs. Viterbi then chooses the best full path.</figcaption>
+</figure>
 
 ## The Trade-off
 
 ::: warning Accuracy vs Size
-Suzume trades ~2-3% accuracy for 99% size reduction. For most applications (search, tagging, tokenization), this trade-off is worth it.
+Suzume is optimized for browser and edge use cases where bundle size, startup time, and no-server deployment matter. Traditional dictionary analyzers remain better when you need maximum linguistic coverage for specialized corpora.
 :::
 
 | Use Case | MeCab | Suzume |
@@ -135,29 +114,10 @@ A dynamic programming algorithm that finds the optimal path through the lattice.
 
 ### Analysis Pipeline
 
-```mermaid
-flowchart TB
-    Input["Input: 東京スカイツリーに行きました"]
-
-    subgraph Pre["1. Pre-tokenization"]
-        P1[Preserve URLs/emails]
-        P2[Group numbers]
-    end
-
-    subgraph Gen["2. Candidate Generation"]
-        G1[Dictionary lookup]
-        G2[Pattern matching]
-    end
-
-    subgraph Lattice["3. Lattice + Viterbi"]
-        L1["Build all possibilities"]
-        L2["Find optimal path"]
-    end
-
-    Output["東京 / スカイツリー / に / 行き / まし / た"]
-
-    Input --> Pre --> Gen --> Lattice --> Output
-```
+<figure class="doc-diagram">
+  <img src="/diagrams/pipeline-en.svg" alt="Input flows through pre-tokenization, candidate generation, lattice construction, Viterbi, and output." />
+  <figcaption>The analyzer keeps multiple possible segmentations alive until scoring selects the best path.</figcaption>
+</figure>
 
 ### Unknown Word Handling
 
@@ -190,6 +150,6 @@ The rules are stored, not every conjugated form.
 |----------|--------|
 | Why is MeCab big? | Stores every word + pre-computed costs |
 | Why is Suzume small? | Stores rules + minimal dictionary |
-| Is accuracy affected? | ~2-3% lower, acceptable for most uses |
+| Is accuracy affected? | Yes. Suzume favors compact, robust tokenization over exhaustive dictionary coverage |
 | When to use MeCab? | Academic research, maximum accuracy |
 | When to use Suzume? | Browser apps, real-time, size-sensitive |

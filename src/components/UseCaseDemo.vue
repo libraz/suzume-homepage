@@ -410,40 +410,45 @@ function getPosColor(pos: string): string {
   to { transform: rotate(360deg); }
 }
 
-/* Tabs */
+/* Tabs - equal-width segmented control */
 .tabs {
   display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 0.25rem;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto 1.5rem;
+  padding: 0.25rem;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-border);
+  border-radius: 11px;
 }
 
 .tabs button {
-  padding: 0.625rem 1.25rem;
+  flex: 1 1 0;
+  padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
   font-weight: 500;
-  border: 1px solid var(--vp-c-border);
+  border: none;
   border-radius: 8px;
-  background: var(--vp-c-bg);
+  background: transparent;
   color: var(--vp-c-text-2);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, background-color 0.2s;
 }
 
 .tabs button:hover {
-  border-color: var(--vp-c-brand-1);
   color: var(--vp-c-brand-1);
 }
 
 .tabs button.active {
   background: var(--vp-c-brand-1);
-  border-color: var(--vp-c-brand-1);
   color: white;
 }
 
-/* Demo Panel */
+/* Demo Panel - reserve height so tab switches don't jump the layout */
 .demo-panel {
   padding: 1.5rem;
+  min-height: 340px;
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-border);
   border-radius: 12px;
@@ -759,20 +764,14 @@ function getPosColor(pos: string): string {
     font-size: 0.9rem;
   }
 
-  .tabs {
-    flex-wrap: wrap;
-    gap: 0.375rem;
-  }
-
   .tabs button {
-    padding: 0.5rem 0.875rem;
+    padding: 0.5rem 0.5rem;
     font-size: 0.8rem;
-    flex: 1;
-    min-width: 80px;
   }
 
   .demo-panel {
     padding: 1rem;
+    min-height: 320px;
     border-radius: 10px;
   }
 

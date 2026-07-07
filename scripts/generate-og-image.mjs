@@ -10,7 +10,7 @@ const fontsDir = join(__dirname, 'fonts')
 
 // Load font
 const fontPath = join(fontsDir, 'ArchitectsDaughter-Regular.ttf')
-const font = opentype.loadSync(fontPath)
+const font = opentype.parse(readFileSync(fontPath).buffer)
 
 // Text to convert to path
 const text = 'Suzume'

@@ -13,9 +13,9 @@ onMounted(async () => {
     gzipKB.value = meta.gzipKB
     sizeKB.value = meta.sizeKB
   } catch {
-    // Fallback
-    gzipKB.value = 211
-    sizeKB.value = 578
+    // Fallback (keep in sync with src/wasm/meta.json)
+    gzipKB.value = 435
+    sizeKB.value = 1121
   }
 })
 </script>
@@ -39,12 +39,13 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem;
-  margin: 1.5rem 0;
-  padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, var(--vp-c-brand-soft) 0%, transparent 100%);
-  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 20%, transparent);
-  border-radius: 12px;
+  gap: 2rem;
+  width: fit-content;
+  margin: 1.75rem auto;
+  padding: 1.125rem 2.25rem;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 22%, var(--vp-c-border));
+  border-radius: 14px;
 }
 
 .stat-card {
@@ -53,23 +54,28 @@ onMounted(async () => {
 
 .stat-value {
   font-size: 2.5rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--vp-c-brand-1);
   line-height: 1;
-  font-family: monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.02em;
 }
 
 .stat-unit {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-left: 0.125rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--vp-c-text-2);
+  margin-left: 0.15rem;
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  color: var(--vp-c-text-2);
-  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+  margin-top: 0.4rem;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .stat-divider {

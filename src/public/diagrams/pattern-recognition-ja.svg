@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="360" viewBox="0 0 920 360" role="img" aria-labelledby="title desc">
+  <title id="title">未知語候補の生成</title>
+  <desc id="desc">辞書にない語を文字種パターンで確認し、名詞などの候補として生成する。</desc>
+  <rect width="920" height="360" rx="18" fill="#f8fafc"/>
+  <text x="48" y="48" fill="#0f172a" font-family="system-ui, sans-serif" font-size="24" font-weight="700">未知語をパターンから候補化する</text>
+  <rect x="65" y="130" width="150" height="64" rx="12" fill="#dbeafe" stroke="#93c5fd"/>
+  <text x="140" y="168" text-anchor="middle" fill="#1e3a8a" font-family="system-ui, sans-serif" font-size="18" font-weight="700">スカイツリー</text>
+  <path d="M225 162h72" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M291 156l10 6-10 6" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(320 100)">
+    <path d="M85 0l85 62-85 62L0 62z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+    <text x="85" y="58" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="15" font-weight="700">辞書に</text>
+    <text x="85" y="79" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="15" font-weight="700">ある?</text>
+  </g>
+  <text x="510" y="145" fill="#64748b" font-family="system-ui, sans-serif" font-size="13" font-weight="700">No</text>
+  <path d="M493 162h68" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M555 156l10 6-10 6" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(585 100)">
+    <path d="M85 0l85 62-85 62L0 62z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+    <text x="85" y="58" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="15" font-weight="700">カタカナ</text>
+    <text x="85" y="79" text-anchor="middle" fill="#0f172a" font-family="system-ui, sans-serif" font-size="15" font-weight="700">列?</text>
+  </g>
+  <path d="M670 225v46" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M664 265l6 10 6-10" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="683" y="253" fill="#64748b" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Yes</text>
+  <rect x="555" y="278" width="230" height="48" rx="24" fill="#dcfce7" stroke="#86efac"/>
+  <text x="670" y="309" text-anchor="middle" fill="#166534" font-family="system-ui, sans-serif" font-size="16" font-weight="700">名詞候補を生成</text>
+  <g fill="#475569" font-family="system-ui, sans-serif" font-size="14">
+    <text x="80" y="255">ほかの例:</text>
+    <text x="80" y="281">漢字列 → 名詞候補</text>
+    <text x="80" y="305">漢字 + する → サ変名詞 / 動詞候補</text>
+    <text x="80" y="329">ひらがな + い → 形容詞候補</text>
+  </g>
+</svg>

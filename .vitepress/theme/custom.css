@@ -33,15 +33,22 @@
   font-family: 'Architects Daughter', cursive !important;
   font-size: 6rem !important;
   letter-spacing: 3px;
+  line-height: 1.15;
+  margin-bottom: 0.5rem;
 }
 
 .VPHero .text {
   font-size: 1.5rem !important;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
 .VPHero .tagline {
   font-size: 1rem !important;
+  line-height: 1.65;
   color: var(--vp-c-text-2);
+  max-width: 40rem;
+  text-wrap: pretty;
 }
 
 /* Prevent hero text from wrapping */
@@ -79,20 +86,21 @@
   }
 }
 
-/* Feature cards with subtle sky blue accent */
+/* Feature cards - full border + subtle brand lift on hover (no one-sided stripe) */
 .VPFeature {
-  border-top: 2px solid var(--vp-c-brand-soft);
-  transition: border-color 0.3s, transform 0.2s;
+  transition: border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
 }
 
 .VPFeature:hover {
-  border-top-color: var(--vp-c-brand-1);
-  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 42%, var(--vp-c-border));
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -12px color-mix(in srgb, var(--vp-c-brand-1) 45%, transparent);
 }
 
-/* Code block accent */
-.vp-doc [class*='language-'] {
-  border-left: 3px solid var(--vp-c-brand-soft);
+/* Feature icon tile - subtle brand tint instead of flat gray */
+.VPFeature .icon {
+  background-color: var(--vp-c-brand-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 16%, transparent) !important;
 }
 
 /* Unified code font for all code blocks */
@@ -140,10 +148,13 @@ div[class*="language-"] code {
 .dark .vp-code .token.constant { color: #79b8ff !important; }
 .dark .vp-code .token.boolean { color: #79b8ff !important; }
 
-/* Smooth transitions */
-* {
-  transition-property: color, background-color, border-color;
-  transition-duration: 0.15s;
+/* Smooth transitions - scoped to interactive elements (avoids blanket theme-switch smear) */
+a,
+button,
+.VPFeature,
+.VPButton {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 0.2s;
   transition-timing-function: ease;
 }
 
@@ -205,6 +216,51 @@ html[lang="ja"] .VPNavBarTitle .title::after {
   color: #a78bfa;
 }
 
+/* Beta notice - neutral banner with brand badge (replaces the off-palette yellow warning) */
+.beta-notice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 1.75rem 0;
+  padding: 0.875rem 1.125rem;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.beta-notice .beta-badge {
+  flex-shrink: 0;
+  padding: 0.125rem 0.5rem;
+  border-radius: 100px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transform: translateY(-1px);
+}
+
+.beta-notice a {
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .beta-notice {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .beta-notice .beta-badge {
+    align-self: flex-start;
+  }
+}
+
 /* Common container width for home page components */
 :root {
   --home-content-max-width: 1152px;
@@ -246,6 +302,26 @@ html[lang="ja"] .VPNavBarTitle .title::after {
 .vp-doc th,
 .vp-doc td {
   display: table-cell !important;
+}
+
+.vp-doc .doc-diagram {
+  margin: 1.25rem 0 1.75rem;
+}
+
+.vp-doc .doc-diagram img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+}
+
+.vp-doc .doc-diagram figcaption {
+  margin-top: 0.5rem;
+  color: var(--vp-c-text-3);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 /* Fix aside overlapping header */
