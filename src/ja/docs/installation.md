@@ -2,6 +2,8 @@
 
 ## パッケージマネージャー
 
+JavaScript、TypeScript、ブラウザで使う場合は WASM パッケージをインストールします：
+
 ::: code-group
 
 ```bash [npm]
@@ -41,3 +43,15 @@ bun add @libraz/suzume
 - **ブラウザ**: WASM対応のモダンブラウザ（Chrome、Firefox、Safari、Edge）
 - **Deno**: 1.0以上
 - **Bun**: 1.0以上
+
+## Go
+
+Go 製のサーバー、CLI、バッチ処理では CGO バインディングを使えます：
+
+```bash
+go get github.com/libraz/go-suzume
+cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
+make lib
+```
+
+必要環境、使用例、API の概要は [Go バインディング](/ja/docs/go) を参照してください。

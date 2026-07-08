@@ -25,7 +25,7 @@ features:
     details: 辞書に依存しないから新語でも崩れない。ブランド名、スラング、専門用語も安定してトークン化。
   - icon: ⚡
     title: 本番投入可能
-    details: C++からWASMにコンパイル。TypeScript対応。Node.js、Deno、Bun、全ブラウザで動作。
+    details: C++からWASMにコンパイル。TypeScript対応。Node.js、Deno、Bun、全ブラウザに加えて、CGOバインディング経由でGoからも利用可能。
 ---
 
 <TypewriterDemo />
@@ -63,7 +63,15 @@ pnpm add @libraz/suzume
 bun add @libraz/suzume
 ```
 
+```bash [Go]
+go get github.com/libraz/go-suzume
+cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
+make lib
+```
+
 :::
+
+Go 製のサーバー、CLI、バッチ処理で使う場合は [Go バインディングガイド](/ja/docs/go) を参照してください。
 
 ## 使い方
 

@@ -25,7 +25,7 @@ features:
     details: No dictionary dependency means no breaking on new words. Brand names, slang, technical terms — stable tokenization every time.
   - icon: ⚡
     title: Production Ready
-    details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, and all modern browsers.
+    details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, all modern browsers, and Go via CGO bindings.
 ---
 
 <TypewriterDemo />
@@ -63,7 +63,15 @@ pnpm add @libraz/suzume
 bun add @libraz/suzume
 ```
 
+```bash [Go]
+go get github.com/libraz/go-suzume
+cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
+make lib
+```
+
 :::
+
+For Go services, CLIs, and batch jobs, see the [Go bindings guide](/docs/go).
 
 ## Usage
 

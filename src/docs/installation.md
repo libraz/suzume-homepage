@@ -2,6 +2,8 @@
 
 ## Package Manager
 
+For JavaScript, TypeScript, and browser usage, install the WASM package:
+
 ::: code-group
 
 ```bash [npm]
@@ -41,3 +43,15 @@ For browser usage without a build step:
 - **Browser**: Any modern browser with WASM support (Chrome, Firefox, Safari, Edge)
 - **Deno**: 1.0 or later
 - **Bun**: 1.0 or later
+
+## Go
+
+For Go services, CLIs, and batch jobs, use the CGO bindings:
+
+```bash
+go get github.com/libraz/go-suzume
+cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
+make lib
+```
+
+See [Go Bindings](/docs/go) for requirements, examples, and API notes.

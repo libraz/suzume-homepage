@@ -194,6 +194,7 @@ export default defineConfig({
               items: [
                 { text: 'はじめに', link: '/ja/docs/getting-started' },
                 { text: 'インストール', link: '/ja/docs/installation' },
+                { text: 'Go バインディング', link: '/ja/docs/go' },
                 { text: 'ユーザー辞書', link: '/ja/docs/user-dictionary' },
               ]
             },
@@ -203,8 +204,8 @@ export default defineConfig({
                 { text: 'API リファレンス', link: '/ja/docs/api' },
                 { text: '仕組み', link: '/ja/docs/how-it-works' },
                 { text: 'MeCab との違い', link: '/ja/docs/mecab-comparison' },
-              { text: 'ネイティブビルド & CLI', link: '/ja/docs/native-build' },
-              { text: 'テストガイド', link: '/ja/docs/testing' },
+                { text: 'ネイティブビルド & CLI', link: '/ja/docs/native-build' },
+                { text: 'テストガイド', link: '/ja/docs/testing' },
               ]
             }
           ]
@@ -227,6 +228,7 @@ export default defineConfig({
           items: [
             { text: 'Getting Started', link: '/docs/getting-started' },
             { text: 'Installation', link: '/docs/installation' },
+            { text: 'Go Bindings', link: '/docs/go' },
             { text: 'User Dictionary', link: '/docs/user-dictionary' },
           ]
         },
