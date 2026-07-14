@@ -2,7 +2,7 @@
 set -e
 
 SUZUME_DIR="../suzume"
-DIST_DIR="$SUZUME_DIR/dist"
+DIST_DIR="$SUZUME_DIR/bindings/wasm/dist"
 DEST_DIR="src/wasm"
 
 # Required files from dist/
@@ -39,7 +39,7 @@ if [ ${#missing_wasm[@]} -gt 0 ]; then
     echo "   - $file"
   done
   echo ""
-  echo "   Run 'yarn build:wasm' in suzume first."
+  echo "   Run 'make wasm' in suzume first."
   exit 1
 fi
 
@@ -57,8 +57,7 @@ if [ ${#missing_js[@]} -gt 0 ]; then
     echo "   - $file"
   done
   echo ""
-  echo "   Run 'yarn build:js' in suzume first."
-  echo "   (or 'yarn build' to build both WASM and JS)"
+  echo "   Run 'make wasm' in suzume first (builds both WASM and JS)."
   exit 1
 fi
 
