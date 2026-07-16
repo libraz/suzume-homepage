@@ -39,10 +39,40 @@ bun add @libraz/suzume
 
 ## 動作要件
 
-- **Node.js**: 16.0以上
+- **Node.js**: 18.0以上
 - **ブラウザ**: WASM対応のモダンブラウザ（Chrome、Firefox、Safari、Edge）
 - **Deno**: 1.0以上
 - **Bun**: 1.0以上
+
+## Python
+
+Python アプリケーションやデータ処理では、PyPI からホイールをインストールします：
+
+::: code-group
+
+```bash [pip]
+pip install suzume
+```
+
+```bash [poetry]
+poetry add suzume
+```
+
+```bash [uv]
+uv add suzume
+```
+
+:::
+
+Python 3.10 以上が必要です。ネイティブライブラリと辞書はホイールに同梱されているため、ほかにインストールするものはありません。
+
+使い方は [Python バインディング](/ja/docs/python) を参照してください。
+
+## CLI
+
+`suzume-cli` は、シェルからテキストをトークン化するネイティブのコマンドラインツールです。
+
+ビルド方法は [ネイティブビルドと CLI](/ja/docs/native-build)、使い方は [CLI リファレンス](/ja/docs/cli) を参照してください。
 
 ## Go
 

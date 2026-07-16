@@ -4,9 +4,11 @@
 
 ## 実行時の読み込み
 
-`loadUserDictionary()` を使用して実行時に辞書エントリを読み込みます：
+実行時に辞書エントリを 1 回の呼び出しで読み込みます。
 
-```typescript
+::: code-group
+
+```typescript [node]
 const suzume = await Suzume.create()
 
 // 単語を1つ追加
@@ -19,6 +21,56 @@ suzume.loadUserDictionary(`
 DeepL,NOUN
 `)
 ```
+
+```python [python]
+from suzume import Suzume
+
+sz = Suzume()
+
+# 単語を1つ追加
+sz.load_user_dict("ChatGPT,NOUN")
+
+# 複数の単語を追加
+sz.load_user_dict(
+    "スカイツリー,NOUN\n"
+    "ポケモン,NOUN\n"
+    "DeepL,NOUN\n"
+)
+```
+
+```bash [cli]
+# -d / --dict で 1 つ以上の辞書を渡す（繰り返し指定可能）
+suzume-cli analyze -d user.csv "スカイツリーとポケモン"
+```
+
+:::
+
+### 結果の確認
+
+`loadUserDictionary()` は `boolean` を返します。読み込めなかった場合（辞書が読み取れなかった場合など）は `false` になります。読み込み失敗を扱いたいときはこの値を確認してください。
+
+```typescript
+if (!suzume.loadUserDictionary(data)) {
+  // 辞書を読み込めなかった — フォールバックするかエラーを通知する
+}
+```
+
+読み込み失敗で処理を中断したい場合は、fail-fast の派生メソッドを使います。こちらは `false` を返す代わりに、内部の C API の詳細を含むエラーを投げます。
+
+```typescript
+suzume.loadUserDictionaryOrThrow(data)
+```
+
+バイナリ辞書向けのメソッド（`loadBinaryDictionary()` / `loadBinaryDictionaryOrThrow()`）も同じパターンに従います。Python では `load_user_dict()` と `load_binary_dict()` が失敗時に `SuzumeError` を送出します。
+
+::: tip パース警告
+不正な行（フィールド数の誤り、未知の品詞など）は読み込みを中断せずスキップされます。`Suzume.create()` や読み込み呼び出しのあとに `suzume.dictionaryWarnings` を確認すると、スキップされたエントリのメッセージを取得できます（Python では `dictionary_warnings`）。
+
+```typescript
+suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
+console.log(suzume.dictionaryWarnings) // スキップされたエントリのメッセージ
+```
+:::
 
 ## フォーマット
 
@@ -43,7 +95,7 @@ DeepL,NOUN
 |-------|----------|-------------|
 | `表層形` | はい | テキスト中に現れる単語 |
 | `品詞` | はい | 品詞 |
-| `コスト` | いいえ | 単語コスト（低いほど選択されやすい） |
+| `コスト` | いいえ | 現在パーサーでは無視されます（後述） |
 | `基本形` | いいえ | 辞書形/基本形 |
 
 ## 品詞の値
@@ -63,6 +115,7 @@ DeepL,NOUN
 | `PREFIX` | 接頭辞 | 接頭辞 |
 | `SUFFIX` | 接尾辞 | 接尾辞 |
 | `SYMBOL` | 記号 | 記号 |
+| `OTHER` | 未分類 | その他 |
 
 ::: tip 日本語の品詞名
 英語の値の代わりに日本語の品詞名（例：`名詞`、`動詞`、`形容詞`）も使用できます。
@@ -104,21 +157,31 @@ Kubernetes,NOUN
 バズる,VERB,5000,バズる
 ```
 
-## コストの調整
+## エントリが反映されたか確認する
 
-`コスト` パラメータは単語選択の優先度を制御します：
+各形態素は `isUserDict` を持ち、読み込んだユーザー辞書から一致したトークンの場合に `true` になります。カスタム単語が実際に適用されているかを確認するのに使えます。
 
-- **低いコスト** = 選択されやすい
-- **デフォルトコスト** = 約8000
-- **一般的な単語** = 5000-7000
-- **まれな単語** = 9000+
+```typescript
+suzume.loadUserDictionary('スカイツリー,NOUN')
+
+const result = suzume.analyze('スカイツリーへ行く')
+const skytree = result.morphemes.find((m) => m.surface === 'スカイツリー')
+
+console.log(skytree?.isUserDict) // true — ユーザー辞書から一致
+```
+
+## コスト列について
+
+`コスト` 列は現在パーサーで**使用されていません**。値が読み取られることはなく、そこに何を書いてもエントリは同じように一致します。可読性のために列を残しても構いませんが、単語選択を制御する目的で値を調整することは当てにしないでください。現状では `5000` と `9000` はまったく同じ挙動になります。
 
 ```csv
-# "東京" + "都" より "東京都" を優先
+# 末尾のコスト値は受け付けられますが無視されます
 東京都,NOUN,5000
-
-# あまり一般的でない複合語
 超電磁砲,NOUN,9000
+
+# 同じ意味 — コストを書かなくても同様に一致します
+東京都,NOUN
+超電磁砲,NOUN
 ```
 
 ## ユースケース
@@ -231,3 +294,7 @@ function addWord(word: string, pos: string) {
   localStorage.setItem('myDictionary', current + '\n' + entry)
 }
 ```
+
+## 関連情報
+
+- [API リファレンス](/ja/docs/api) — 辞書読み込みメソッド（`loadUserDictionary` / `loadUserDictionaryOrThrow` / `loadBinaryDictionary` / `loadBinaryDictionaryOrThrow`、`dictionaryWarnings`）と Morpheme のフィールド（`isUserDict`、`isFromDictionary`）。

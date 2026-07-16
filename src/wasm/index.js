@@ -18,7 +18,12 @@ const registry = new FinalizationRegistry((ref) => {
     }
 });
 /**
- * Suzume instance for Japanese morphological analysis
+ * Suzume instance for Japanese morphological analysis.
+ *
+ * Error contract note: under the WebAssembly build, a memory-allocation failure
+ * aborts the module rather than returning NULL, so the C++ allocation-failure
+ * path (which maps to a NULL return and a thrown Error on native/Python) is
+ * effectively unreachable here.
  */
 export class Suzume {
     constructor(module, handle, layouts) {
@@ -115,6 +120,7 @@ export class Suzume {
                 excludeFormalNouns: offsetofTagOptions(7),
                 excludeLowInfo: offsetofTagOptions(8),
                 removeDuplicates: offsetofTagOptions(9),
+                structSize: offsetofTagOptions(10),
             },
             extendedOptions: {
                 size: sizeofExtendedOptions(),
@@ -158,6 +164,9 @@ export class Suzume {
             const optionsPtr = module._malloc(OPTIONS_SIZE);
             try {
                 const heap = module.HEAPU32;
+                // Zero the whole struct first so any field the C ABI may append later
+                // defaults to zero instead of reading back uninitialized malloc bytes.
+                new Uint8Array(heap.buffer).fill(0, optionsPtr, optionsPtr + OPTIONS_SIZE);
                 const modeMap = {
                     normal: 0,
                     search: 1,
@@ -209,10 +218,7 @@ export class Suzume {
      */
     analyze(text) {
         this.ensureAlive();
-        const textBytes = this.module.lengthBytesUTF8(text) + 1;
-        const textPtr = this.module._malloc(textBytes);
-        try {
-            this.module.stringToUTF8(text, textPtr, textBytes);
+        return this.withUtf8String(text, (textPtr) => {
             const resultPtr = this._analyze(this.handle, textPtr);
             if (resultPtr === 0) {
                 throw new Error(`Suzume analyze failed: ${this.lastError || 'unknown error'}`);
@@ -223,10 +229,7 @@ export class Suzume {
             finally {
                 this._resultFree(resultPtr);
             }
-        }
-        finally {
-            this.module._free(textPtr);
-        }
+        });
     }
     /**
      * Generate tags from Japanese text
@@ -237,10 +240,7 @@ export class Suzume {
      */
     generateTags(text, options) {
         this.ensureAlive();
-        const textBytes = this.module.lengthBytesUTF8(text) + 1;
-        const textPtr = this.module._malloc(textBytes);
-        try {
-            this.module.stringToUTF8(text, textPtr, textBytes);
+        return this.withUtf8String(text, (textPtr) => {
             if (options) {
                 // Build pos_filter bitmask
                 let posFilter = 0;
@@ -270,35 +270,18 @@ export class Suzume {
                         options.excludeLowInfo !== false ? 1 : 0;
                     heapU32[(optionsPtr + layout.removeDuplicates) >> 2] =
                         options.removeDuplicates !== false ? 1 : 0;
-                    const tagsPtr = this._generateTagsWithOptions(this.handle, textPtr, optionsPtr);
-                    if (tagsPtr === 0) {
-                        throw new Error(`Suzume tag generation failed: ${this.lastError || 'unknown error'}`);
-                    }
-                    try {
-                        return this.parseTags(tagsPtr);
-                    }
-                    finally {
-                        this._tagsFree(tagsPtr);
-                    }
+                    // Forward-compat marker: the malloc'd buffer is uninitialized, so set
+                    // the trailing size field to the full struct size the way the native
+                    // header documents (mirrors the extended-options path above).
+                    heapU32[(optionsPtr + layout.structSize) >> 2] = layout.size;
+                    return this.consumeTags(this._generateTagsWithOptions(this.handle, textPtr, optionsPtr));
                 }
                 finally {
                     this.module._free(optionsPtr);
                 }
             }
-            const tagsPtr = this._generateTags(this.handle, textPtr);
-            if (tagsPtr === 0) {
-                throw new Error(`Suzume tag generation failed: ${this.lastError || 'unknown error'}`);
-            }
-            try {
-                return this.parseTags(tagsPtr);
-            }
-            finally {
-                this._tagsFree(tagsPtr);
-            }
-        }
-        finally {
-            this.module._free(textPtr);
-        }
+            return this.consumeTags(this._generateTags(this.handle, textPtr));
+        });
     }
     /**
      * Load user dictionary from string data
@@ -308,15 +291,7 @@ export class Suzume {
      */
     loadUserDictionary(data) {
         this.ensureAlive();
-        const dataBytes = this.module.lengthBytesUTF8(data) + 1;
-        const dataPtr = this.module._malloc(dataBytes);
-        try {
-            this.module.stringToUTF8(data, dataPtr, dataBytes);
-            return this._loadUserDict(this.handle, dataPtr, dataBytes - 1) === 1;
-        }
-        finally {
-            this.module._free(dataPtr);
-        }
+        return this.withUtf8String(data, (dataPtr, dataBytes) => this._loadUserDict(this.handle, dataPtr, dataBytes - 1) === 1);
     }
     /**
      * Load user dictionary from string data, throwing with C API details on failure.
@@ -404,6 +379,28 @@ export class Suzume {
     ensureAlive() {
         if (this.handle === 0) {
             throw new Error('Suzume instance has been destroyed');
+        }
+    }
+    withUtf8String(value, operation) {
+        const byteLength = this.module.lengthBytesUTF8(value) + 1;
+        const pointer = this.module._malloc(byteLength);
+        try {
+            this.module.stringToUTF8(value, pointer, byteLength);
+            return operation(pointer, byteLength);
+        }
+        finally {
+            this.module._free(pointer);
+        }
+    }
+    consumeTags(tagsPtr) {
+        if (tagsPtr === 0) {
+            throw new Error(`Suzume tag generation failed: ${this.lastError || 'unknown error'}`);
+        }
+        try {
+            return this.parseTags(tagsPtr);
+        }
+        finally {
+            this._tagsFree(tagsPtr);
         }
     }
     // Parse suzume_result_t structure from WASM memory

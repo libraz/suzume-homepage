@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: Japanese Tokenizer That Actually Works in the Browser
-  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 450KB gzipped — runs entirely in the browser, no server required.
+  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 500KB gzipped — runs entirely in the browser, no server required.
   actions:
     - theme: brand
       text: Try It Now
@@ -16,16 +16,16 @@ hero:
 features:
   - icon: 🪶
     title: Ultra Lightweight
-    details: WASM + minimal built-in dictionary, all under 450KB gzipped. No external dictionary files to manage.
+    details: WASM + minimal built-in dictionary, all under 500KB gzipped. No external dictionary files to manage.
   - icon: 🖥️
     title: True Client-Side
-    details: Runs 100% in the browser. No Python backend, no API calls, no CORS headaches. Just JavaScript.
+    details: Runs 100% in the browser. No server backend, no API calls, no CORS headaches. Just JavaScript.
   - icon: 🔮
     title: Robust to Unknown Words
     details: No dictionary dependency means no breaking on new words. Brand names, slang, technical terms — stable tokenization every time.
   - icon: ⚡
     title: Production Ready
-    details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, all modern browsers, and Go via CGO bindings.
+    details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, all modern browsers, Python via ctypes, and Go via CGO bindings.
 ---
 
 <TypewriterDemo />
@@ -63,6 +63,10 @@ pnpm add @libraz/suzume
 bun add @libraz/suzume
 ```
 
+```bash [python (pip)]
+pip install suzume
+```
+
 ```bash [Go]
 go get github.com/libraz/go-suzume
 cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
@@ -71,7 +75,7 @@ make lib
 
 :::
 
-For Go services, CLIs, and batch jobs, see the [Go bindings guide](/docs/go).
+For Go services, CLIs, and batch jobs, see the [Go bindings guide](/docs/go). For Python, see the [Python bindings guide](/docs/python).
 
 ## Usage
 
@@ -88,4 +92,6 @@ console.log(result)
 //   { surface: 'もも', pos: 'NOUN', posJa: '名詞', ... },
 //   ...
 // ]
+// Each morpheme carries more fields (baseForm, conjType, extendedPos, start, end, …).
+// See the full Morpheme reference: /docs/api
 ```

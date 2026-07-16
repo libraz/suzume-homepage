@@ -6,9 +6,10 @@ Suzume has a comprehensive test suite covering C++ core logic, WASM bindings, an
 
 | Layer | Framework | Files | Description |
 |-------|-----------|-------|-------------|
-| C++ Unit/Integration | Google Test 1.12.1 | 31 files | Core library, dictionary, grammar, normalization |
-| Data-Driven | JSON + Google Test | 77 JSON files | Tokenization correctness (auto-discovered) |
-| WASM | Vitest | 3 files | JS/C API, memory layout, struct compatibility |
+| C++ Unit/Integration | Google Test 1.12.1 | 34 files | Core library, dictionary, grammar, normalization |
+| Data-Driven | JSON + Google Test | 86 JSON files | Tokenization correctness (auto-discovered) |
+| WASM | Vitest | 4 files | JS/C API, memory layout, struct compatibility |
+| Python | pytest | `bindings/python/tests/` | analyze/tags API, ABI layout |
 | CLI | Built-in | `test` command | Single/batch test, benchmarks |
 
 ## Running Tests
@@ -44,6 +45,14 @@ yarn test
 yarn test:watch      # Watch mode
 yarn test:coverage   # With coverage report
 ```
+
+### Python Tests
+
+```bash
+cd bindings/python && pytest
+```
+
+The pytest suite (`bindings/python/tests/`) covers the analyze and tags APIs and the ABI struct layout.
 
 ### CLI Test Command
 
@@ -98,6 +107,10 @@ Create a JSON file:
 
 Place it in `tests/data/tokenization/` and rebuild — the test runner picks it up automatically via `universal_tokenization_test.cpp`.
 
+::: warning POS labels in fixtures
+The `pos` values in these JSON fixtures use a Title-case reference taxonomy (`Noun`, `Particle`, …). This is a separate label set from the runtime `Morpheme.pos` values returned by the library, which are UPPERCASE English (`NOUN`, `PARTICLE`, …). Don't assume the two match verbatim.
+:::
+
 #### Optional Fields
 
 ```json
@@ -118,16 +131,16 @@ Place it in `tests/data/tokenization/` and rebuild — the test runner picks it 
 
 #### Existing Test Files
 
-77 JSON files organized by linguistic category:
+86 JSON files organized by linguistic category. The suite grows over time; a representative selection:
 
-| Category | Files | Description |
-|----------|-------|-------------|
-| `basic.json` | 1 | Basic tokenization, single words |
-| `adjective*.json` | 5 | i-adjectives, na-adjectives, compounds |
-| `verb*.json` | 10 | Ichidan, godan, suru, passive, causative |
-| `particle*.json` | 7 | Case, topic, binding particles |
-| `usecase_*.json` | 9 | Real-world texts: news, business, casual |
-| `pattern_*.json` | 4 | Linguistic patterns |
+| Category | Description |
+|----------|-------------|
+| `basic.json` | Basic tokenization, single words |
+| `adjective*.json` | i-adjectives, na-adjectives, compounds |
+| `verb*.json` | Ichidan, godan, suru, passive, causative |
+| `particle*.json` | Case, topic, binding particles |
+| `usecase_*.json` | Real-world texts: news, business, casual |
+| `pattern_*.json` | Linguistic patterns |
 
 ### C++ Unit Tests
 
@@ -156,7 +169,7 @@ TEST(ModuleTest, SpecificBehavior) {
 
 For testing the WebAssembly bindings:
 
-Create `tests/wasm/feature.test.ts`:
+Create `bindings/wasm/tests/feature.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
@@ -248,7 +261,7 @@ ctest --test-dir build
 
 GitHub Actions runs on every push:
 
-1. **Lint** — Biome for JS/TS (`js/`, `tests/wasm/`)
+1. **Lint** — Biome for JS/TS (`bindings/wasm/js/`, `bindings/wasm/tests/`, configured via `bindings/wasm/biome.json`)
 2. **Build & Test** — C++ tests with coverage, WASM tests
 3. **Coverage** — Uploaded to Codecov (CLI code excluded from coverage metrics)
 

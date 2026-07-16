@@ -11,7 +11,7 @@
     </filter>
   </defs>
   <rect width="920" height="300" rx="18" fill="url(#bg)"/>
-  <text x="48" y="48" fill="#0f172a" font-family="system-ui, sans-serif" font-size="24" font-weight="700">Suzumeがgzipで450KB未満に収まる理由</text>
+  <text x="48" y="48" fill="#0f172a" font-family="system-ui, sans-serif" font-size="24" font-weight="700">Suzumeがgzipで500KB未満に収まる理由</text>
   <g filter="url(#shadow)">
     <rect x="52" y="92" width="210" height="112" rx="14" fill="#ffffff" stroke="#bfdbfe"/>
     <rect x="355" y="92" width="210" height="112" rx="14" fill="#ffffff" stroke="#bbf7d0"/>
@@ -27,11 +27,11 @@
   <text x="116" y="151" fill="#475569" font-family="system-ui, sans-serif" font-size="14">助詞・助動詞・例外語を</text>
   <text x="116" y="173" fill="#475569" font-family="system-ui, sans-serif" font-size="14">中心に内蔵する。</text>
   <text x="419" y="124" fill="#0f172a" font-family="system-ui, sans-serif" font-size="17" font-weight="700">文法パターン</text>
-  <text x="419" y="151" fill="#475569" font-family="system-ui, sans-serif" font-size="14">未知語を文字種や語構成</text>
-  <text x="419" y="173" fill="#475569" font-family="system-ui, sans-serif" font-size="14">から候補化する。</text>
+  <text x="419" y="151" fill="#475569" font-family="system-ui, sans-serif" font-size="14">未知語を語構成から</text>
+  <text x="419" y="173" fill="#475569" font-family="system-ui, sans-serif" font-size="14">候補化する。</text>
   <text x="722" y="124" fill="#0f172a" font-family="system-ui, sans-serif" font-size="17" font-weight="700">動的スコアリング</text>
-  <text x="722" y="151" fill="#475569" font-family="system-ui, sans-serif" font-size="14">品詞のつながりを実行時</text>
-  <text x="722" y="173" fill="#475569" font-family="system-ui, sans-serif" font-size="14">に評価する。</text>
+  <text x="722" y="151" fill="#475569" font-family="system-ui, sans-serif" font-size="14">品詞のつながりを</text>
+  <text x="722" y="173" fill="#475569" font-family="system-ui, sans-serif" font-size="14">実行時に評価する。</text>
   <path d="M267 148h70" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
   <path d="M331 142l10 6-10 6" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M570 148h70" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>

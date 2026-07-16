@@ -97,7 +97,12 @@ export interface TagOptions {
     removeDuplicates?: boolean;
 }
 /**
- * Suzume instance for Japanese morphological analysis
+ * Suzume instance for Japanese morphological analysis.
+ *
+ * Error contract note: under the WebAssembly build, a memory-allocation failure
+ * aborts the module rather than returning NULL, so the C++ allocation-failure
+ * path (which maps to a NULL return and a thrown Error on native/Python) is
+ * effectively unreachable here.
  */
 export declare class Suzume {
     private module;
@@ -187,6 +192,8 @@ export declare class Suzume {
      */
     destroy(): void;
     private ensureAlive;
+    private withUtf8String;
+    private consumeTags;
     private parseResult;
     private parseTags;
 }

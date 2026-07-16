@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: ブラウザで動く軽量日本語トークナイザー
-  tagline: 50MBの辞書ファイルはもう不要。gzipで450KB以下、フロントエンド完結でサーバー構築不要。
+  tagline: 50MBの辞書ファイルはもう不要。gzipで500KB以下、フロントエンド完結でサーバー構築不要。
   actions:
     - theme: brand
       text: 今すぐ試す
@@ -16,16 +16,16 @@ hero:
 features:
   - icon: 🪶
     title: 超軽量
-    details: WASM＋最小限の内蔵辞書で合計450KB以下（gzip）。外部辞書ファイルの管理は不要。
+    details: WASM＋最小限の内蔵辞書で合計500KB以下（gzip）。外部辞書ファイルの管理は不要。
   - icon: 🖥️
     title: 真のクライアントサイド
-    details: 100%ブラウザで完結。Pythonバックエンド不要、APIコール不要、CORS問題なし。
+    details: 100%ブラウザで完結。サーバーバックエンド不要、APIコール不要、CORS問題なし。
   - icon: 🔮
     title: 未知語に強い
     details: 辞書に依存しないから新語でも崩れない。ブランド名、スラング、専門用語も安定してトークン化。
   - icon: ⚡
     title: 本番投入可能
-    details: C++からWASMにコンパイル。TypeScript対応。Node.js、Deno、Bun、全ブラウザに加えて、CGOバインディング経由でGoからも利用可能。
+    details: C++からWASMにコンパイル。TypeScript対応。Node.js、Deno、Bun、全ブラウザに加えて、ctypes経由でPython、CGOバインディング経由でGoからも利用可能。
 ---
 
 <TypewriterDemo />
@@ -63,6 +63,10 @@ pnpm add @libraz/suzume
 bun add @libraz/suzume
 ```
 
+```bash [python (pip)]
+pip install suzume
+```
+
 ```bash [Go]
 go get github.com/libraz/go-suzume
 cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
@@ -71,7 +75,7 @@ make lib
 
 :::
 
-Go 製のサーバー、CLI、バッチ処理で使う場合は [Go バインディングガイド](/ja/docs/go) を参照してください。
+Go 製のサーバー、CLI、バッチ処理で使う場合は [Go バインディングガイド](/ja/docs/go) を参照してください。Python から使う場合は [Python バインディングガイド](/ja/docs/python) を参照してください。
 
 ## 使い方
 
@@ -88,4 +92,6 @@ console.log(result)
 //   { surface: 'もも', pos: 'NOUN', posJa: '名詞', ... },
 //   ...
 // ]
+// 各形態素には baseForm、conjType、extendedPos、start、end など、さらに多くのフィールドがあります。
+// Morpheme の全フィールドは API リファレンスを参照: /ja/docs/api
 ```

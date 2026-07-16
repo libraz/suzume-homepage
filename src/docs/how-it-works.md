@@ -2,7 +2,7 @@
 
 ## Why So Small?
 
-The biggest question: **How can Suzume tokenize Japanese text in under 450KB gzipped when traditional analyzers often need tens of megabytes of dictionaries?**
+The biggest question: **How can Suzume tokenize Japanese text in roughly 460KB gzipped when traditional analyzers often need tens of megabytes of dictionaries?**
 
 ### The Short Answer
 
@@ -88,6 +88,16 @@ Suzume computes connection scores dynamically using compact rules:
   <figcaption>A natural POS transition gets a low cost; unlikely transitions get higher costs. Viterbi then chooses the best full path.</figcaption>
 </figure>
 
+## Consistency of Analysis
+
+Suzume decides parts of speech and boundaries from rules (character type, conjugation, connection rules) rather than from per-word dictionary entries. This has a property distinct from size: the same construction is always handled by the same rule, so grammatically similar inputs are decided the same way.
+
+When analysis depends on a dictionary and a cost table, each decision is governed by values recorded per entry. Entries are added over a long period by many hands, so grammatically similar words can end up treated differently. A rule-based approach keeps the decision criteria in one place, which makes that kind of variation less likely.
+
+For example, the colloquial copula "じゃ" is classified as an auxiliary consistently, whether it is followed by "ない", "なかっ", or "な". Causative-passive forms are likewise normalized to the same shape rather than being split in some cases and merged in others (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
+
+This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Limitations](/docs/mecab-comparison)).
+
 ## The Trade-off
 
 ::: warning Accuracy vs Size
@@ -101,6 +111,12 @@ Suzume is optimized for browser and edge use cases where bundle size, startup ti
 | Search indexing | ✓ | ✓ |
 | Hashtag generation | ✓ | ✓ |
 | Real-time UI | ✗ Needs server | ✓ |
+
+The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. Only surface normalization (`preserveVu`, `preserveCase`, `preserveSymbols`) and output shaping (`mode`, `lemmatize`, `mergeCompounds`) are tunable via `SuzumeOptions`.
+
+::: tip Tuning tokenization
+`mode: 'search' | 'split'` and `mergeCompounds` let you adjust how aggressively compounds are segmented or merged for your use case. See the [API reference](/docs/api) for details.
+:::
 
 ## Technical Deep Dive
 
@@ -131,7 +147,7 @@ When Suzume encounters an unknown word like "スカイツリー":
 
 ### Verb Conjugation
 
-Suzume recognizes 800+ conjugation patterns without storing each form:
+Suzume recognizes hundreds of conjugation patterns without storing each form:
 
 ```
 Base: 食べる (to eat)
@@ -153,3 +169,9 @@ The rules are stored, not every conjugated form.
 | Is accuracy affected? | Yes. Suzume favors compact, robust tokenization over exhaustive dictionary coverage |
 | When to use MeCab? | Academic research, maximum accuracy |
 | When to use Suzume? | Browser apps, real-time, size-sensitive |
+
+## See also
+
+- [API reference](/docs/api)
+- [MeCab comparison](/docs/mecab-comparison)
+- [Getting started](/docs/getting-started)

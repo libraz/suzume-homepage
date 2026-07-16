@@ -1,5 +1,7 @@
 # API リファレンス
 
+このページは Suzume の JavaScript / WASM バインディングについて解説します。npm では [`@libraz/suzume`](/ja/docs/installation) として公開しています。Python、Go、CLI にはそれぞれ専用のリファレンスがあります。
+
 ## Suzume クラス
 
 日本語トークン化のメインクラス。
@@ -42,6 +44,14 @@ const suzume = await Suzume.create({
   mergeCompounds: true,
 })
 ```
+
+**解析モード:**
+
+`mode` オプションはテキストの分割方法を制御します。
+
+- **`normal`** — 汎用向けのバランスの取れた分割（デフォルト）。
+- **`search`** — 複合語も分割する細かめの分割。検索インデックスの再現率が向上します。
+- **`split`** — 最も細かい分割。複合語を意味を持つ最小単位まで分解します。
 
 ---
 
@@ -88,7 +98,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
 | `tag` | `string` | タグテキスト（`useLemma` 設定に応じて表層形または原形） |
-| `pos` | `string` | 品詞（`Noun`, `Verb`, `Adjective`, `Adverb` 等） |
+| `pos` | `string` | 品詞（`NOUN`, `VERB`, `ADJ`, `ADVERB` 等） |
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
@@ -225,21 +235,6 @@ loadUserDictionaryOrThrow(data: string): void
 
 ---
 
-### `version`
-
-Suzume のバージョン文字列を取得します。
-
-```typescript
-get version(): string
-```
-
-**例:**
-```typescript
-console.log(suzume.version) // "0.9.3"
-```
-
----
-
 ### `loadBinaryDictionary(data)`
 
 コンパイル済みバイナリ辞書（.dic形式）を実行時に読み込みます。
@@ -279,6 +274,21 @@ suzume.loadBinaryDictionary(dictData)
 
 ```typescript
 loadBinaryDictionaryOrThrow(data: Uint8Array): void
+```
+
+---
+
+### `version`
+
+Suzume のバージョン文字列を取得します。
+
+```typescript
+get version(): string
+```
+
+**例:**
+```typescript
+console.log(suzume.version) // 例: "0.9.5"
 ```
 
 ---
@@ -368,7 +378,7 @@ interface Morpheme {
 | `isFromDictionary` | `boolean` | いずれかの辞書に一致した場合 `true` | `true` |
 | `score` | `number` | 解析器が使う候補スコア/コスト | `12.5` |
 
-### 品詞一覧
+### 品詞一覧（pos）
 
 | `pos` | `posJa` | 説明 |
 |-------|---------|-------------|
@@ -387,7 +397,7 @@ interface Morpheme {
 | `SYMBOL` | 記号 | 記号 |
 | `OTHER` | その他 | その他/不明 |
 
-### 拡張品詞（extendedPos）
+### 拡張品詞一覧（extendedPos）
 
 `extendedPos` プロパティは基本の `pos` タグを超えた詳細なサブカテゴリを提供します。活用形の区別、助詞の役割、助動詞の機能、名詞のサブタイプなどを識別する場合に有用です。
 

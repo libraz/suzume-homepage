@@ -11,7 +11,7 @@
     </filter>
   </defs>
   <rect width="920" height="300" rx="18" fill="url(#bg)"/>
-  <text x="48" y="48" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Why Suzume stays under 450KB gzipped</text>
+  <text x="48" y="48" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Why Suzume stays under 500KB gzipped</text>
   <g filter="url(#shadow)">
     <rect x="52" y="92" width="210" height="112" rx="14" fill="#ffffff" stroke="#bfdbfe"/>
     <rect x="355" y="92" width="210" height="112" rx="14" fill="#ffffff" stroke="#bbf7d0"/>

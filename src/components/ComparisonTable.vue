@@ -5,7 +5,7 @@ import { useI18n } from '@/composables/useI18n'
 const { t, isJa } = useI18n()
 
 // Dynamic size label from WASM metadata
-const sizeLabel = ref('<450KB')
+const sizeLabel = ref('<500KB')
 onMounted(async () => {
   try {
     const meta = await import('@/wasm/meta.json')

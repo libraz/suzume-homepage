@@ -39,10 +39,40 @@ For browser usage without a build step:
 
 ## Requirements
 
-- **Node.js**: 16.0 or later
+- **Node.js**: 18.0 or later
 - **Browser**: Any modern browser with WASM support (Chrome, Firefox, Safari, Edge)
 - **Deno**: 1.0 or later
 - **Bun**: 1.0 or later
+
+## Python
+
+For Python applications and data pipelines, install the wheel from PyPI:
+
+::: code-group
+
+```bash [pip]
+pip install suzume
+```
+
+```bash [poetry]
+poetry add suzume
+```
+
+```bash [uv]
+uv add suzume
+```
+
+:::
+
+Python 3.10 or later is required. The native library and dictionaries ship inside the wheel, so there is nothing else to install.
+
+See the [Python bindings guide](/docs/python) for usage.
+
+## CLI
+
+`suzume-cli` is the native command-line tool for tokenizing text from the shell.
+
+See [Native Build & CLI](/docs/native-build) to build it and the [CLI reference](/docs/cli) for usage.
 
 ## Go
 

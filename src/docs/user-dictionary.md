@@ -4,9 +4,11 @@ Add custom words to improve analysis for your domain.
 
 ## Runtime Loading
 
-Load dictionary entries at runtime using `loadUserDictionary()`:
+Load dictionary entries at runtime with a single call:
 
-```typescript
+::: code-group
+
+```typescript [node]
 const suzume = await Suzume.create()
 
 // Add a single word
@@ -19,6 +21,56 @@ suzume.loadUserDictionary(`
 DeepL,NOUN
 `)
 ```
+
+```python [python]
+from suzume import Suzume
+
+sz = Suzume()
+
+# Add a single word
+sz.load_user_dict("ChatGPT,NOUN")
+
+# Add multiple words
+sz.load_user_dict(
+    "スカイツリー,NOUN\n"
+    "ポケモン,NOUN\n"
+    "DeepL,NOUN\n"
+)
+```
+
+```bash [cli]
+# Pass one or more dictionaries with -d / --dict (repeatable)
+suzume-cli analyze -d user.csv "スカイツリーとポケモン"
+```
+
+:::
+
+### Checking the result
+
+`loadUserDictionary()` returns a `boolean` — `false` when the data could not be loaded (for example, an unreadable dictionary). Check it if a load failure should be handled:
+
+```typescript
+if (!suzume.loadUserDictionary(data)) {
+  // dictionary could not be loaded — fall back or surface an error
+}
+```
+
+Prefer the fail-fast variant when a failed load should abort. It throws an error carrying the underlying C API details instead of returning `false`:
+
+```typescript
+suzume.loadUserDictionaryOrThrow(data)
+```
+
+The binary-dictionary methods (`loadBinaryDictionary()` / `loadBinaryDictionaryOrThrow()`) follow the same pattern. In Python, `load_user_dict()` and `load_binary_dict()` raise `SuzumeError` on failure.
+
+::: tip Parse warnings
+Malformed lines (wrong field count, unknown POS) are skipped rather than aborting the load. Inspect `suzume.dictionaryWarnings` after `Suzume.create()` or a load call to see the messages for any skipped entries (`dictionary_warnings` in Python):
+
+```typescript
+suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
+console.log(suzume.dictionaryWarnings) // messages for skipped entries
+```
+:::
 
 ## Format
 
@@ -43,7 +95,7 @@ surface,pos,cost,lemma
 |-------|----------|-------------|
 | `surface` | Yes | The word as it appears in text |
 | `pos` | Yes | Part of speech |
-| `cost` | No | Word cost (lower = more likely to be selected) |
+| `cost` | No | Currently ignored by the parser (see below) |
 | `lemma` | No | Base/dictionary form |
 
 ## Part of Speech Values
@@ -63,6 +115,7 @@ surface,pos,cost,lemma
 | `PREFIX` | Prefixes | 接頭辞 |
 | `SUFFIX` | Suffixes | 接尾辞 |
 | `SYMBOL` | Symbols | 記号 |
+| `OTHER` | Uncategorized | その他 |
 
 ::: tip Japanese POS names
 You can also use Japanese POS names (e.g., `名詞`, `動詞`, `形容詞`) instead of English values.
@@ -104,21 +157,31 @@ Kubernetes,NOUN
 バズる,VERB,5000,バズる
 ```
 
-## Cost Tuning
+## Verifying an Entry Took Effect
 
-The `cost` parameter controls word selection priority:
+Each morpheme exposes `isUserDict`, which is `true` when the token was matched from a loaded user dictionary. Use it to confirm a custom word is actually being applied:
 
-- **Lower cost** = More likely to be selected
-- **Default cost** = ~8000
-- **Common words** = 5000-7000
-- **Rare words** = 9000+
+```typescript
+suzume.loadUserDictionary('スカイツリー,NOUN')
+
+const result = suzume.analyze('スカイツリーへ行く')
+const skytree = result.morphemes.find((m) => m.surface === 'スカイツリー')
+
+console.log(skytree?.isUserDict) // true — matched from the user dictionary
+```
+
+## The Cost Column
+
+The `cost` column is currently **not used** by the parser — its value is never read, and entries are matched regardless of what you put there. You can keep the column for readability, but don't rely on tuning it to influence word selection; a `cost` of `5000` and `9000` behave identically today.
 
 ```csv
-# Prefer "東京都" over "東京" + "都"
+# The trailing cost value is accepted but ignored
 東京都,NOUN,5000
-
-# Less common compound
 超電磁砲,NOUN,9000
+
+# Equivalent — the entries match the same way without a cost
+東京都,NOUN
+超電磁砲,NOUN
 ```
 
 ## Use Cases
@@ -231,3 +294,7 @@ function addWord(word: string, pos: string) {
   localStorage.setItem('myDictionary', current + '\n' + entry)
 }
 ```
+
+## See also
+
+- [API Reference](/docs/api) — dictionary-loading methods (`loadUserDictionary` / `loadUserDictionaryOrThrow` / `loadBinaryDictionary` / `loadBinaryDictionaryOrThrow`, `dictionaryWarnings`) and the Morpheme fields (`isUserDict`, `isFromDictionary`).

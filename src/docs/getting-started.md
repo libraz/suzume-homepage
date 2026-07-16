@@ -6,25 +6,11 @@ Suzume is a lightweight Japanese tokenizer. It runs on WASM, so it works in brow
 
 ## Installation
 
-::: code-group
-
-```bash [npm]
+```bash
 npm install @libraz/suzume
 ```
 
-```bash [yarn]
-yarn add @libraz/suzume
-```
-
-```bash [pnpm]
-pnpm add @libraz/suzume
-```
-
-```bash [bun]
-bun add @libraz/suzume
-```
-
-:::
+See [Installation](/docs/installation) for all package managers, CDN, and other bindings.
 
 ## Basic Usage
 
@@ -44,6 +30,16 @@ for (const m of morphemes) {
 // Free resources when done
 suzume.destroy()
 ```
+
+`Suzume.create()` also accepts options that tune tokenization:
+
+```typescript
+const suzume = await Suzume.create({ mode: 'search', mergeCompounds: true })
+```
+
+Available options include `preserveVu`, `preserveCase`, `preserveSymbols`, `mode` (`'normal'` | `'search'` | `'split'`), `lemmatize`, and `mergeCompounds`. See the [API Reference](/docs/api) for details.
+
+Beyond `destroy()`, the instance also exposes `loadUserDictionary` / `loadUserDictionaryOrThrow`, `loadBinaryDictionary`, and the `dictionaryWarnings` and `lastError` getters — see the [API Reference](/docs/api).
 
 ## Common Tasks
 
@@ -91,8 +87,12 @@ interface Morpheme {
   extendedPos: string  // Extended POS subcategory (e.g. "VerbRenyokei")
   start: number        // Start character offset
   end: number          // End character offset
-  isUnknown: boolean   // Generated as an unknown word candidate
-  isFromDictionary: boolean
+  isUserDict: boolean       // Came from a loaded user dictionary
+  isFormalNoun: boolean     // Formal/dependent noun (e.g. こと, もの)
+  isLowInfo: boolean        // Low-information token (function-word-like)
+  isUnknown: boolean        // Generated as an unknown word candidate
+  isFromDictionary: boolean // Present in the bundled dictionary
+  score: number             // Cost/confidence score
 }
 ```
 
@@ -115,4 +115,6 @@ You can also load directly from a CDN:
 - [Installation](/docs/installation) - Detailed setup instructions
 - [User Dictionary](/docs/user-dictionary) - Add custom words
 - [API Reference](/docs/api) - Full API documentation
+- [Python Guide](/docs/python) - Using Suzume from Python
+- [CLI](/docs/cli) - Command-line usage
 - [How It Works](/docs/how-it-works) - Technical deep-dive

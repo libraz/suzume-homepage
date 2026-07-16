@@ -128,6 +128,54 @@ const faqJsonLd = {
   ]
 }
 
+// Single source of truth for the docs sidebar, shared across locales so the
+// English and Japanese trees stay in parity mechanically (add a page once here).
+const docsNav = [
+  {
+    en: 'Guide',
+    ja: 'ガイド',
+    items: [
+      { slug: 'getting-started', en: 'Getting Started', ja: 'はじめに' },
+      { slug: 'installation', en: 'Installation', ja: 'インストール' },
+      { slug: 'user-dictionary', en: 'User Dictionary', ja: 'ユーザー辞書' },
+    ],
+  },
+  {
+    en: 'Concepts',
+    ja: 'コンセプト',
+    items: [
+      { slug: 'how-it-works', en: 'How It Works', ja: '仕組み' },
+      { slug: 'mecab-comparison', en: 'Differences from MeCab', ja: 'MeCab との違い' },
+    ],
+  },
+  {
+    en: 'API Reference',
+    ja: 'API リファレンス',
+    items: [
+      { slug: 'api', en: 'JavaScript / WASM', ja: 'JavaScript / WASM' },
+      { slug: 'python', en: 'Python', ja: 'Python' },
+      { slug: 'go', en: 'Go', ja: 'Go' },
+      { slug: 'cli', en: 'CLI', ja: 'CLI' },
+    ],
+  },
+  {
+    en: 'Advanced',
+    ja: '発展',
+    items: [
+      { slug: 'native-build', en: 'Native Build', ja: 'ネイティブビルド' },
+      { slug: 'testing', en: 'Testing Guide', ja: 'テストガイド' },
+    ],
+  },
+] as const
+
+function sidebarFor(lang: 'en' | 'ja') {
+  const prefix = lang === 'ja' ? '/ja/docs/' : '/docs/'
+  return docsNav.map((group) => ({
+    text: group[lang],
+    items: group.items.map((item) => ({ text: item[lang], link: prefix + item.slug })),
+  }))
+}
+
 export default defineConfig({
   srcDir: 'src',
 
@@ -144,7 +192,7 @@ export default defineConfig({
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { href: 'https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap', rel: 'stylesheet' }],
+    ['link', { href: 'https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap', rel: 'stylesheet' }],
 
     // JSON-LD structured data
     ['script', { type: 'application/ld+json' }, JSON.stringify(softwareApplicationJsonLd)],
@@ -188,27 +236,7 @@ export default defineConfig({
           { text: 'GitHub', link: githubUrl }
         ],
         sidebar: {
-          '/ja/docs/': [
-            {
-              text: 'ガイド',
-              items: [
-                { text: 'はじめに', link: '/ja/docs/getting-started' },
-                { text: 'インストール', link: '/ja/docs/installation' },
-                { text: 'Go バインディング', link: '/ja/docs/go' },
-                { text: 'ユーザー辞書', link: '/ja/docs/user-dictionary' },
-              ]
-            },
-            {
-              text: 'リファレンス',
-              items: [
-                { text: 'API リファレンス', link: '/ja/docs/api' },
-                { text: '仕組み', link: '/ja/docs/how-it-works' },
-                { text: 'MeCab との違い', link: '/ja/docs/mecab-comparison' },
-                { text: 'ネイティブビルド & CLI', link: '/ja/docs/native-build' },
-                { text: 'テストガイド', link: '/ja/docs/testing' },
-              ]
-            }
-          ]
+          '/ja/docs/': sidebarFor('ja')
         }
       }
     }
@@ -222,27 +250,7 @@ export default defineConfig({
     ],
 
     sidebar: {
-      '/docs/': [
-        {
-          text: 'Guide',
-          items: [
-            { text: 'Getting Started', link: '/docs/getting-started' },
-            { text: 'Installation', link: '/docs/installation' },
-            { text: 'Go Bindings', link: '/docs/go' },
-            { text: 'User Dictionary', link: '/docs/user-dictionary' },
-          ]
-        },
-        {
-          text: 'Reference',
-          items: [
-            { text: 'API Reference', link: '/docs/api' },
-            { text: 'How It Works', link: '/docs/how-it-works' },
-            { text: 'Differences from MeCab', link: '/docs/mecab-comparison' },
-            { text: 'Native Build & CLI', link: '/docs/native-build' },
-            { text: 'Testing Guide', link: '/docs/testing' },
-          ]
-        }
-      ]
+      '/docs/': sidebarFor('en')
     },
 
     socialLinks: [

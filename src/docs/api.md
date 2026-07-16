@@ -1,5 +1,7 @@
 # API Reference
 
+This page documents the JavaScript / WASM binding of Suzume, published to npm as [`@libraz/suzume`](/docs/installation). The Python, Go, and CLI bindings have their own references.
+
 ## Suzume Class
 
 The main class for Japanese tokenization.
@@ -42,6 +44,14 @@ const suzume = await Suzume.create({
   mergeCompounds: true,
 })
 ```
+
+**Analysis modes:**
+
+The `mode` option controls how text is segmented:
+
+- **`normal`** — balanced segmentation for general use (default).
+- **`search`** — finer segmentation that also splits compound words, improving recall for search indexing.
+- **`split`** — the most aggressive segmentation, breaking compounds into their smallest meaningful units.
 
 ---
 
@@ -88,7 +98,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | Property | Type | Description |
 |----------|------|-------------|
 | `tag` | `string` | Tag text (surface or lemma depending on `useLemma`) |
-| `pos` | `string` | Part of speech (`Noun`, `Verb`, `Adjective`, `Adverb`, etc.) |
+| `pos` | `string` | Part of speech (`NOUN`, `VERB`, `ADJ`, `ADVERB`, etc.) |
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -225,21 +235,6 @@ Use this form during setup or tests when a malformed dictionary should fail fast
 
 ---
 
-### `version`
-
-Gets the Suzume version string.
-
-```typescript
-get version(): string
-```
-
-**Example:**
-```typescript
-console.log(suzume.version) // "0.9.3"
-```
-
----
-
 ### `loadBinaryDictionary(data)`
 
 Loads a pre-compiled binary dictionary (.dic format) at runtime.
@@ -279,6 +274,21 @@ Loads a compiled binary dictionary and throws an error with C API details when l
 
 ```typescript
 loadBinaryDictionaryOrThrow(data: Uint8Array): void
+```
+
+---
+
+### `version`
+
+Gets the Suzume version string.
+
+```typescript
+get version(): string
+```
+
+**Example:**
+```typescript
+console.log(suzume.version) // e.g. "0.9.5"
 ```
 
 ---
