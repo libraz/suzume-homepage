@@ -79,8 +79,8 @@ func main() {
 | `ConjType` | Conjugation type, if applicable |
 | `ConjForm` | Conjugation form, if applicable |
 | `ExtendedPOS` | Fine-grained POS subcategory |
-| `Start` | Start byte offset in the input |
-| `End` | End byte offset in the input |
+| `Start` | Start character offset in the normalized text |
+| `End` | End character offset in the normalized text |
 | `IsUserDict` | Entry came from a loaded user dictionary |
 | `IsFormalNoun` | Entry is a formal (dependent) noun |
 | `IsLowInfo` | Entry carries low information content |

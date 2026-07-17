@@ -172,10 +172,11 @@ function getPosColor(pos: string): string {
 </script>
 
 <template>
-  <div class="usecase-section">
-    <div class="section-header">
-      <h2>{{ t('useCase.title') }}</h2>
-      <p class="section-subtitle">{{ t('useCase.subtitle') }}</p>
+  <section class="home-section usecase-section">
+    <div class="home-section-head">
+      <span class="home-eyebrow">{{ t('useCase.eyebrow') }}</span>
+      <h2 class="home-heading">{{ t('useCase.title') }}</h2>
+      <p class="home-subheading">{{ t('useCase.subtitle') }}</p>
     </div>
 
     <!-- Loading State -->
@@ -361,32 +362,10 @@ function getPosColor(pos: string): string {
       </div>
 
     </template>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-.usecase-section {
-  margin: 3rem 0;
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.section-header h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--vp-c-text-1);
-  margin: 0 0 0.5rem 0;
-}
-
-.section-subtitle {
-  font-size: 1rem;
-  color: var(--vp-c-text-2);
-  margin: 0;
-}
-
 /* Loading */
 .loading-state {
   display: flex;
@@ -416,7 +395,7 @@ function getPosColor(pos: string): string {
   gap: 0.25rem;
   width: 100%;
   max-width: 460px;
-  margin: 0 auto 1.5rem;
+  margin: 0 0 1.5rem;
   padding: 0.25rem;
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-border);
@@ -752,18 +731,6 @@ function getPosColor(pos: string): string {
 
 /* Responsive */
 @media (max-width: 640px) {
-  .usecase-section {
-    margin: 2rem 0;
-  }
-
-  .section-header h2 {
-    font-size: 1.5rem;
-  }
-
-  .section-subtitle {
-    font-size: 0.9rem;
-  }
-
   .tabs button {
     padding: 0.5rem 0.5rem;
     font-size: 0.8rem;

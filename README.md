@@ -17,7 +17,7 @@ yarn build
 # Preview production build
 yarn preview
 
-# Copy WASM from ../suzume/dist
+# Copy WASM from ../suzume/bindings/wasm/dist
 yarn copy:wasm
 ```
 

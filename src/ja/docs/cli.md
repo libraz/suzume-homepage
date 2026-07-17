@@ -40,27 +40,27 @@ echo "東京スカイツリーに行きました" | suzume-cli
 
 | フォーマット | 説明 |
 |--------|-------------|
-| `morpheme` | デフォルト。1形態素ごとに `表層形` TAB `品詞` TAB `原形` |
-| `tags` | 内容語のタグのみ（[タグ抽出](#タグ抽出)を参照） |
-| `json` | 全フィールドを含む構造化 JSON |
+| `morpheme` | デフォルト。`表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
+| `tags` | 内容語の `タグ` TAB `品詞` の組（[タグ抽出](#タグ抽出)を参照） |
+| `json` | 解析・デバッグ用フィールドを含む構造化 JSON |
 | `tsv` | `表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
 | `chasen` | ChaSen 風フォーマット（日本語の品詞名と活用情報） |
 
 ```bash
-# デフォルト: 表層形 TAB 品詞 TAB 原形
+# デフォルト: 表層形 TAB 品詞 TAB 原形 TAB 開始位置 TAB 終了位置
 suzume-cli "食べている"
-# 食べ    VERB    食べる
-# て      AUX     てる
-# いる    AUX     いる
+# 食べ    VERB        食べる    0    2
+# て      PARTICLE    て        2    3
+# いる    AUX         いる      3    5
 
 # JSON
 suzume-cli -f json "食べている"
 
 # タグのみ
 suzume-cli -f tags "東京スカイツリーに行きました"
-# 東京
-# スカイツリー
-# 行く
+# 東京            NOUN
+# スカイツリー    NOUN
+# 行く            VERB
 
 # TSV（全フィールド: 表層形, 品詞, 原形, 開始位置, 終了位置）
 suzume-cli -f tsv "食べている"
@@ -107,10 +107,10 @@ suzume-cli -m split "東京都新宿区"
 
 | オプション | デフォルト | 説明 |
 |--------|---------|-------------|
-| `--tag-include-particles` | 無効 | 助詞をタグに残す |
-| `--tag-include-auxiliaries` | 無効 | 助動詞をタグに残す |
-| `--tag-include-formal-nouns` | 無効 | 形式名詞（こと、もの等）を残す |
-| `--tag-include-low-info` | 無効 | 情報量の少ないトークンを残す |
+| `--include-particles` | 無効 | 助詞をタグに残す |
+| `--include-auxiliaries` | 無効 | 助動詞をタグに残す |
+| `--include-formal-nouns` | 無効 | 形式名詞（こと、もの等）を残す |
+| `--include-low-info` | 無効 | 情報量の少ないトークンを残す |
 | `--tag-keep-duplicates` | 無効 | 重複を除去せずそのまま残す |
 | `--tag-use-surface` | 無効 | 原形ではなく表層形を使う |
 | `--tag-min-length LENGTH` | `2` | タグの最小文字数 |
@@ -118,7 +118,7 @@ suzume-cli -m split "東京都新宿区"
 
 ```bash
 # 助詞と助動詞を残し、1文字のタグも許可
-suzume-cli -f tags --tag-include-particles --tag-min-length 1 "本を読む"
+suzume-cli -f tags --include-particles --include-auxiliaries --tag-min-length 1 "本を読む"
 
 # 表層形で上位5件のタグに絞る
 suzume-cli -f tags --tag-use-surface --tag-max-tags 5 "東京スカイツリーに行きました"
@@ -232,7 +232,7 @@ surface	pos	conj_type
 
 ```bash
 # 単一入力のテスト
-suzume-cli test "テスト文" --expect "テスト,文"
+suzume-cli test "テスト文" --expect "テスト"
 
 # ファイルからテストを実行
 suzume-cli test -f tests.tsv
@@ -250,7 +250,7 @@ suzume-cli test benchmark --iterations=1000
 
 ```tsv
 東京スカイツリーに行きました	東京,スカイツリー,行く
-美しい花が咲いている	美しい,花,咲く
+美しい花が咲いている	美しい,咲く
 ```
 
 ## 関連ページ

@@ -2,6 +2,10 @@
 
 Suzumeはネイティブ C++ ライブラリおよび CLI ツールとしてビルドでき、ブラウザ/Node.js 環境外でも使用できます。
 
+::: tip 自分のプロジェクトへのリンク
+このページは CLI・辞書・WASM モジュールをソースからビルドする方法を扱います。ライブラリをインストールして C / C++ プログラムへリンクする方法（CMake の `find_package`、pkg-config、組み込みのファイルシステム不要ビルド）は [C / C++ ライブラリガイド](/ja/docs/cpp) を参照してください。
+:::
+
 ## ソースからのビルド
 
 ### 必要環境
@@ -74,5 +78,5 @@ cmake --build build --target build-dict
 # WASM をビルド
 cmake --build build-wasm --parallel
 
-# 出力: dist/suzume.js, dist/suzume-wasm.wasm
+# 出力: bindings/wasm/dist/suzume.js, bindings/wasm/dist/suzume-wasm.wasm
 ```

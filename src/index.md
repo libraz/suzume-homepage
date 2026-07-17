@@ -3,45 +3,30 @@ layout: home
 
 hero:
   name: Suzume
-  text: Japanese Tokenizer That Actually Works in the Browser
-  tagline: No more 50MB dictionary files. Lightweight Japanese tokenization under 500KB gzipped — runs entirely in the browser, no server required.
+  text: Japanese tokenization, right in the browser
+  tagline: A lightweight tokenizer compiled to WebAssembly. Under __WASM_GZIP_SIZE__ gzipped, it runs entirely client-side — no server, no multi-megabyte dictionary.
   actions:
     - theme: brand
-      text: Try It Now
+      text: Try the live demo
       link: '#demo'
     - theme: alt
-      text: Get Started
+      text: Get started
       link: /docs/getting-started
-
-features:
-  - icon: 🪶
-    title: Ultra Lightweight
-    details: WASM + minimal built-in dictionary, all under 500KB gzipped. No external dictionary files to manage.
-  - icon: 🖥️
-    title: True Client-Side
-    details: Runs 100% in the browser. No server backend, no API calls, no CORS headaches. Just JavaScript.
-  - icon: 🔮
-    title: Robust to Unknown Words
-    details: No dictionary dependency means no breaking on new words. Brand names, slang, technical terms — stable tokenization every time.
-  - icon: ⚡
-    title: Production Ready
-    details: C++ compiled to WASM. TypeScript support. Works in Node.js, Deno, Bun, all modern browsers, Python via ctypes, and Go via CGO bindings.
 ---
+
+<HomeHero />
 
 <TypewriterDemo />
 
-<div class="beta-notice">
-  <span class="beta-badge">Beta</span>
-  <span>Suzume is in beta and under active development (since December 25, 2025). If you find any bugs, please <a href="https://github.com/libraz/suzume/issues" target="_blank" rel="noopener">open a GitHub issue</a> with an example sentence that reproduces the problem.</span>
-</div>
-
-<WasmStats />
-
-<ComparisonTable />
+<HomeFeatures />
 
 <div id="demo"></div>
 
 <UseCaseDemo />
+
+<ComparisonTable />
+
+<HomeProse>
 
 ## Installation
 
@@ -73,25 +58,75 @@ cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
 make lib
 ```
 
+```bash [C / C++]
+git clone https://github.com/libraz/suzume.git
+cd suzume && make install
+```
+
 :::
 
-For Go services, CLIs, and batch jobs, see the [Go bindings guide](/docs/go). For Python, see the [Python bindings guide](/docs/python).
+For Go services, CLIs, and batch jobs, see the [Go bindings guide](/docs/go). For Python, see the [Python bindings guide](/docs/python). To link the native library into a C or C++ project, see the [C / C++ library guide](/docs/cpp).
 
 ## Usage
 
-```typescript
+The same API is available from every runtime:
+
+::: code-group
+
+```typescript [TypeScript]
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
-const result = suzume.analyze('すもももももももものうち')
 
-console.log(result)
-// [
-//   { surface: 'すもも', pos: 'NOUN', posJa: '名詞', ... },
-//   { surface: 'も', pos: 'PARTICLE', posJa: '助詞', ... },
-//   { surface: 'もも', pos: 'NOUN', posJa: '名詞', ... },
-//   ...
-// ]
-// Each morpheme carries more fields (baseForm, conjType, extendedPos, start, end, …).
-// See the full Morpheme reference: /docs/api
+for (const m of suzume.analyze('東京都に住んでいます')) {
+  console.log(m.surface, m.pos, m.baseForm)
+}
 ```
+
+```python [Python]
+from suzume import Suzume
+
+with Suzume() as sz:
+    for m in sz.analyze("東京都に住んでいます"):
+        print(m.surface, m.pos, m.base_form)
+```
+
+```go [Go]
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/libraz/go-suzume"
+)
+
+func main() {
+	s, err := suzume.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer s.Close()
+
+	for _, m := range s.Analyze("東京都に住んでいます") {
+		fmt.Printf("%s\t%s\t%s\n", m.Surface, m.POS, m.BaseForm)
+	}
+}
+```
+
+```cpp [C++]
+#include "suzume/suzume.hpp"
+#include <cstdio>
+
+int main() {
+  suzume::Tokenizer tokenizer;
+  for (const suzume::Morpheme& m : tokenizer.analyze("東京都に住んでいます"))
+    std::printf("%s\t%s\t%s\n", m.surface.c_str(), m.pos.c_str(), m.lemma.c_str());
+}
+```
+
+:::
+
+Each token carries `surface`, `pos`, `baseForm`, and more — see the full [Morpheme reference](/docs/api).
+
+</HomeProse>

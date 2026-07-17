@@ -164,9 +164,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="typewriter-section">
-    <div class="typewriter-header">
-      <h3>{{ t('typewriter.title') }}</h3>
+  <section class="home-section typewriter-section">
+    <div class="home-section-head tw-head">
+      <div>
+        <span class="home-eyebrow">{{ t('typewriter.eyebrow') }}</span>
+        <h2 class="home-heading">{{ t('typewriter.title') }}</h2>
+      </div>
       <span class="source">{{ t('typewriter.source') }}</span>
     </div>
 
@@ -192,35 +195,22 @@ onUnmounted(() => {
         <span class="cursor">|</span>
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-.typewriter-section {
-  margin: 2rem auto;
-  max-width: 800px;
-  padding: 0 1.5rem;
-}
-
-.typewriter-header {
+.tw-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.typewriter-header h3 {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--vp-c-text-2);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .source {
-  font-size: 0.75rem;
+  flex-shrink: 0;
+  font-size: 0.78rem;
   color: var(--vp-c-text-3);
+  font-style: italic;
 }
 
 .loading-state {
@@ -328,14 +318,10 @@ onUnmounted(() => {
 
 /* Responsive */
 @media (max-width: 640px) {
-  .typewriter-section {
-    margin: 1.5rem auto;
-    padding: 0 1rem;
-  }
-
-  .typewriter-header {
+  .tw-head {
     flex-direction: column;
-    gap: 0.25rem;
+    align-items: flex-start;
+    gap: 0.35rem;
   }
 
   .typewriter-container {

@@ -2,6 +2,10 @@
 
 Suzume can be built as a native C++ library and CLI tool for use outside the browser/Node.js environment.
 
+::: tip Linking into your own project
+This page covers building the CLI, dictionaries, and WASM module from source. To install the library and link it into a C or C++ program (CMake `find_package`, pkg-config, or an embedded no-filesystem build), see the [C / C++ library guide](/docs/cpp).
+:::
+
 ## Building from Source
 
 ### Requirements
@@ -74,5 +78,5 @@ cmake --build build --target build-dict
 # Build WASM
 cmake --build build-wasm --parallel
 
-# Output: dist/suzume.js, dist/suzume-wasm.wasm
+# Output: bindings/wasm/dist/suzume.js, bindings/wasm/dist/suzume-wasm.wasm
 ```

@@ -31,13 +31,13 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 **Example:**
 ```typescript
 // Default usage
-const suzume = await Suzume.create()
+const defaultSuzume = await Suzume.create()
 
 // Custom WASM path
-const suzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
+const customWasmSuzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
 
 // With options
-const suzume = await Suzume.create({
+const searchSuzume = await Suzume.create({
   preserveSymbols: true,
   preserveVu: false,
   mode: 'search',
@@ -50,7 +50,7 @@ const suzume = await Suzume.create({
 The `mode` option controls how text is segmented:
 
 - **`normal`** — balanced segmentation for general use (default).
-- **`search`** — finer segmentation that also splits compound words, improving recall for search indexing.
+- **`search`** — search-oriented output that merges consecutive noun compounds into larger searchable units.
 - **`split`** — the most aggressive segmentation, breaking compounds into their smallest meaningful units.
 
 ---
@@ -98,7 +98,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | Property | Type | Description |
 |----------|------|-------------|
 | `tag` | `string` | Tag text (surface or lemma depending on `useLemma`) |
-| `pos` | `string` | Part of speech (`NOUN`, `VERB`, `ADJ`, `ADVERB`, etc.) |
+| `pos` | `string` | Part of speech (`NOUN`, `VERB`, `ADJ`, `ADV`, etc.) |
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -133,7 +133,8 @@ const tags = suzume.generateTags('東京スカイツリーに行きました')
 
 // Nouns only
 const nouns = suzume.generateTags('美しい花が静かに咲いている', {
-  pos: ['noun']
+  pos: ['noun'],
+  minLength: 1,
 })
 // [{ tag: '花', pos: 'NOUN' }]
 
@@ -144,8 +145,8 @@ const tags2 = suzume.generateTags('新しいプロジェクトを開始して管
 // [{ tag: '新しい', pos: 'ADJ' },
 //  { tag: 'プロジェクト', pos: 'NOUN' },
 //  { tag: '開始', pos: 'NOUN' },
-//  { tag: '管理', pos: 'NOUN' },
-//  { tag: 'する', pos: 'VERB' }]
+//  { tag: 'する', pos: 'VERB' },
+//  { tag: '管理', pos: 'NOUN' }]
 
 const tags3 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
   excludeBasic: true
@@ -160,9 +161,9 @@ const tags3 = suzume.generateTags('新しいプロジェクトを開始して管
 const top3 = suzume.generateTags('東京タワーと東京スカイツリーを見学しました', {
   maxTags: 3
 })
-// [{ tag: '東京タワー', pos: 'NOUN' },
-//  { tag: '東京スカイツリー', pos: 'NOUN' },
-//  { tag: '見学', pos: 'NOUN' }]
+// [{ tag: '東京', pos: 'NOUN' },
+//  { tag: 'タワー', pos: 'NOUN' },
+//  { tag: 'スカイツリー', pos: 'NOUN' }]
 ```
 
 ::: tip excludeBasic
@@ -258,8 +259,8 @@ suzume.loadBinaryDictionary(dictData)
 
 // Load from URL (Browser)
 const response = await fetch('/dictionaries/custom.dic')
-const dictData = new Uint8Array(await response.arrayBuffer())
-suzume.loadBinaryDictionary(dictData)
+const browserDictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(browserDictData)
 ```
 
 ::: tip Binary vs CSV dictionaries
@@ -346,7 +347,7 @@ interface Morpheme {
   posJa: string        // Part of speech (Japanese)
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
-  extendedPos: string  // Extended POS subcategory (English)
+  extendedPos: string  // Stable extended POS code (e.g. "VERB_連用")
   start: number        // Start character offset in normalized text
   end: number          // End character offset in normalized text
   isUserDict: boolean
@@ -368,7 +369,7 @@ interface Morpheme {
 | `posJa` | `string` | Part of speech in Japanese | `"動詞"` |
 | `conjType` | `string \| null` | Conjugation type (for verbs/adjectives) | `"一段"` |
 | `conjForm` | `string \| null` | Conjugation form | `"連用形"` |
-| `extendedPos` | `string` | Extended POS subcategory | `"VerbRenyokei"` |
+| `extendedPos` | `string` | Extended POS subcategory | `"VERB_連用"` |
 | `start` | `number` | Start character offset in normalized text | `0` |
 | `end` | `number` | End character offset in normalized text | `2` |
 | `isUserDict` | `boolean` | True when matched from a user dictionary | `false` |
@@ -405,98 +406,104 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 
 | Value | Description | Example |
 |-------|-------------|---------|
-| `VerbShuushikei` | 終止形: dictionary form | 食べる, 書く |
-| `VerbRenyokei` | 連用形: continuative form | 食べ, 書き |
-| `VerbMizenkei` | 未然形: irrealis form | 食べ-, 書か- |
-| `VerbOnbinkei` | 音便形: euphonic change | 書い-, 泳い- |
-| `VerbTeForm` | て形 | 食べて, 書いて |
-| `VerbKateikei` | 仮定形: conditional | 食べれば, 書けば |
-| `VerbMeireikei` | 命令形: imperative | 食べろ, 書け |
-| `VerbRentaikei` | 連体形: attributive | (same as shuushi in modern Japanese) |
-| `VerbTaForm` | た形: past | 食べた, 書いた |
-| `VerbTaraForm` | たら形: conditional past | 食べたら, 書いたら |
+| `VERB_終止` | 終止形: dictionary form | 食べる, 書く |
+| `VERB_連用` | 連用形: continuative form | 食べ, 書き |
+| `VERB_未然` | 未然形: irrealis form | 食べ-, 書か- |
+| `VERB_音便` | 音便形: euphonic change | 書い-, 泳い- |
+| `VERB_て形` | て形 | 食べて, 書いて |
+| `VERB_仮定` | 仮定形: conditional | 食べれば, 書けば |
+| `VERB_命令` | 命令形: imperative | 食べろ, 書け |
+| `VERB_連体` | 連体形: attributive | (same as shuushi in modern Japanese) |
+| `VERB_た形` | た形: past | 食べた, 書いた |
+| `VERB_たら形` | たら形: conditional past | 食べたら, 書いたら |
 
 **Adjective forms:**
 
 | Value | Description | Example |
 |-------|-------------|---------|
-| `AdjBasic` | 終止形: basic form | 美しい, 高い |
-| `AdjRenyokei` | 連用形(く): adverbial | 美しく, 高く |
-| `AdjStem` | 語幹: stem (ガル接続) | 美し-, 高- |
-| `AdjKatt` | かっ形: past stem | 美しかっ-, 高かっ- |
-| `AdjKeForm` | け形: conditional stem | 美しけれ- |
-| `AdjNaAdj` | ナ形容詞: na-adjective stem | 静か, 綺麗 |
+| `ADJ_終止` | 終止形: basic form | 美しい, 高い |
+| `ADJ_連用` | 連用形(く): adverbial | 美しく, 高く |
+| `ADJ_語幹` | 語幹: stem (ガル接続) | 美し-, 高- |
+| `ADJ_かっ` | かっ形: past stem | 美しかっ-, 高かっ- |
+| `ADJ_け形` | け形: conditional stem | 美しけれ- |
+| `ADJ_未然` | 未然形 | 美しくな- |
+| `ADJ_NA` | ナ形容詞: na-adjective stem | 静か, 綺麗 |
 
 **Auxiliaries:**
 
 | Value | Description | Example |
 |-------|-------------|---------|
-| `AuxTenseTa` | 過去: past tense | た, だ |
-| `AuxTenseMasu` | 丁寧: polite | ます, まし, ませ |
-| `AuxNegativeNai` | 否定 | ない, なかっ |
-| `AuxNegativeNu` | 否定(古語) | ぬ, ん |
-| `AuxDesireTai` | 願望 | たい, たかっ |
-| `AuxVolitional` | 意志/推量 | う, よう |
-| `AuxPassive` | 受身 | れる, られる |
-| `AuxCausative` | 使役 | せる, させる |
-| `AuxPotential` | 可能 | れる, られる |
-| `AuxAspectIru` | 継続 | いる, い, おる |
-| `AuxAspectShimau` | 完了 | しまう, ちゃう |
-| `AuxAspectOku` | 準備 | おく, とく |
-| `AuxAspectMiru` | 試行 | みる |
-| `AuxAspectIku` | 進行方向 | いく |
-| `AuxAspectKuru` | 接近 | くる |
-| `AuxAppearanceSou` | 様態 | そう |
-| `AuxConjectureRashii` | 推定 | らしい |
-| `AuxConjectureMitai` | 推定 | みたい |
-| `AuxCopulaDa` | 断定 | だ, で, な, なら |
-| `AuxCopulaDesu` | 丁寧断定 | です, でし |
-| `AuxHonorific` | 尊敬 | れる, られる |
-| `AuxGozaru` | 丁重 | ござる |
-| `AuxExcessive` | 過度 | すぎる |
-| `AuxGaru` | ガル接続 | がる |
+| `AUX_過去` | 過去: past tense | た, だ |
+| `AUX_丁寧` | 丁寧: polite | ます, まし, ませ |
+| `AUX_否定` | 否定 | ない, なかっ |
+| `AUX_否定古` | 否定(古語) | ぬ, ん |
+| `AUX_打消推量` | 打消推量 | まい |
+| `AUX_文語断定` | 文語の断定 | なり |
+| `AUX_文語過去` | 文語の過去 | けり |
+| `AUX_文語断定連体` | 文語の断定・連体 | たる |
+| `AUX_文語当為` | 文語の当為 | べし |
+| `AUX_願望` | 願望 | たい, たかっ |
+| `AUX_意志` | 意志/推量 | う, よう |
+| `AUX_受身` | 受身 | れる, られる |
+| `AUX_使役` | 使役 | せる, させる |
+| `AUX_可能` | 可能 | れる, られる |
+| `AUX_継続` | 継続 | いる, い, おる |
+| `AUX_完了` | 完了 | しまう, ちゃう |
+| `AUX_準備` | 準備 | おく, とく |
+| `AUX_試行` | 試行 | みる |
+| `AUX_進行` | 進行方向 | いく |
+| `AUX_接近` | 接近 | くる |
+| `AUX_様態` | 様態 | そう |
+| `AUX_推定` | 推定 | らしい |
+| `AUX_みたい` | 推定 | みたい |
+| `AUX_断定` | 断定 | だ, で, な, なら |
+| `AUX_丁寧断定` | 丁寧断定 | です, でし |
+| `AUX_尊敬` | 尊敬 | れる, られる |
+| `AUX_丁重` | 丁重 | ござる |
+| `AUX_過度` | 過度 | すぎる |
+| `AUX_ガル` | ガル接続 | がる |
 
 **Particles:**
 
 | Value | Description | Example |
 |-------|-------------|---------|
-| `ParticleCase` | 格助詞 | が, を, に, で, へ, と, から, まで, より |
-| `ParticleTopic` | 係助詞 | は, も |
-| `ParticleFinal` | 終助詞 | ね, よ, わ, な, か |
-| `ParticleConj` | 接続助詞 | て, で, ば, ながら, たり, けど |
-| `ParticleQuote` | 引用助詞 | と（引用） |
-| `ParticleAdverbial` | 副助詞 | ばかり, だけ, ほど, しか, など |
-| `ParticleNo` | 準体助詞 | の |
-| `ParticleBinding` | 係結び | こそ, さえ, すら |
+| `PART_格` | 格助詞 | が, を, に, で, へ, と, から, まで, より |
+| `PART_係` | 係助詞 | は, も |
+| `PART_終` | 終助詞 | ね, よ, わ, な, か |
+| `PART_接続` | 接続助詞 | て, で, ば, ながら, たり, けど |
+| `PART_引用` | 引用助詞 | と（引用） |
+| `PART_副` | 副助詞 | ばかり, だけ, ほど, しか, など |
+| `PART_準体` | 準体助詞 | の |
+| `PART_係結` | 係結び | こそ, さえ, すら |
 
 **Nouns:**
 
 | Value | Description | Example |
 |-------|-------------|---------|
-| `Noun` | 普通名詞 | 東京, 天気 |
-| `NounFormal` | 形式名詞 | こと, もの, ところ, わけ |
-| `NounVerbal` | 連用形転成名詞 | 読み, 書き |
-| `NounProper` | 固有名詞 | — |
-| `NounProperFamily` | 固有名詞(姓) | 田中, 鈴木 |
-| `NounProperGiven` | 固有名詞(名) | 太郎 |
-| `NounNumber` | 数詞 | 一, 100 |
+| `NOUN` | 普通名詞 | 東京, 天気 |
+| `NOUN_形式` | 形式名詞 | こと, もの, ところ, わけ |
+| `NOUN_転成` | 連用形転成名詞 | 読み, 書き |
+| `NOUN_固有` | 固有名詞 | — |
+| `NOUN_姓` | 固有名詞(姓) | 田中, 鈴木 |
+| `NOUN_名` | 固有名詞(名) | 太郎 |
+| `NOUN_数` | 数詞 | 一, 100 |
 
 **Other:**
 
 | Value | Description |
 |-------|-------------|
-| `Pronoun` | 代名詞 |
-| `PronounInterrogative` | 疑問詞 (何, 誰, どこ) |
-| `Adverb` | 副詞 |
-| `AdverbQuotative` | 引用副詞 (そう, こう) |
-| `Conjunction` | 接続詞 |
-| `Determiner` | 連体詞 |
-| `Prefix` | 接頭辞 |
-| `Suffix` | 接尾辞 |
-| `Symbol` | 記号 |
-| `Interjection` | 感動詞 |
-| `Other` | その他 |
-| `Unknown` | 不明 |
+| `PRON` | 代名詞 |
+| `PRON_疑問` | 疑問詞 (何, 誰, どこ) |
+| `ADV` | 副詞 |
+| `ADV_引用` | 引用副詞 (そう, こう) |
+| `CONJ` | 接続詞 |
+| `DET` | 連体詞 |
+| `PREFIX` | 接頭辞 |
+| `SUFFIX` | 接尾辞 |
+| `SYMBOL` | 記号 |
+| `INTJ` | 感動詞 |
+| `OTHER` | その他 |
+| `UNKNOWN` | 不明 |
 
 ---
 
@@ -507,9 +514,8 @@ try {
   const suzume = await Suzume.create()
   const result = suzume.analyze('テスト')
 } catch (error) {
-  if (error.message === 'Failed to create Suzume instance') {
-    console.error('WASM initialization failed')
-  }
+  const message = error instanceof Error ? error.message : String(error)
+  console.error('WASM initialization failed:', message)
 }
 ```
 

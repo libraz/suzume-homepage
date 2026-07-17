@@ -9,6 +9,8 @@
 ::: code-group
 
 ```typescript [node]
+import { Suzume } from '@libraz/suzume'
+
 const suzume = await Suzume.create()
 
 // 単語を1つ追加
@@ -47,7 +49,7 @@ suzume-cli analyze -d user.csv "スカイツリーとポケモン"
 
 ### 結果の確認
 
-`loadUserDictionary()` は `boolean` を返します。読み込めなかった場合（辞書が読み取れなかった場合など）は `false` になります。読み込み失敗を扱いたいときはこの値を確認してください。
+`loadUserDictionary()` は `boolean` を返します。渡した辞書データを解析・読み込みできなかった場合は `false` になります。読み込み失敗を扱いたいときはこの値を確認してください。
 
 ```typescript
 if (!suzume.loadUserDictionary(data)) {
@@ -63,12 +65,12 @@ suzume.loadUserDictionaryOrThrow(data)
 
 バイナリ辞書向けのメソッド（`loadBinaryDictionary()` / `loadBinaryDictionaryOrThrow()`）も同じパターンに従います。Python では `load_user_dict()` と `load_binary_dict()` が失敗時に `SuzumeError` を送出します。
 
-::: tip パース警告
-不正な行（フィールド数の誤り、未知の品詞など）は読み込みを中断せずスキップされます。`Suzume.create()` や読み込み呼び出しのあとに `suzume.dictionaryWarnings` を確認すると、スキップされたエントリのメッセージを取得できます（Python では `dictionary_warnings`）。
+::: tip パース動作と起動時の警告
+フィールドが 2 個未満の行は警告なしでスキップされます。一方、未知の品詞や不正な CSV クォートなどは読み込み失敗になります。実行時の失敗は戻り値（または `loadUserDictionaryOrThrow()`）と `lastError` で確認してください。`dictionaryWarnings` は `Suzume.create()` が辞書を自動読み込みした際の警告であり、実行時にスキップした行の一覧ではありません（Python では `dictionary_warnings`）。
 
 ```typescript
-suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
-console.log(suzume.dictionaryWarnings) // スキップされたエントリのメッセージ
+const loaded = suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
+console.log(loaded) // true: "broken-line" は警告なしで無視される
 ```
 :::
 
@@ -165,7 +167,7 @@ Kubernetes,NOUN
 suzume.loadUserDictionary('スカイツリー,NOUN')
 
 const result = suzume.analyze('スカイツリーへ行く')
-const skytree = result.morphemes.find((m) => m.surface === 'スカイツリー')
+const skytree = result.find((m) => m.surface === 'スカイツリー')
 
 console.log(skytree?.isUserDict) // true — ユーザー辞書から一致
 ```
@@ -197,7 +199,9 @@ Tailwind,NOUN
 `)
 
 const tags = suzume.generateTags('Next.jsでReactアプリを作成')
-// ['Next.js', 'React', 'アプリ', '作成']
+// [{ tag: 'Next.js', pos: 'NOUN' },
+//  { tag: 'Reactアプリ', pos: 'NOUN' },
+//  { tag: '作成', pos: 'NOUN' }]
 ```
 
 ### チャットアプリケーション
@@ -248,8 +252,8 @@ suzume.loadBinaryDictionary(dictData)
 
 // ブラウザ
 const response = await fetch('/dictionaries/user.dic')
-const dictData = new Uint8Array(await response.arrayBuffer())
-suzume.loadBinaryDictionary(dictData)
+const browserDictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(browserDictData)
 ```
 
 ::: tip パフォーマンス
@@ -261,17 +265,17 @@ suzume.loadBinaryDictionary(dictData)
 バイナリ辞書は以下の構造を持つコンパクトな形式です：
 
 ```
-[ヘッダー (40 bytes, マジック: "SZMD")]
-[ダブル配列トライ]
-[エントリ配列 (各 12 bytes)]
-[文字列プール (UTF-8)]
+[ヘッダー (16 bytes, マジック: "SZMD")]
+[フロントコーディングされた表層形テーブル]
+[可変サイズのエントリ配列 (各 1、2、または 3 bytes)]
+[省略可能な原形プール (UTF-8)]
 ```
 
-- **ダブル配列トライ** — 表層形の高速な共通接頭辞検索に使用（O(m) ルックアップ）
-- **エントリ配列** — 各エントリに表層形・原形の文字列プールオフセット、品詞、フラグを格納
-- **文字列プール** — 重複排除された UTF-8 文字列の連結
+- **表層形テーブル** — ソート済み表層形の共通接頭辞を共有してコンパクトに格納
+- **可変サイズのエントリ配列** — 辞書を表現できる最小のエントリ形式を使用
+- **原形プール** — 表層形と異なる原形だけを格納
 
-コンパイル時に動詞・形容詞は活用形に展開され、全エントリがソートされた上でトライに格納されます。
+コンパイル時に動詞・形容詞は活用形に展開され、全エントリがソートされます。読み込み時に、コンパクトな表層形テーブルから実行時用のダブル配列トライを再構築します。
 
 ## 永続化
 

@@ -6,7 +6,7 @@ Suzume has a comprehensive test suite covering C++ core logic, WASM bindings, an
 
 | Layer | Framework | Files | Description |
 |-------|-----------|-------|-------------|
-| C++ Unit/Integration | Google Test 1.12.1 | 34 files | Core library, dictionary, grammar, normalization |
+| C++ Unit/Integration | Google Test 1.12.1 | 36 files | Core library, dictionary, grammar, normalization |
 | Data-Driven | JSON + Google Test | 86 JSON files | Tokenization correctness (auto-discovered) |
 | WASM | Vitest | 4 files | JS/C API, memory layout, struct compatibility |
 | Python | pytest | `bindings/python/tests/` | analyze/tags API, ABI layout |
@@ -41,15 +41,16 @@ ctest --test-dir build -R "UserDict" --verbose
 make wasm-test
 
 # Or run tests only (if WASM is already built)
-yarn test
-yarn test:watch      # Watch mode
-yarn test:coverage   # With coverage report
+(cd bindings/wasm && yarn test)
+(cd bindings/wasm && yarn test:watch)      # Watch mode
+(cd bindings/wasm && yarn test:coverage)   # With coverage report
 ```
 
 ### Python Tests
 
 ```bash
-cd bindings/python && pytest
+make python-test
+# Direct equivalent: (cd bindings/python && uv run --extra dev pytest)
 ```
 
 The pytest suite (`bindings/python/tests/`) covers the analyze and tags APIs and the ABI struct layout.
@@ -172,21 +173,22 @@ For testing the WebAssembly bindings:
 Create `bindings/wasm/tests/feature.test.ts`:
 
 ```typescript
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { getModule, allocString, parseMorphemes } from './helpers'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { Suzume } from '../dist/index.js'
 
 describe('Feature', () => {
-  let module: any
+  let suzume: Suzume
 
   beforeAll(async () => {
-    module = await getModule()
+    suzume = await Suzume.create()
+  })
+
+  afterAll(() => {
+    suzume.destroy()
   })
 
   it('should behave correctly', () => {
-    const input = allocString(module, 'テスト')
-    const result = module._Suzume_analyze(instance, input, options)
-    const morphemes = parseMorphemes(module, result)
-
+    const morphemes = suzume.analyze('テスト')
     expect(morphemes[0].surface).toBe('テスト')
   })
 })
@@ -199,7 +201,7 @@ For batch testing via the CLI:
 ```tsv
 # Comments start with #
 東京スカイツリーに行きました	東京,スカイツリー,行く
-美しい花が咲いている	美しい,花,咲く
+美しい花が咲いている	美しい,咲く
 ```
 
 Run with:

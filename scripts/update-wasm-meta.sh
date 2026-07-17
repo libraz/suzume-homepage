@@ -30,8 +30,16 @@ if [ -f "$WASM_FILE" ]; then
     COMMIT_HASH=$(git -C "$SUZUME_DIR" rev-parse --short HEAD)
   fi
 
+  # Get the artifact's package version from the suzume WASM binding
+  VERSION=""
+  VERSION_FILE="$SUZUME_DIR/bindings/wasm/package.json"
+  if [ -f "$VERSION_FILE" ]; then
+    VERSION=$(grep -m1 '"version"' "$VERSION_FILE" | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
+  fi
+
   cat > "$META_FILE" << EOF
 {
+  "version": "$VERSION",
   "size": $SIZE,
   "sizeKB": $SIZE_KB,
   "gzipSize": $GZIP_SIZE,
@@ -43,6 +51,7 @@ if [ -f "$WASM_FILE" ]; then
 EOF
 
   echo "📦 Updated $META_FILE"
+  echo "   Version: ${VERSION:-（不明）}"
   echo "   Size: ${SIZE_KB}KB (${GZIP_KB}KB gzipped)"
   echo "   MD5: $MD5"
   echo "   Build: $BUILD_DATE"

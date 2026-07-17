@@ -85,3 +85,15 @@ make lib
 ```
 
 必要環境、使用例、API の概要は [Go バインディング](/ja/docs/go) を参照してください。
+
+## C / C++
+
+ネイティブの C / C++ プログラムに Suzume を直接リンクするには、ライブラリをソースからビルドしてインストールします：
+
+```bash
+git clone https://github.com/libraz/suzume.git
+cd suzume
+make install                 # /usr/local へ。PREFIX=/opt/suzume で変更可
+```
+
+C++17 コンパイラと CMake 3.15 以降が必要です。使い方、CMake の `find_package`、pkg-config、組み込み（ファイルシステム不要）ビルドは [C / C++ ライブラリガイド](/ja/docs/cpp) を参照してください。

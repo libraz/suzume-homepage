@@ -84,14 +84,14 @@ interface Morpheme {
   posJa: string        // Part of speech (Japanese)
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
-  extendedPos: string  // Extended POS subcategory (e.g. "VerbRenyokei")
+  extendedPos: string  // Extended POS subcategory (e.g. "VERB_連用")
   start: number        // Start character offset
   end: number          // End character offset
   isUserDict: boolean       // Came from a loaded user dictionary
   isFormalNoun: boolean     // Formal/dependent noun (e.g. こと, もの)
   isLowInfo: boolean        // Low-information token (function-word-like)
   isUnknown: boolean        // Generated as an unknown word candidate
-  isFromDictionary: boolean // Present in the bundled dictionary
+  isFromDictionary: boolean // Matched from a core or user dictionary
   score: number             // Cost/confidence score
 }
 ```

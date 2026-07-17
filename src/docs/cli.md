@@ -40,27 +40,27 @@ The `-f, --format` flag selects the output shape:
 
 | Format | Description |
 |--------|-------------|
-| `morpheme` | Default. `surface` TAB `POS` TAB `lemma`, one morpheme per line |
-| `tags` | Content-word tags only (see [Tag Extraction](#tag-extraction)) |
-| `json` | Structured JSON with all fields |
+| `morpheme` | Default. `surface` TAB `POS` TAB `lemma` TAB `start` TAB `end` |
+| `tags` | Content-word `tag` TAB `POS` pairs (see [Tag Extraction](#tag-extraction)) |
+| `json` | Structured JSON with analysis and debugging fields |
 | `tsv` | `surface` TAB `POS` TAB `lemma` TAB `start` TAB `end` |
 | `chasen` | ChaSen-like format (Japanese POS names + conjugation info) |
 
 ```bash
-# Default: surface TAB pos TAB lemma
+# Default: surface TAB pos TAB lemma TAB start TAB end
 suzume-cli "食べている"
-# 食べ    VERB    食べる
-# て      AUX     てる
-# いる    AUX     いる
+# 食べ    VERB        食べる    0    2
+# て      PARTICLE    て        2    3
+# いる    AUX         いる      3    5
 
 # JSON
 suzume-cli -f json "食べている"
 
 # Tags only
 suzume-cli -f tags "東京スカイツリーに行きました"
-# 東京
-# スカイツリー
-# 行く
+# 東京            NOUN
+# スカイツリー    NOUN
+# 行く            VERB
 
 # TSV with all fields (surface, pos, lemma, start, end)
 suzume-cli -f tsv "食べている"
@@ -107,10 +107,10 @@ With `-f tags`, Suzume extracts content-word tags and drops low-information toke
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--tag-include-particles` | off | Keep particles in the tag set |
-| `--tag-include-auxiliaries` | off | Keep auxiliary verbs in the tag set |
-| `--tag-include-formal-nouns` | off | Keep formal nouns (こと, もの, etc.) |
-| `--tag-include-low-info` | off | Keep low-information tokens |
+| `--include-particles` | off | Keep particles in the tag set |
+| `--include-auxiliaries` | off | Keep auxiliary verbs in the tag set |
+| `--include-formal-nouns` | off | Keep formal nouns (こと, もの, etc.) |
+| `--include-low-info` | off | Keep low-information tokens |
 | `--tag-keep-duplicates` | off | Keep duplicate tags instead of deduplicating |
 | `--tag-use-surface` | off | Use surface forms instead of lemmas |
 | `--tag-min-length LENGTH` | `2` | Minimum tag length in characters |
@@ -118,7 +118,7 @@ With `-f tags`, Suzume extracts content-word tags and drops low-information toke
 
 ```bash
 # Keep particles and auxiliaries, allow single-character tags
-suzume-cli -f tags --tag-include-particles --tag-min-length 1 "本を読む"
+suzume-cli -f tags --include-particles --include-auxiliaries --tag-min-length 1 "本を読む"
 
 # Limit to the top 5 tags by surface form
 suzume-cli -f tags --tag-use-surface --tag-max-tags 5 "東京スカイツリーに行きました"
@@ -232,7 +232,7 @@ Run verification tests and benchmarks.
 
 ```bash
 # Test single input
-suzume-cli test "テスト文" --expect "テスト,文"
+suzume-cli test "テスト文" --expect "テスト"
 
 # Run tests from file
 suzume-cli test -f tests.tsv
@@ -250,7 +250,7 @@ TSV with input and expected tags:
 
 ```tsv
 東京スカイツリーに行きました	東京,スカイツリー,行く
-美しい花が咲いている	美しい,花,咲く
+美しい花が咲いている	美しい,咲く
 ```
 
 ## See also

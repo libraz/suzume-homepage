@@ -9,6 +9,8 @@ Load dictionary entries at runtime with a single call:
 ::: code-group
 
 ```typescript [node]
+import { Suzume } from '@libraz/suzume'
+
 const suzume = await Suzume.create()
 
 // Add a single word
@@ -47,7 +49,7 @@ suzume-cli analyze -d user.csv "スカイツリーとポケモン"
 
 ### Checking the result
 
-`loadUserDictionary()` returns a `boolean` — `false` when the data could not be loaded (for example, an unreadable dictionary). Check it if a load failure should be handled:
+`loadUserDictionary()` returns a `boolean` — `false` when the supplied dictionary data cannot be parsed or loaded. Check it if a load failure should be handled:
 
 ```typescript
 if (!suzume.loadUserDictionary(data)) {
@@ -63,12 +65,12 @@ suzume.loadUserDictionaryOrThrow(data)
 
 The binary-dictionary methods (`loadBinaryDictionary()` / `loadBinaryDictionaryOrThrow()`) follow the same pattern. In Python, `load_user_dict()` and `load_binary_dict()` raise `SuzumeError` on failure.
 
-::: tip Parse warnings
-Malformed lines (wrong field count, unknown POS) are skipped rather than aborting the load. Inspect `suzume.dictionaryWarnings` after `Suzume.create()` or a load call to see the messages for any skipped entries (`dictionary_warnings` in Python):
+::: tip Parse behavior and startup warnings
+Lines with fewer than two fields are silently skipped. Other errors, such as an unknown POS or invalid CSV quoting, fail the load. Check the return value (or use `loadUserDictionaryOrThrow()`) and `lastError` for runtime failures. `dictionaryWarnings` contains warnings produced while automatically loading dictionaries during `Suzume.create()`; it is not a per-call list of skipped runtime lines (`dictionary_warnings` in Python):
 
 ```typescript
-suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
-console.log(suzume.dictionaryWarnings) // messages for skipped entries
+const loaded = suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
+console.log(loaded) // true: "broken-line" is silently ignored
 ```
 :::
 
@@ -165,7 +167,7 @@ Each morpheme exposes `isUserDict`, which is `true` when the token was matched f
 suzume.loadUserDictionary('スカイツリー,NOUN')
 
 const result = suzume.analyze('スカイツリーへ行く')
-const skytree = result.morphemes.find((m) => m.surface === 'スカイツリー')
+const skytree = result.find((m) => m.surface === 'スカイツリー')
 
 console.log(skytree?.isUserDict) // true — matched from the user dictionary
 ```
@@ -197,7 +199,9 @@ Tailwind,NOUN
 `)
 
 const tags = suzume.generateTags('Next.jsでReactアプリを作成')
-// ['Next.js', 'React', 'アプリ', '作成']
+// [{ tag: 'Next.js', pos: 'NOUN' },
+//  { tag: 'Reactアプリ', pos: 'NOUN' },
+//  { tag: '作成', pos: 'NOUN' }]
 ```
 
 ### Chat Applications
@@ -248,8 +252,8 @@ suzume.loadBinaryDictionary(dictData)
 
 // Browser
 const response = await fetch('/dictionaries/user.dic')
-const dictData = new Uint8Array(await response.arrayBuffer())
-suzume.loadBinaryDictionary(dictData)
+const browserDictData = new Uint8Array(await response.arrayBuffer())
+suzume.loadBinaryDictionary(browserDictData)
 ```
 
 ::: tip Performance
@@ -261,17 +265,17 @@ Binary dictionaries load significantly faster than CSV format, making them ideal
 The binary dictionary is a compact format with the following layout:
 
 ```
-[Header (40 bytes, magic: "SZMD")]
-[Double-Array Trie]
-[Entry Array (12 bytes each)]
-[String Pool (UTF-8)]
+[Header (16 bytes, magic: "SZMD")]
+[Front-coded surface table]
+[Adaptive entry array (1, 2, or 3 bytes each)]
+[Optional lemma pool (UTF-8)]
 ```
 
-- **Double-array trie** — Enables fast common-prefix lookup of surface forms (O(m) per query)
-- **Entry array** — Each entry stores string pool offsets for surface/lemma, POS, and flags
-- **String pool** — Concatenated, deduplicated UTF-8 strings
+- **Front-coded surface table** — Stores sorted surface forms compactly by sharing prefixes
+- **Adaptive entry array** — Uses the smallest entry encoding that can represent the dictionary
+- **Optional lemma pool** — Stores lemmas only when they differ from their surface forms
 
-During compilation, verbs and adjectives are expanded into their conjugated forms, and all entries are sorted before being packed into the trie.
+During compilation, verbs and adjectives are expanded into their conjugated forms and all entries are sorted. On load, Suzume rebuilds its runtime double-array trie from the compact surface table.
 
 ## Persistence
 

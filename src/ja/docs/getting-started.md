@@ -84,14 +84,14 @@ interface Morpheme {
   posJa: string        // 品詞（日本語）
   conjType: string | null  // 活用型
   conjForm: string | null  // 活用形
-  extendedPos: string  // 拡張品詞サブカテゴリ（例: "VerbRenyokei"）
+  extendedPos: string  // 拡張品詞サブカテゴリ（例: "VERB_連用"）
   start: number        // 開始文字位置
   end: number          // 終了文字位置
   isUserDict: boolean       // 読み込んだユーザー辞書に由来するか
   isFormalNoun: boolean     // 形式名詞か（例: こと、もの）
   isLowInfo: boolean        // 情報量の低い語か（機能語的な語）
   isUnknown: boolean        // 未知語候補として生成されたか
-  isFromDictionary: boolean // 同梱辞書に登録されているか
+  isFromDictionary: boolean // コア辞書またはユーザー辞書から一致したか
   score: number             // コスト・確信度スコア
 }
 ```

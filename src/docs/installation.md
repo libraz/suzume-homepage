@@ -85,3 +85,15 @@ make lib
 ```
 
 See [Go Bindings](/docs/go) for requirements, examples, and API notes.
+
+## C / C++
+
+To link Suzume directly into a native C or C++ program, build and install the library from source:
+
+```bash
+git clone https://github.com/libraz/suzume.git
+cd suzume
+make install                 # into /usr/local; override with PREFIX=/opt/suzume
+```
+
+Requires a C++17 compiler and CMake 3.15+. See the [C / C++ library guide](/docs/cpp) for usage, CMake `find_package`, pkg-config, and embedded (no-filesystem) builds.

@@ -1,7 +1,49 @@
 {
+  "homeHero": {
+    "ariaLabel": "リリース状況と主要スペック",
+    "beta": "Beta",
+    "openSource": "オープンソース",
+    "gzipLabel": "gzip 後のバンドル",
+    "rawNote": "生 {n}KB",
+    "clientLabel": "クライアント完結",
+    "clientNote": "サーバー・API 不要",
+    "runtimesLabel": "ランタイム"
+  },
+  "features": {
+    "eyebrow": "特徴",
+    "heading": "フロントエンドのための設計",
+    "subheading": "サーバー・辞書・プライバシーの負担なしに、クライアント側で日本語をトークナイズできます。",
+    "items": {
+      "size": {
+        "title": "小さなフットプリント",
+        "desc": "WASM モジュールと内蔵辞書を合わせて gzip {size} 以下。数十 MB の辞書を取得・配信する必要がありません。"
+      },
+      "client": {
+        "title": "クライアント完結の設計",
+        "desc": "ブラウザやランタイム上だけで動作します。トークナイズ用のサーバーも API 往復も CORS 設定も不要です。"
+      },
+      "privacy": {
+        "title": "テキストは手元に残る",
+        "desc": "解析は端末内で完結し、入力がブラウザの外に出ません。機微なテキストを自社インフラに預けずに済みます。"
+      },
+      "unknown": {
+        "title": "未知語に強い",
+        "desc": "単語の境界を固定辞書ではなく文字パターンから求めます。ブランド名・スラング・専門用語もそのまま残ります。"
+      },
+      "realtime": {
+        "title": "同期・即時",
+        "desc": "ネイティブに近い WASM 速度と同期 API。ネットワーク遅延なしで、キー入力ごとにトークナイズできます。"
+      },
+      "typed": {
+        "title": "型付き・マルチランタイム",
+        "desc": "TypeScript の型を完備した C++ コア。Python・Go・ネイティブ C/C++ で、バックエンド・バッチ・組み込みにも使えます。"
+      }
+    }
+  },
   "comparison": {
-    "title": "なぜ Suzume?",
-    "subtitle": "TinySegmenterの軽量さとMeCabの高精度、両方のいいとこ取り。",
+    "eyebrow": "比較",
+    "title": "Suzume の立ち位置",
+    "subtitle": "TinySegmenter の軽さと、MeCab に近い詳しさ。Suzume はその中間に位置します。",
     "feature": "機能",
     "browserRun": "ブラウザ動作",
     "dictionary": "辞書ファイル",
@@ -14,29 +56,17 @@
     "customDict": "カスタム辞書",
     "notRequired": "不要",
     "required": "必須",
-    "heavy": "(重い)",
     "na": "N/A",
-    "tokenizeOnly": "分かち書きのみ",
     "light": "軽量",
     "accurate": "高精度",
-    "benefits": {
-      "frontendOnly": {
-        "title": "フロントエンド完結",
-        "desc": "サーバー構築・運用コストゼロ。CDNから配信するだけ。"
-      },
-      "realtime": {
-        "title": "リアルタイム処理",
-        "desc": "APIコール不要。レイテンシなしで即座に解析。"
-      },
-      "privacy": {
-        "title": "プライバシー保護",
-        "desc": "テキストデータがサーバーに送信されない。"
-      }
-    }
+    "guideTitle": "比較表だけでは見えない、設計思想の違い",
+    "guideDescription": "分割単位・辞書への依存・未知語処理を具体例で解説します。",
+    "guideLink": "MeCabとの違いを読む"
   },
   "useCase": {
-    "title": "ユースケース",
-    "subtitle": "サーバー不要でリアルタイムに動作するデモをお試しください",
+    "eyebrow": "プレイグラウンド",
+    "title": "自分のテキストで試す",
+    "subtitle": "どのデモもブラウザ内だけで動作します。手元の文章を貼り付けて、その場でトークナイズを確認できます。",
     "tagGen": "タグ生成",
     "baseFormTab": "正規化",
     "analyzeTab": "トークン化",
@@ -76,11 +106,8 @@
     }
   },
   "typewriter": {
-    "title": "リアルタイムトークナイズ",
+    "eyebrow": "ライブ",
+    "title": "読むそばからトークナイズ",
     "source": "夏目漱石「吾輩は猫である」より"
-  },
-  "wasmStats": {
-    "gzipped": "gzip圧縮",
-    "raw": "非圧縮"
   }
 }

@@ -81,7 +81,7 @@ The constructor is keyword-only. Alongside `mode`, it accepts the normalization 
 | `pos_ja` | `str` | Part of speech in Japanese (e.g. 名詞) |
 | `conj_type` | `str \| None` | Conjugation type, or `None` for non-conjugating words |
 | `conj_form` | `str \| None` | Conjugation form, or `None` for non-conjugating words |
-| `extended_pos` | `str` | Extended POS subcategory in English |
+| `extended_pos` | `str` | Stable extended POS code (e.g. `VERB_連用`) |
 | `start` | `int` | Start character offset in normalized text |
 | `end` | `int` | End character offset in normalized text |
 | `is_user_dict` | `bool` | True when matched from a user dictionary |

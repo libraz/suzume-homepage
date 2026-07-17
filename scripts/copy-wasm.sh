@@ -21,7 +21,7 @@ fi
 # Check if dist directory exists
 if [ ! -d "$DIST_DIR" ]; then
   echo "❌ Error: dist directory not found at $DIST_DIR"
-  echo "   Run 'yarn build' in suzume first."
+  echo "   Run 'make wasm' in suzume first."
   exit 1
 fi
 

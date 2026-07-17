@@ -1,20 +1,11 @@
 import { defineConfig } from 'vitepress'
-import { readFileSync } from 'fs'
 import { fileURLToPath, URL } from 'node:url'
+import { WASM_GZIP_SIZE, SUZUME_VERSION } from '../src/wasm/metadata'
 
 const siteUrl = 'https://suzume.libraz.net'
 const githubUrl = 'https://github.com/libraz/suzume'
 
-// Load WASM metadata and calculate size label
-let wasmMeta = { gzipKB: 435, sizeKB: 1121 }
-try {
-  const metaPath = fileURLToPath(new URL('../src/wasm/meta.json', import.meta.url))
-  wasmMeta = JSON.parse(readFileSync(metaPath, 'utf-8'))
-} catch (e) {
-  // Use fallback values
-}
-const sizeLabel = Math.ceil(wasmMeta.gzipKB / 50) * 50
-const sizeLabelText = `${sizeLabel}KB`
+const sizeLabelText = WASM_GZIP_SIZE
 
 // JSON-LD: SoftwareApplication schema
 const softwareApplicationJsonLd = {
@@ -31,7 +22,7 @@ const softwareApplicationJsonLd = {
   description: `Lightweight Japanese tokenizer that runs in the browser. Unlike MeCab, no server or large dictionary files required. Under ${sizeLabelText} gzipped, robust to unknown words.`,
   url: siteUrl,
   downloadUrl: githubUrl,
-  softwareVersion: '1.0.0',
+  softwareVersion: SUZUME_VERSION,
   author: {
     '@type': 'Person',
     name: 'libraz'
@@ -155,6 +146,7 @@ const docsNav = [
       { slug: 'api', en: 'JavaScript / WASM', ja: 'JavaScript / WASM' },
       { slug: 'python', en: 'Python', ja: 'Python' },
       { slug: 'go', en: 'Go', ja: 'Go' },
+      { slug: 'cpp', en: 'C / C++', ja: 'C / C++' },
       { slug: 'cli', en: 'CLI', ja: 'CLI' },
     ],
   },
@@ -263,13 +255,24 @@ export default defineConfig({
   },
 
   transformPageData(pageData) {
-    // Dynamically update tagline with current WASM size
-    if (pageData.frontmatter?.hero?.tagline) {
-      const tagline = pageData.frontmatter.hero.tagline as string
-      if (/\d+KB/.test(tagline)) {
-        pageData.frontmatter.hero.tagline = tagline.replace(/\d+KB/g, sizeLabelText)
+    // Inject generated WASM metadata into every home frontmatter string.
+    function injectWasmSize(value: unknown): void {
+      if (!value || typeof value !== 'object') return
+
+      for (const [key, child] of Object.entries(value)) {
+        if (typeof child === 'string') {
+          const values = value as Record<string, unknown>
+          values[key] = child.replaceAll(
+            '__WASM_GZIP_SIZE__',
+            sizeLabelText
+          )
+        } else {
+          injectWasmSize(child)
+        }
       }
     }
+
+    injectWasmSize(pageData.frontmatter)
   },
 
   markdown: {

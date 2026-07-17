@@ -2,15 +2,15 @@
 
 ## Why So Small?
 
-The biggest question: **How can Suzume tokenize Japanese text in roughly 460KB gzipped when traditional analyzers often need tens of megabytes of dictionaries?**
+The biggest question: how can Suzume tokenize Japanese text in about <WasmSize /> gzipped when traditional analyzers often need tens of megabytes of dictionaries?
 
 ### The Short Answer
 
 | Traditional (MeCab) | Suzume |
 |---------------------|--------|
-| Stores **every word** with all metadata | Stores only **essential words** |
-| Pre-computed connection costs for all word pairs | Computes connections **on the fly** |
-| Requires full dictionary to handle any input | Uses **pattern rules** for unknown words |
+| Stores every word with all metadata | Stores only essential words |
+| Pre-computed connection costs for all word pairs | Computes connections on the fly |
+| Requires full dictionary to handle any input | Uses pattern rules for unknown words |
 
 ::: tip Key Insight
 MeCab's dictionary is like a phone book with every person's name. Suzume is like knowing the rules of how Japanese names are formed — you can recognize new names without listing them all.
@@ -18,10 +18,7 @@ MeCab's dictionary is like a phone book with every person's name. Suzume is like
 
 ### The Three Pillars
 
-<figure class="doc-diagram">
-  <img src="/diagrams/pillars-en.svg" alt="Suzume uses a minimal dictionary, grammar patterns, and dynamic scoring to stay small." />
-  <figcaption>Suzume keeps the shipped data small and moves more of the analysis into compact grammar and scoring code.</figcaption>
-</figure>
+<DiagramPillars />
 
 ::: info What is Tokenization?
 Breaking text into meaningful units (tokens) and identifying their parts of speech. For Japanese, this means segmenting continuous text like "東京に行く" into "東京 / に / 行く".
@@ -49,10 +46,7 @@ Suzume stores high-frequency function words, particles, auxiliaries, and selecte
 
 Instead of storing every word, Suzume recognizes patterns:
 
-<figure class="doc-diagram">
-  <img src="/diagrams/pattern-recognition-en.svg" alt="Unknown word candidate generation for スカイツリー." />
-  <figcaption>For example, a katakana sequence that is not in the dictionary can still become a noun candidate.</figcaption>
-</figure>
+<DiagramPattern />
 
 | Pattern | Rule | Result |
 |---------|------|--------|
@@ -83,10 +77,7 @@ particle → noun: cost 50
 
 Suzume computes connection scores dynamically using compact rules:
 
-<figure class="doc-diagram">
-  <img src="/diagrams/dynamic-scoring-en.svg" alt="A noun followed by を gets a low connection cost." />
-  <figcaption>A natural POS transition gets a low cost; unlikely transitions get higher costs. Viterbi then chooses the best full path.</figcaption>
-</figure>
+<DiagramScoring />
 
 ## Consistency of Analysis
 
@@ -130,10 +121,7 @@ A dynamic programming algorithm that finds the optimal path through the lattice.
 
 ### Analysis Pipeline
 
-<figure class="doc-diagram">
-  <img src="/diagrams/pipeline-en.svg" alt="Input flows through pre-tokenization, candidate generation, lattice construction, Viterbi, and output." />
-  <figcaption>The analyzer keeps multiple possible segmentations alive until scoring selects the best path.</figcaption>
-</figure>
+<DiagramPipeline />
 
 ### Unknown Word Handling
 

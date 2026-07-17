@@ -81,7 +81,7 @@ with Suzume(mode="split") as sz:
 | `pos_ja` | `str` | 日本語の品詞（例: 名詞） |
 | `conj_type` | `str \| None` | 活用型。活用しない語では `None` |
 | `conj_form` | `str \| None` | 活用形。活用しない語では `None` |
-| `extended_pos` | `str` | 英語の拡張品詞サブカテゴリ |
+| `extended_pos` | `str` | 安定した拡張品詞コード（例: `VERB_連用`） |
 | `start` | `int` | 正規化後テキストにおける開始文字オフセット |
 | `end` | `int` | 正規化後テキストにおける終了文字オフセット |
 | `is_user_dict` | `bool` | ユーザー辞書にマッチした場合 True |

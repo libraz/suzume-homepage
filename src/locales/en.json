@@ -1,7 +1,49 @@
 {
+  "homeHero": {
+    "ariaLabel": "Release status and key specs",
+    "beta": "Beta",
+    "openSource": "open source",
+    "gzipLabel": "gzipped bundle",
+    "rawNote": "{n}KB raw",
+    "clientLabel": "client-side",
+    "clientNote": "no server or API",
+    "runtimesLabel": "runtimes"
+  },
+  "features": {
+    "eyebrow": "Why Suzume",
+    "heading": "Designed for the frontend",
+    "subheading": "Client-side Japanese tokenization, without the usual server, dictionary, and privacy trade-offs.",
+    "items": {
+      "size": {
+        "title": "Tiny footprint",
+        "desc": "The WASM module and its built-in dictionary total under {size} gzipped — no multi-megabyte dictionary to fetch or host."
+      },
+      "client": {
+        "title": "Client-side by design",
+        "desc": "Runs entirely in the browser or your runtime. No tokenization server, no API round-trip, no CORS setup."
+      },
+      "privacy": {
+        "title": "Text stays local",
+        "desc": "Analysis happens on-device, so user input never leaves the browser and sensitive text stays out of your infrastructure."
+      },
+      "unknown": {
+        "title": "Robust to unknown words",
+        "desc": "Boundaries come from character patterns rather than a fixed dictionary, so brand names, slang, and technical terms stay intact."
+      },
+      "realtime": {
+        "title": "Synchronous and instant",
+        "desc": "Near-native WASM speed with a synchronous API. Tokenize on every keystroke without network latency."
+      },
+      "typed": {
+        "title": "Typed, multi-runtime",
+        "desc": "A C++ core with first-class TypeScript types, plus Python, Go, and native C/C++ bindings for backend, batch, and embedded use."
+      }
+    }
+  },
   "comparison": {
-    "title": "Why Suzume?",
-    "subtitle": "The best of both worlds: TinySegmenter's lightness meets MeCab's accuracy.",
+    "eyebrow": "Compare",
+    "title": "Where Suzume fits",
+    "subtitle": "TinySegmenter's light footprint, closer to MeCab's detail — Suzume sits between them.",
     "feature": "Feature",
     "browserRun": "Browser",
     "dictionary": "Dictionary",
@@ -14,29 +56,17 @@
     "customDict": "Custom Dictionary",
     "notRequired": "Not required",
     "required": "Required",
-    "heavy": "(Heavy)",
     "na": "N/A",
-    "tokenizeOnly": "Tokenize only",
     "light": "Light",
     "accurate": "Accurate",
-    "benefits": {
-      "frontendOnly": {
-        "title": "Frontend Only",
-        "desc": "Zero server setup. Just serve from CDN."
-      },
-      "realtime": {
-        "title": "Real-time Processing",
-        "desc": "No API calls. Instant analysis with zero latency."
-      },
-      "privacy": {
-        "title": "Privacy First",
-        "desc": "Text data never leaves the user's browser."
-      }
-    }
+    "guideTitle": "There is more to the difference than this table",
+    "guideDescription": "See concrete examples of token boundaries, dictionary dependence, and unknown-word handling.",
+    "guideLink": "Read the MeCab comparison"
   },
   "useCase": {
-    "title": "Use Cases",
-    "subtitle": "Try real-time demos that run entirely in your browser",
+    "eyebrow": "Playground",
+    "title": "Try it on your own text",
+    "subtitle": "Every demo runs entirely in your browser — paste your own text and watch it tokenize.",
     "tagGen": "Tag Generation",
     "baseFormTab": "Normalize",
     "analyzeTab": "Tokenize",
@@ -76,11 +106,8 @@
     }
   },
   "typewriter": {
-    "title": "Real-time Tokenization",
+    "eyebrow": "Live",
+    "title": "Tokenized as you read",
     "source": "From \"I Am a Cat\" by Natsume Soseki"
-  },
-  "wasmStats": {
-    "gzipped": "gzipped",
-    "raw": "raw"
   }
 }
