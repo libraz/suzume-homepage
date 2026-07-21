@@ -144,7 +144,7 @@ function stopTyping() {
 
 onMounted(async () => {
   try {
-    const wasmPath = new URL('../wasm/suzume-wasm.wasm', import.meta.url).href
+    const wasmPath = new URL('../wasm/suzume.wasm', import.meta.url).href
     suzume = await Suzume.create({ wasmPath })
     preAnalyze()
     loading.value = false

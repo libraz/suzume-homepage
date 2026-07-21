@@ -1,6 +1,6 @@
 # C / C++ Library
 
-Suzume can be linked directly into native C and C++ programs — no WebAssembly, no JavaScript, and no runtime dependencies. The core is the same C++ tokenizer that the WASM, Python, and Go bindings wrap; here you consume it as an ordinary static or shared library, or embed it with the dictionaries baked in.
+Suzume can be linked directly into native C and C++ programs — no WebAssembly, no JavaScript, and no runtime dependencies. The core is the same C++ tokenizer used by the WASM and Python bindings; here you consume it as an ordinary static or shared library, or embed it with the dictionaries baked in.
 
 Two entry points ship in the same package:
 
@@ -65,6 +65,14 @@ Include the C ABI directly. You own each result and must free it exactly once:
 #include "suzume/suzume_c.h"
 #include <stdio.h>
 
+static const char* pos_name(suzume_pos_t pos) {
+  static const char* const names[] = {
+    "OTHER", "NOUN", "VERB", "ADJ", "ADV", "PARTICLE", "AUX", "CONJ",
+    "DET", "PRON", "PREFIX", "SUFFIX", "INTJ", "SYMBOL", "OTHER"
+  };
+  return pos < sizeof(names) / sizeof(names[0]) ? names[pos] : "OTHER";
+}
+
 int main(void) {
   suzume_t handle = suzume_create();
   if (handle == NULL) {
@@ -81,7 +89,7 @@ int main(void) {
 
   for (size_t i = 0; i < result->count; i++) {
     const suzume_morpheme_t* m = &result->morphemes[i];
-    printf("%s\t%s\t%s\n", m->surface, m->pos, m->base_form);
+    printf("%s\t%s\t%s\n", m->surface, pos_name(m->pos), m->base_form);
   }
 
   suzume_result_free(result);
@@ -131,25 +139,27 @@ The core is `Expected<T, Error>` based — no exceptions in normal operation —
 
 ## Morpheme Fields
 
-`analyze()` returns a `std::vector<suzume::Morpheme>` (C++) or a `suzume_result_t` holding an array of `suzume_morpheme_t` (C). Each morpheme exposes:
+`analyze()` returns a `std::vector<suzume::Morpheme>` (C++) or a `suzume_result_t` holding an array of `suzume_morpheme_t` (C). The compact C ABI uses stable numeric codes and a bit field; the C++ wrapper decodes them into owning strings and booleans.
 
 | C++ (`Morpheme`) | C (`suzume_morpheme_t`) | Description |
 |------------------|-------------------------|-------------|
 | `surface` | `surface` | Surface form as it appears in the text |
-| `pos` | `pos` | Part-of-speech tag (uppercase, e.g. `NOUN`, `VERB`) |
+| `pos` | `pos` | English POS label in C++; stable `SUZUME_POS_*` numeric code in C |
 | `lemma` | `base_form` | Dictionary base form (lemma) |
-| `pos_ja` | `pos_ja` | Part-of-speech name in Japanese |
-| `conj_type` | `conj_type` | Conjugation type, if applicable |
-| `conj_form` | `conj_form` | Conjugation form, if applicable |
-| `extended_pos` | `extended_pos` | Stable fine-grained POS code (e.g. `VERB_連用`) |
+| `pos_ja` | derived from `pos` | Part-of-speech name in Japanese |
+| `conj_type` | `conjugation_type` | Decoded label in C++; stable numeric code in C (`0` means none) |
+| `conj_form` | `conjugation_form` | Decoded label in C++; stable numeric code in C |
+| `extended_pos` | `extended_pos` | Label in C++ (e.g. `VERB_連用`); stable numeric code in C |
 | `start` | `start` | Start character offset in the normalized text |
 | `end` | `end` | End character offset in the normalized text |
-| `is_user_dict` | `is_user_dict` | Entry came from a loaded user dictionary |
-| `is_formal_noun` | `is_formal_noun` | Entry is a formal (dependent) noun |
-| `is_low_info` | `is_low_info` | Entry carries low information content |
-| `is_unknown` | `is_unknown` | Entry is an unknown word |
-| `is_from_dictionary` | `is_from_dictionary` | Entry was matched from a dictionary |
+| `is_user_dict` | `flags & SUZUME_MORPHEME_USER_DICT` | Entry came from a loaded user dictionary |
+| `is_formal_noun` | `flags & SUZUME_MORPHEME_FORMAL_NOUN` | Entry is a formal (dependent) noun |
+| `is_low_info` | `flags & SUZUME_MORPHEME_LOW_INFO` | Entry carries low information content |
+| `is_unknown` | `flags & SUZUME_MORPHEME_UNKNOWN` | Entry is an unknown word |
+| `is_from_dictionary` | `flags & SUZUME_MORPHEME_FROM_DICTIONARY` | Entry was matched from a dictionary |
 | `score` | `score` | Analysis score for the morpheme |
+
+The C header intentionally carries no duplicated English/Japanese label strings. Use the `SUZUME_POS_*` constants directly or map them at the application boundary, as in the C example above. The JavaScript, Python, and C++ wrappers ship their own stable label tables.
 
 See [API Reference](/docs/api) for the full POS and `extendedPos` value tables.
 

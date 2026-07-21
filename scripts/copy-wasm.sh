@@ -6,8 +6,10 @@ DIST_DIR="$SUZUME_DIR/bindings/wasm/dist"
 DEST_DIR="src/wasm"
 
 # Required files from dist/
-WASM_FILES=("suzume-wasm.wasm" "suzume.js")
-JS_FILES=("index.js" "index.d.ts")
+WASM_FILES=("suzume.wasm" "suzume.js")
+# index.js imports the compact ABI tables emitted alongside it. Keep the list
+# explicit so a partial copy fails early instead of surfacing as a Vite error.
+JS_FILES=("index.js" "index.d.ts" "abi_labels.js" "abi_layout.js")
 
 echo "📦 Copying WASM files from suzume..."
 
@@ -62,7 +64,7 @@ if [ ${#missing_js[@]} -gt 0 ]; then
 fi
 
 # Check if WASM has changed by comparing MD5
-SRC_WASM="$DIST_DIR/suzume-wasm.wasm"
+SRC_WASM="$DIST_DIR/suzume.wasm"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   NEW_MD5=$(md5 -q "$SRC_WASM")
 else

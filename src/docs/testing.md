@@ -4,13 +4,13 @@ Suzume has a comprehensive test suite covering C++ core logic, WASM bindings, an
 
 ## Test Architecture
 
-| Layer | Framework | Files | Description |
-|-------|-----------|-------|-------------|
-| C++ Unit/Integration | Google Test 1.12.1 | 36 files | Core library, dictionary, grammar, normalization |
-| Data-Driven | JSON + Google Test | 86 JSON files | Tokenization correctness (auto-discovered) |
-| WASM | Vitest | 4 files | JS/C API, memory layout, struct compatibility |
-| Python | pytest | `bindings/python/tests/` | analyze/tags API, ABI layout |
-| CLI | Built-in | `test` command | Single/batch test, benchmarks |
+| Layer | Framework | Location | Description |
+|-------|-----------|----------|-------------|
+| C++ Unit/Integration | Google Test | `tests/**/*.cpp` | Core library, dictionary, grammar, normalization |
+| Data-Driven | JSON + Google Test | `tests/data/tokenization/*.json` | Tokenization correctness (auto-discovered) |
+| WASM | Vitest | `bindings/wasm/tests/` | JS/C API, memory layout, generated ABI compatibility |
+| Python | pytest | `bindings/python/tests/` | Analyze/tags API, errors, ABI layout |
+| CLI | Built-in | `test` / `test benchmark` | Single/batch tests and benchmarks |
 
 ## Running Tests
 
@@ -67,72 +67,36 @@ suzume-cli test -f tests.tsv
 # With user dictionary
 suzume-cli test -f tests.tsv -d user.dic
 
-# Verbose output
-suzume-cli test -f tests.tsv -v
 ```
 
 ## Adding Tests
 
 ### Data-Driven Tokenization Tests (Recommended)
 
-The easiest way to add tests. JSON files in `tests/data/tokenization/` are **auto-discovered** — no code changes needed.
+Expectations in `tests/data/tokenization/*.json` are generated from the reference-analyzer normalization pipeline and auto-discovered by `universal_tokenization_test.cpp`.
 
-Create a JSON file:
+::: danger Do not edit generated fixtures directly
+Both `tests/data/tokenization/*.json` and `data/**/*.tsv` are tooling-managed; repository hooks block direct writes. Do not change an expected token merely to match current Suzume output. Fix the analyzer or the normalization rule, then regenerate through the tooling.
+:::
 
-```json
-{
-  "version": "1.0",
-  "description": "Description of test category",
-  "cases": [
-    {
-      "id": "unique_test_id",
-      "description": "What this test verifies",
-      "input": "テスト入力",
-      "tags": ["category", "subcategory"],
-      "expected": [
-        {
-          "surface": "テスト",
-          "pos": "Noun",
-          "lemma": "テスト"
-        },
-        {
-          "surface": "入力",
-          "pos": "Noun",
-          "lemma": "入力"
-        }
-      ]
-    }
-  ]
-}
+With the repository MCP server configured, the standard workflow is:
+
+```text
+test_show(input_text="問題文")
+# Fix and rebuild the analyzer or normalization rule.
+test_show(input_text="問題文")
+test_add(input_text="問題文", file="verb_example.json")
 ```
 
-Place it in `tests/data/tokenization/` and rebuild — the test runner picks it up automatically via `universal_tokenization_test.cpp`.
+After changing normalization rules under `scripts/mcp/src/suzume_mcp/core/`, synchronize affected expectations with `test_needs_suzume_update(apply=True)`. See the repository `CONTRIBUTING.md` and `AGENTS.md` for the current workflow and tool reference.
 
 ::: warning POS labels in fixtures
 The `pos` values in these JSON fixtures use a Title-case reference taxonomy (`Noun`, `Particle`, …). This is a separate label set from the runtime `Morpheme.pos` values returned by the library, which are UPPERCASE English (`NOUN`, `PARTICLE`, …). Don't assume the two match verbatim.
 :::
 
-#### Optional Fields
-
-```json
-{
-  "id": "test_with_extras",
-  "input": "...",
-  "expected": [...],
-  "suzume_expected": [...],
-  "accepted_diff": {
-    "category": "lemma-diff",
-    "reason": "Suzume uses different lemma normalization"
-  }
-}
-```
-
-- `suzume_expected` — Suzume-specific expected output (when it intentionally differs from a reference)
-- `accepted_diff` — Documents known/accepted differences with a reason
-
 #### Existing Test Files
 
-86 JSON files organized by linguistic category. The suite grows over time; a representative selection:
+The suite grows over time and is organized by linguistic category. A representative selection:
 
 | Category | Description |
 |----------|-------------|
@@ -217,20 +181,17 @@ Output shows per-test results and a summary with pass/fail counts.
 The CLI includes a built-in benchmark command:
 
 ```bash
-# Default: 1000 iterations with built-in test texts
+# Built-in test texts with the default measurement settings
 suzume-cli test benchmark
 
-# Custom iterations
-suzume-cli test benchmark --iterations=5000
+# Control steady iterations, statistical samples, and warmup
+suzume-cli test benchmark --iterations=5 --samples=3 --warmup=2
 
 # With custom corpus
 suzume-cli test benchmark -f corpus.txt
 ```
 
-Metrics reported:
-- Total time (ms)
-- Throughput (chars/sec)
-- Per-text average latency
+Metrics reported include initialization time, first-analysis latency, median steady-state latency, byte throughput, per-text latency, and peak RSS. Multiple samples make the steady-state median less sensitive to one-off noise.
 
 ## Debug Builds
 
@@ -261,11 +222,7 @@ ctest --test-dir build
 
 ## CI
 
-GitHub Actions runs on every push:
-
-1. **Lint** — Biome for JS/TS (`bindings/wasm/js/`, `bindings/wasm/tests/`, configured via `bindings/wasm/biome.json`)
-2. **Build & Test** — C++ tests with coverage, WASM tests
-3. **Coverage** — Uploaded to Codecov (CLI code excluded from coverage metrics)
+GitHub Actions runs formatting and generated-file guardrails, C++ build/tests with coverage, Python binding checks, WASM tests, version consistency checks, and C/C++ consumer smoke tests. Coverage is uploaded to Codecov.
 
 ## Makefile Targets
 
@@ -275,5 +232,9 @@ GitHub Actions runs on every push:
 | `make build` | Build the project |
 | `make dict` | Build dictionaries only |
 | `make wasm-test` | Build WASM + run WASM tests |
-| `make format` | Format C++ code with clang-format |
-| `make format-check` | Check C++ code formatting |
+| `make python-test` | Build and test the Python binding, including lint/type checks |
+| `make examples` | Build the in-tree C and C++ examples |
+| `make consumer-smoke` | Test an installed package through `find_package` |
+| `make version-check` | Verify versions across binding manifests |
+| `make format` | Format/lint C++, MCP, WASM, and Python sources |
+| `make format-check` | Check formatting across all languages |

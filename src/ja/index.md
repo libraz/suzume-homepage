@@ -52,12 +52,6 @@ bun add @libraz/suzume
 pip install suzume
 ```
 
-```bash [Go]
-go get github.com/libraz/go-suzume
-cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
-make lib
-```
-
 ```bash [C / C++]
 git clone https://github.com/libraz/suzume.git
 cd suzume && make install
@@ -65,7 +59,7 @@ cd suzume && make install
 
 :::
 
-Go 製のサーバー、CLI、バッチ処理で使う場合は [Go バインディングガイド](/ja/docs/go) を参照してください。Python から使う場合は [Python バインディングガイド](/ja/docs/python) を参照してください。ネイティブライブラリを C / C++ プロジェクトへリンクする場合は [C / C++ ライブラリガイド](/ja/docs/cpp) を参照してください。
+Python 製のサービスやデータパイプラインで使う場合は [Python バインディングガイド](/ja/docs/python) を参照してください。ネイティブライブラリを C / C++ プロジェクトへリンクする場合は [C / C++ ライブラリガイド](/ja/docs/cpp) を参照してください。
 
 ## 使い方
 
@@ -89,29 +83,6 @@ from suzume import Suzume
 with Suzume() as sz:
     for m in sz.analyze("東京都に住んでいます"):
         print(m.surface, m.pos, m.base_form)
-```
-
-```go [Go]
-package main
-
-import (
-	"fmt"
-	"log"
-
-	"github.com/libraz/go-suzume"
-)
-
-func main() {
-	s, err := suzume.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer s.Close()
-
-	for _, m := range s.Analyze("東京都に住んでいます") {
-		fmt.Printf("%s\t%s\t%s\n", m.Surface, m.POS, m.BaseForm)
-	}
-}
 ```
 
 ```cpp [C++]

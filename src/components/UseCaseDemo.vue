@@ -108,7 +108,7 @@ watch(analyzeInput, (text) => analyzeText(text))
 
 onMounted(async () => {
   try {
-    const wasmPath = new URL('../wasm/suzume-wasm.wasm', import.meta.url).href
+    const wasmPath = new URL('../wasm/suzume.wasm', import.meta.url).href
     suzume = await Suzume.create({ wasmPath })
     loading.value = false
     // Set default examples and analyze

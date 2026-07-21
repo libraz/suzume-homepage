@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from '@/composables/useI18n'
-import { SUZUME_VERSION, WASM_GZIP_KB, WASM_SIZE_KB } from '@/wasm/metadata'
+import { SUZUME_VERSION, WASM_COMMIT_HASH, WASM_GZIP_KB, WASM_SIZE_KB } from '@/wasm/metadata'
 
 const { t } = useI18n()
 
-const releaseLink = `https://github.com/libraz/suzume/releases/tag/v${SUZUME_VERSION}`
-const runtimes = 'Browser · Node · Deno · Bun · Python · Go · C/C++'
+const buildLink = `https://github.com/libraz/suzume/commit/${WASM_COMMIT_HASH}`
+const runtimes = 'Browser · Node · Deno · Bun · Python · C/C++'
 </script>
 
 <template>
   <section class="home-spec" :aria-label="t('homeHero.ariaLabel')">
     <div class="spec-top">
-      <a class="version-pill" :href="releaseLink" target="_blank" rel="noopener">
+      <a class="version-pill" :href="buildLink" target="_blank" rel="noopener">
         <span class="version-dot" aria-hidden="true"></span>
         <span class="version-num">v{{ SUZUME_VERSION }}</span>
         <span class="version-beta">{{ t('homeHero.beta') }}</span>
@@ -34,7 +34,7 @@ const runtimes = 'Browser · Node · Deno · Bun · Python · Go · C/C++'
       </div>
       <div class="stat-divider" aria-hidden="true"></div>
       <div class="stat">
-        <div class="stat-value">7</div>
+        <div class="stat-value">6</div>
         <div class="stat-label">{{ t('homeHero.runtimesLabel') }}</div>
         <div class="stat-note runtimes">{{ runtimes }}</div>
       </div>

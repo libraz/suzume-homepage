@@ -34,8 +34,14 @@ cmake --build build --parallel
 |--------|---------|-------------|
 | `BUILD_TESTING` | `ON` | Build test suite |
 | `BUILD_WASM` | `OFF` | Build for WebAssembly (requires Emscripten) |
+| `BUILD_SHARED` | `OFF` | Also build the shared C ABI library used by native bindings |
+| `SUZUME_EMBED_DICT` | `OFF` | Embed compiled dictionaries and avoid runtime filesystem access |
+| `SUZUME_INSTALL` | `ON` | Generate install/export rules for CMake and pkg-config |
+| `SUZUME_BUILD_EXAMPLES` | `OFF` | Build the native C and C++ integration examples |
 | `ENABLE_DEBUG_INFO` | `ON` (native) | Enable debug origin tracking in candidates |
 | `ENABLE_DEBUG_LOG` | `ON` (native) | Enable debug logging |
+| `ENABLE_COVERAGE` | `OFF` | Enable compiler coverage instrumentation |
+| `ENABLE_SANITIZER` | `OFF` | Enable sanitizers (`ENABLE_ASAN`, `ENABLE_UBSAN`, `ENABLE_TSAN`) |
 
 ```bash
 # Example: Release build without tests
@@ -63,20 +69,21 @@ cmake --build build --target validate-dict
 
 ## Building for WASM
 
-To build the WebAssembly version:
+The supported convenience target builds the same full dictionaries used by native and Python distributions, configures Emscripten, compiles the module, and emits the JavaScript wrapper:
 
 ```bash
 # Requires Emscripten SDK
 source /path/to/emsdk/emsdk_env.sh
 
-# Configure for WASM
-emcmake cmake -B build-wasm -DBUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
+# Build the native CLI once, then the complete WASM package
+make build
+make wasm
 
-# Build dictionaries first (using native build)
-cmake --build build --target build-dict
+# Native Emscripten output: bindings/wasm/dist/{suzume.wasm,suzume.js}
 
-# Build WASM
-cmake --build build-wasm --parallel
-
-# Output: bindings/wasm/dist/suzume.js, bindings/wasm/dist/suzume-wasm.wasm
+# Compile the public TypeScript wrapper and declarations
+(cd bindings/wasm && yarn build:js)
+# Adds: bindings/wasm/dist/{index.js,index.d.ts,abi_labels.js,abi_layout.js}
 ```
+
+`make wasm-test` rebuilds the module and runs the Vitest binding suite. The WASM build uses `-Oz`, LTO, no exceptions/RTTI, no filesystem, and an embedded dictionary; allocation failure therefore aborts the module instead of returning a recoverable native C API error.

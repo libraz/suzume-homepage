@@ -13,6 +13,8 @@ describe('documented JavaScript samples', () => {
   })
 
   it('returns morphemes as a direct array with stable extended POS codes', () => {
+    expect(suzume.version).toBe('0.9.6')
+
     const result = suzume.analyze('食べている')
 
     expect(Array.isArray(result)).toBe(true)
@@ -22,6 +24,19 @@ describe('documented JavaScript samples', () => {
       { surface: 'いる', pos: 'AUX', extendedPos: 'AUX_継続' },
     ])
     expect(suzume.analyze('美しく')[0].conjType).toBeNull()
+  })
+
+  it('matches the current comparison-page examples', () => {
+    expect(suzume.analyze('そうー').map(({ surface, pos }) => ({ surface, pos }))).toEqual([
+      { surface: 'そうー', pos: 'ADV' },
+    ])
+    expect(suzume.analyze('彼ら').map(({ surface, pos }) => ({ surface, pos }))).toEqual([
+      { surface: '彼ら', pos: 'PRON' },
+    ])
+    expect(suzume.analyze('食べずに').map(({ surface, pos, baseForm }) => ({ surface, pos, baseForm }))).toEqual([
+      { surface: '食べ', pos: 'VERB', baseForm: '食べる' },
+      { surface: 'ずに', pos: 'AUX', baseForm: 'ず' },
+    ])
   })
 
   it('matches the documented tag option examples', () => {

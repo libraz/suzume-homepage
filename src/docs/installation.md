@@ -74,18 +74,6 @@ See the [Python bindings guide](/docs/python) for usage.
 
 See [Native Build & CLI](/docs/native-build) to build it and the [CLI reference](/docs/cli) for usage.
 
-## Go
-
-For Go services, CLIs, and batch jobs, use the CGO bindings:
-
-```bash
-go get github.com/libraz/go-suzume
-cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
-make lib
-```
-
-See [Go Bindings](/docs/go) for requirements, examples, and API notes.
-
 ## C / C++
 
 To link Suzume directly into a native C or C++ program, build and install the library from source:

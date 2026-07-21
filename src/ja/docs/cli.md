@@ -1,6 +1,6 @@
 # CLI リファレンス
 
-`suzume-cli` は Suzume トークナイザーのコマンドライン版です。JavaScript、Python、Go の各バインディングと同じ解析エンジンを使っているため、フラグもこれらの API のオプションに対応しています。
+`suzume-cli` は Suzume トークナイザーのコマンドライン版です。JavaScript、Python、ネイティブ C/C++ の各インターフェースと同じ解析エンジンを使っているため、フラグもこれらの API のオプションに対応しています。
 
 このページはコマンドの使い方を説明します。バイナリをソースからビルドする方法は [ネイティブビルド](/ja/docs/native-build) を参照してください。
 
@@ -167,7 +167,7 @@ suzume-cli dict validate user.tsv
 # 辞書情報を表示
 suzume-cli dict info user.tsv
 
-# 全辞書レイヤーで単語を検索
+# 組み込み L1 とソース L2 辞書で単語を検索
 suzume-cli dict lookup すぎる
 
 # パターンでエントリを検索
@@ -240,9 +240,11 @@ suzume-cli test -f tests.tsv
 # ユーザー辞書を指定してテスト
 suzume-cli test -f tests.tsv -d user.dic
 
-# ベンチマーク
-suzume-cli test benchmark --iterations=1000
+# 再現可能なベンチマーク（1回ウォームアップ後、5サンプルの中央値）
+suzume-cli test benchmark --iterations=1000 --samples=5 --warmup=1
 ```
+
+ベンチマークは初期化・初回解析・定常解析の中央値、定常スループット、テキストごとのレイテンシ、ピーク RSS を報告します。組み込みコーパスを置き換えるには `-f corpus.txt` を指定します。
 
 ### テストファイルフォーマット
 

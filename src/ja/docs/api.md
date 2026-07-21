@@ -1,6 +1,6 @@
 # API リファレンス
 
-このページは Suzume の JavaScript / WASM バインディングについて解説します。npm では [`@libraz/suzume`](/ja/docs/installation) として公開しています。Python、Go、CLI にはそれぞれ専用のリファレンスがあります。
+このページは Suzume の JavaScript / WASM バインディングについて解説します。npm では [`@libraz/suzume`](/ja/docs/installation) として公開しています。Python、C/C++、CLI にはそれぞれ専用のリファレンスがあります。
 
 ## Suzume クラス
 
@@ -289,7 +289,7 @@ get version(): string
 
 **例:**
 ```typescript
-console.log(suzume.version) // 例: "0.9.5"
+console.log(suzume.version) // 例: "0.9.6"
 ```
 
 ---
@@ -369,7 +369,7 @@ interface Morpheme {
 | `posJa` | `string` | 品詞（日本語） | `"動詞"` |
 | `conjType` | `string \| null` | 活用型（動詞/形容詞） | `"一段"` |
 | `conjForm` | `string \| null` | 活用形 | `"連用形"` |
-| `extendedPos` | `string` | 拡張品詞サブカテゴリ | `"VERB_連用"` |
+| `extendedPos` | `string` | 安定した拡張品詞コード | `"VERB_連用"` |
 | `start` | `number` | 正規化後テキスト内の開始文字位置 | `0` |
 | `end` | `number` | 正規化後テキスト内の終了文字位置 | `2` |
 | `isUserDict` | `boolean` | ユーザー辞書に一致した場合 `true` | `false` |
@@ -441,7 +441,10 @@ interface Morpheme {
 | `AUX_文語断定` | 文語の断定 | なり |
 | `AUX_文語過去` | 文語の過去 | けり |
 | `AUX_文語断定連体` | 文語の断定・連体 | たる |
+| `AUX_文語完了` | 文語の完了 | つ, ぬ |
 | `AUX_文語当為` | 文語の当為 | べし |
+| `AUX_不可能` | 不可能 | かねる |
+| `AUX_授受` | 授受 | あげる, くれる, もらう |
 | `AUX_願望` | 願望 | たい, たかっ |
 | `AUX_意志` | 意志/推量 | う, よう |
 | `AUX_受身` | 受身 | れる, られる |
@@ -453,6 +456,7 @@ interface Morpheme {
 | `AUX_試行` | 試行 | みる |
 | `AUX_進行` | 進行方向 | いく |
 | `AUX_接近` | 接近 | くる |
+| `AUX_開始` | 開始 | はじめる |
 | `AUX_様態` | 様態 | そう |
 | `AUX_推定` | 推定 | らしい |
 | `AUX_みたい` | 推定 | みたい |
@@ -462,6 +466,8 @@ interface Morpheme {
 | `AUX_丁重` | 丁重 | ござる |
 | `AUX_過度` | 過度 | すぎる |
 | `AUX_ガル` | ガル接続 | がる |
+| `AUX_よう` | 様態・比況 | よう |
+| `AUX_KURUWA_POLITE` | 丁寧な補助表現 | くるわ |
 
 **助詞:**
 
@@ -500,6 +506,9 @@ interface Morpheme {
 | `DET` | 連体詞 |
 | `PREFIX` | 接頭辞 |
 | `SUFFIX` | 接尾辞 |
+| `SUFFIX_直後` | 直後を表す接尾辞 |
+| `SUFFIX_傾向` | 傾向を表す接尾辞 |
+| `DET_引用` | 引用を伴う連体詞 |
 | `SYMBOL` | 記号 |
 | `INTJ` | 感動詞 |
 | `OTHER` | その他 |

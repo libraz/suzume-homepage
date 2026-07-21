@@ -35,12 +35,12 @@ Traditional analyzers store exhaustive word lists:
 
 Suzume stores high-frequency function words, particles, auxiliaries, and selected exceptions. For many content words, it relies on character patterns and grammar rules instead of shipping every possible surface form.
 
-| Category | MeCab | Suzume |
-|----------|-------|--------|
-| Particles (は, が, を...) | ~50 entries | ~50 entries |
-| Common verbs | ~30,000 entries | ~500 entries |
-| Nouns | ~200,000 entries | Pattern-based |
-| Proper nouns | ~100,000 entries | Pattern-based |
+| Category | Traditional dictionary analyzer | Suzume |
+|----------|---------------------------------|--------|
+| Function words | Stored in the dictionary | Compact entries and grammar rules |
+| Verbs and adjectives | Many surface/conjugated entries | Conjugation rules plus selected exceptions |
+| General and proper nouns | Broad lexical coverage | Character-pattern candidates plus a compact dictionary |
+| Domain-specific terms | Dictionary package or customization | Runtime user dictionary |
 
 ## 2. Pattern Recognition
 
@@ -85,23 +85,23 @@ Suzume decides parts of speech and boundaries from rules (character type, conjug
 
 When analysis depends on a dictionary and a cost table, each decision is governed by values recorded per entry. Entries are added over a long period by many hands, so grammatically similar words can end up treated differently. A rule-based approach keeps the decision criteria in one place, which makes that kind of variation less likely.
 
-For example, the colloquial copula "じゃ" is classified as an auxiliary consistently, whether it is followed by "ない", "なかっ", or "な". Causative-passive forms are likewise normalized to the same shape rather than being split in some cases and merged in others (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
+For example, the colloquial copula "じゃ" is classified as an auxiliary consistently, whether it is followed by "ない", "なかっ", or "な". The causative-passive rules likewise aim to normalize equivalent constructions instead of depending on per-word entries (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
 
 This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Limitations](/docs/mecab-comparison)).
 
-## The Trade-off
+## Different Optimization Targets
 
-::: warning Accuracy vs Size
-Suzume is optimized for browser and edge use cases where bundle size, startup time, and no-server deployment matter. Traditional dictionary analyzers remain better when you need maximum linguistic coverage for specialized corpora.
+::: info Choose by purpose
+Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric.
 :::
 
-| Use Case | MeCab | Suzume |
-|----------|-------|--------|
-| Academic research | ✓ Best choice | △ |
-| Browser apps | ✗ Too large | ✓ Best choice |
-| Search indexing | ✓ | ✓ |
-| Hashtag generation | ✓ | ✓ |
-| Real-time UI | ✗ Needs server | ✓ |
+| Requirement | Prefer |
+|-------------|--------|
+| Small self-contained browser/edge bundle | Suzume |
+| Search-friendly units and real-time UI | Suzume |
+| Same tokenizer across WASM, Python, and C/C++ | Suzume |
+| A particular MeCab dictionary's boundaries/taxonomy | MeCab with that dictionary |
+| Exhaustive domain vocabulary out of the box | A suitable full dictionary analyzer |
 
 The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. Only surface normalization (`preserveVu`, `preserveCase`, `preserveSymbols`) and output shaping (`mode`, `lemmatize`, `mergeCompounds`) are tunable via `SuzumeOptions`.
 
@@ -154,9 +154,9 @@ The rules are stored, not every conjugated form.
 |----------|--------|
 | Why is MeCab big? | Stores every word + pre-computed costs |
 | Why is Suzume small? | Stores rules + minimal dictionary |
-| Is accuracy affected? | Yes. Suzume favors compact, robust tokenization over exhaustive dictionary coverage |
-| When to use MeCab? | Academic research, maximum accuracy |
-| When to use Suzume? | Browser apps, real-time, size-sensitive |
+| Are MeCab and Suzume outputs interchangeable? | No. Their goals, boundaries, and POS taxonomies differ |
+| When to use MeCab? | When a MeCab dictionary's lexical coverage and analysis conventions are required |
+| When to use Suzume? | Compact search/display tokenization across browser, edge, Python, and C/C++ |
 
 ## See also
 

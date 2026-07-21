@@ -52,12 +52,6 @@ bun add @libraz/suzume
 pip install suzume
 ```
 
-```bash [Go]
-go get github.com/libraz/go-suzume
-cd "$(go list -m -f '{{.Dir}}' github.com/libraz/go-suzume)"
-make lib
-```
-
 ```bash [C / C++]
 git clone https://github.com/libraz/suzume.git
 cd suzume && make install
@@ -65,7 +59,7 @@ cd suzume && make install
 
 :::
 
-For Go services, CLIs, and batch jobs, see the [Go bindings guide](/docs/go). For Python, see the [Python bindings guide](/docs/python). To link the native library into a C or C++ project, see the [C / C++ library guide](/docs/cpp).
+For Python services and data pipelines, see the [Python bindings guide](/docs/python). To link the native library into a C or C++ project, see the [C / C++ library guide](/docs/cpp).
 
 ## Usage
 
@@ -89,29 +83,6 @@ from suzume import Suzume
 with Suzume() as sz:
     for m in sz.analyze("東京都に住んでいます"):
         print(m.surface, m.pos, m.base_form)
-```
-
-```go [Go]
-package main
-
-import (
-	"fmt"
-	"log"
-
-	"github.com/libraz/go-suzume"
-)
-
-func main() {
-	s, err := suzume.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer s.Close()
-
-	for _, m := range s.Analyze("東京都に住んでいます") {
-		fmt.Printf("%s\t%s\t%s\n", m.Surface, m.POS, m.BaseForm)
-	}
-}
 ```
 
 ```cpp [C++]

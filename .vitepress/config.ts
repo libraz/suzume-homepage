@@ -41,7 +41,7 @@ const faqJsonLd = {
       name: 'What is Suzume?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Suzume is a lightweight, feature-driven Japanese tokenizer that runs on WebAssembly. Unlike dictionary-based analyzers like MeCab, it works without large dictionary files and is robust to unknown words. It runs in browsers, Node.js, Deno, and Bun.'
+        text: 'Suzume is a lightweight, feature-driven Japanese tokenizer available through WebAssembly, Python, and native C/C++. Unlike exhaustive dictionary analyzers, it uses compact dictionaries and rules and is robust to unknown words. The WebAssembly package runs in browsers, Node.js, Deno, and Bun.'
       }
     },
     {
@@ -65,7 +65,7 @@ const faqJsonLd = {
       name: 'How do I add custom words to Suzume?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Use loadUserDictionary() to add custom words at runtime. Format: "word,pos" (e.g., "ChatGPT,noun"). You can add brand names, technical terms, or domain-specific vocabulary without rebuilding the dictionary.'
+        text: 'Use loadUserDictionary() to add custom words at runtime. Format: "word,pos" (e.g., "ChatGPT,NOUN"). You can add brand names, technical terms, or domain-specific vocabulary without rebuilding the dictionary.'
       }
     },
     {
@@ -145,7 +145,6 @@ const docsNav = [
     items: [
       { slug: 'api', en: 'JavaScript / WASM', ja: 'JavaScript / WASM' },
       { slug: 'python', en: 'Python', ja: 'Python' },
-      { slug: 'go', en: 'Go', ja: 'Go' },
       { slug: 'cpp', en: 'C / C++', ja: 'C / C++' },
       { slug: 'cli', en: 'CLI', ja: 'CLI' },
     ],

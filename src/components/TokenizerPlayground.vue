@@ -69,7 +69,7 @@ watch(input, () => {
 
 onMounted(async () => {
   try {
-    const wasmPath = new URL('../wasm/suzume-wasm.wasm', import.meta.url).href
+    const wasmPath = new URL('../wasm/suzume.wasm', import.meta.url).href
     suzume = await Suzume.create({ wasmPath })
     version.value = suzume.version
     loading.value = false

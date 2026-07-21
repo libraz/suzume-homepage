@@ -20,10 +20,10 @@ MeCab is a morphological analyzer — its goal is to decompose text into morphem
 | **Dictionary** | 50MB+ (required) | Minimal (~<WasmSize /> gzipped, WASM included) |
 | **Unknown words** | Falls back to character types | Pattern-based candidate generation |
 | **Compound handling** | Splits per dictionary | Merges by character type heuristics |
-| **Target** | Server-side, academic | Browser, real-time, client-side |
+| **Target** | Detailed dictionary-based analysis | Compact search/display tokenization across browser, edge, and native runtimes |
 
 ::: tip Core Trade-off
-MeCab knows every word in its dictionary and can split them precisely. Suzume uses character-type patterns instead of an exhaustive dictionary, so it merges sequences it cannot reliably split.
+MeCab follows the entries and costs in the selected dictionary. Suzume uses character-type features and compact rules instead of an exhaustive lexicon, so it merges sequences it cannot reliably split.
 :::
 
 ## Intentional Differences
@@ -234,7 +234,7 @@ These are atomic identifiers in modern text. Splitting them provides no benefit.
 
 Prolonged sound marks (ー) are merged with the preceding token, and consecutive marks are normalized to one.
 
-<TokenDiff input="そうー" mecab="そう(副詞) / ー(名詞)" suzume="そうー(ADJ)" />
+<TokenDiff input="そうー" mecab="そう(副詞) / ー(名詞)" suzume="そうー(ADV)" />
 
 <TokenDiff input="すごーーい" mecab="すご(形容詞) / ーー(名詞) / い(名詞)" suzume="すごーーい(ADJ, lemma: すごい)" />
 
@@ -255,10 +255,6 @@ Suzume splits certain MeCab tokens that should be separate units.
 **ってば emphatic particle:**
 
 <TokenDiff input="もうってば" mecab="も(助詞) / うっ(動詞) / て(助詞) / ば(助詞)" suzume="もう(ADV) / ってば(PARTICLE)" />
-
-**Plural suffix ら:**
-
-<TokenDiff input="彼ら" mecab="彼ら(名詞・代名詞)" suzume="彼(PRON) / ら(SUFFIX)" />
 
 **Kanji adverb + に:**
 
@@ -360,7 +356,7 @@ These noun + suffix combinations function as single lexical units.
 
 The negative auxiliary ず and the following particle に are merged as one compound grammatical unit.
 
-<TokenDiff input="食べずに" mecab="食べ / ず / に" suzume="食べ / ずに" />
+<TokenDiff input="食べずに" mecab="食べ / ず / に" suzume="食べ / ずに(AUX, lemma: ず)" />
 
 <Why>
 
@@ -424,7 +420,7 @@ Here か is a particle that creates an indefinite expression rather than part of
 
 ## POS Classification Differences
 
-MeCab and Suzume use different POS classification strategies, resulting in different labels for the same words. Suzume applies 150+ rules for its own POS classification system.
+MeCab and Suzume use different POS classification strategies, resulting in different labels for the same words. Suzume applies its own feature and context rules to assign the public POS taxonomy.
 
 ### Adjective-Derived よく
 
@@ -512,10 +508,6 @@ MeCab classifies katakana onomatopoeia (reduplication patterns) as nouns. Suzume
 
 <TokenDiff input="ドキドキする" mecab="ドキドキ(名詞・サ変接続) / する(動詞)" suzume="ドキドキ(ADV) / する(VERB)" />
 
-Onomatopoeia + っと patterns are also merged:
-
-<TokenDiff input="どきっとする" mecab="どき / っと / する" suzume="どきっと(ADV) / する" />
-
 ### で+ある Copula Handling
 
 Suzume applies context-aware classification for the copula である pattern:
@@ -585,15 +577,7 @@ suzume.loadUserDictionary('東京都庁,NOUN')
 
 ### Context-Dependent POS Classification
 
-Suzume's feature-based model sometimes cannot distinguish POS that requires dictionary knowledge or deep context. The major patterns:
-
-**Auxiliary vs Main Verb**
-
-When subsidiary verbs follow て-form, Suzume may classify them as main verbs:
-
-<TokenDiff input="確認してあります" mecab="確認(名詞) / し(動詞) / て(助詞) / あり(動詞・非自立) / ます(助動詞)" suzume="確認(NOUN) / し(VERB) / て(PARTICLE) / あり(VERB) / ます(AUX)" />
-
-Affects: ある, おく, いく, くる after て-form. Trial みる is recognized, but Suzume cannot always determine whether the remaining forms function as subsidiary (auxiliary) or main verbs.
+Suzume's feature-based model sometimes cannot distinguish POS that requires dictionary knowledge or deep context. A representative remaining pattern is:
 
 **Verb Renyokei vs Noun**
 
@@ -638,7 +622,7 @@ When MeCab-level subcategories are needed, `extendedPos` covers many of these ca
 |----------|---------------|
 | Browser / client-side apps | **Suzume** — no server required |
 | Search indexing / tag extraction | **Suzume** — compound merging is often desirable |
-| Academic research / corpus analysis | **MeCab** — maximum accuracy and POS detail |
+| Compatibility with a particular MeCab dictionary/corpus | **MeCab** — preserves that dictionary's boundaries and taxonomy |
 | Real-time UI (input-as-you-type) | **Suzume** — fast, no network latency |
-| Precise compound word splitting | **MeCab** — dictionary-driven boundaries |
+| Dictionary-defined compound word splitting | **MeCab** — boundaries come from the selected dictionary |
 | Handling unknown / modern words | **Suzume** — robust to unseen vocabulary |

@@ -267,15 +267,19 @@ The binary dictionary is a compact format with the following layout:
 ```
 [Header (16 bytes, magic: "SZMD")]
 [Front-coded surface table]
-[Adaptive entry array (1, 2, or 3 bytes each)]
-[Optional lemma pool (UTF-8)]
+[POS / ExtendedPOS grammar palette]
+[Optional packed-record palette]
+[Adaptive entry array (1, 2, or 3 bytes per entry)]
+[Optional length-prefixed, deduplicated lemma table (UTF-8)]
 ```
 
 - **Front-coded surface table** — Stores sorted surface forms compactly by sharing prefixes
-- **Adaptive entry array** — Uses the smallest entry encoding that can represent the dictionary
-- **Optional lemma pool** — Stores lemmas only when they differ from their surface forms
+- **Grammar palette** — Deduplicates the POS/ExtendedPOS pairs referenced by entries
+- **Record palette** — Replaces frequently repeated packed records with one-byte indexes when that is smaller
+- **Adaptive entry array** — Selects grammar-only, packed, wide, or record-palette encoding for the dictionary
+- **Lemma representation** — Stores only differing lemmas; when every lemma is a nearby surface, entries use relative surface indexes and omit the lemma table entirely
 
-During compilation, verbs and adjectives are expanded into their conjugated forms and all entries are sorted. On load, Suzume rebuilds its runtime double-array trie from the compact surface table.
+The current pre-1.0 format is version 3 and intentionally does not decode older format versions. During compilation, verbs and adjectives are expanded into their conjugated forms and all entries are sorted. On load, Suzume rebuilds its runtime double-array trie from the compact surface table.
 
 ## Persistence
 

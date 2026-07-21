@@ -1,5 +1,5 @@
 #!/bin/bash
-WASM_FILE="src/wasm/suzume-wasm.wasm"
+WASM_FILE="src/wasm/suzume.wasm"
 META_FILE="src/wasm/meta.json"
 SUZUME_DIR="../suzume"
 

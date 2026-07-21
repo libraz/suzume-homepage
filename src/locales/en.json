@@ -36,7 +36,7 @@
       },
       "typed": {
         "title": "Typed, multi-runtime",
-        "desc": "A C++ core with first-class TypeScript types, plus Python, Go, and native C/C++ bindings for backend, batch, and embedded use."
+        "desc": "A C++ core with first-class TypeScript types, plus Python and native C/C++ bindings for backend, batch, and embedded use."
       }
     }
   },

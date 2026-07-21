@@ -1,6 +1,6 @@
 # CLI Reference
 
-`suzume-cli` is the command-line front-end to the Suzume tokenizer. It exposes the same analysis engine as the JavaScript, Python, and Go bindings, so its flags mirror the options available through those APIs.
+`suzume-cli` is the command-line front-end to the Suzume tokenizer. It exposes the same analysis engine as the JavaScript, Python, and native C/C++ interfaces, so its flags mirror the options available through those APIs.
 
 This page covers how to *use* the command. To build the binary from source, see the [Native Build](/docs/native-build) guide.
 
@@ -167,7 +167,7 @@ suzume-cli dict validate user.tsv
 # Show dictionary info
 suzume-cli dict info user.tsv
 
-# Look up a word in all dictionary layers
+# Look up a word in built-in L1 and source L2 dictionaries
 suzume-cli dict lookup すぎる
 
 # Search entries by pattern
@@ -240,9 +240,11 @@ suzume-cli test -f tests.tsv
 # Run with user dictionary
 suzume-cli test -f tests.tsv -d user.dic
 
-# Benchmark
-suzume-cli test benchmark --iterations=1000
+# Reproducible benchmark (median of five samples after one warmup pass)
+suzume-cli test benchmark --iterations=1000 --samples=5 --warmup=1
 ```
+
+The benchmark reports median initialization, first-analysis, and steady-state timing, steady throughput and per-text latency, and peak RSS. Use `-f corpus.txt` to replace the built-in corpus.
 
 ### Test File Format
 
