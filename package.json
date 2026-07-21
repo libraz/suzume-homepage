@@ -17,5 +17,6 @@
     "vitepress": "^1.6.4",
     "vitest": "^4.1.10",
     "vue": "^3.5.40"
-  }
+  },
+  "packageManager": "yarn@4.15.0"
 }
