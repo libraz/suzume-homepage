@@ -9,7 +9,7 @@
     "preview": "vitepress preview",
     "copy:wasm": "./scripts/copy-wasm.sh",
     "update": "yarn copy:wasm && yarn dev",
-    "test": "vitest run"
+    "test": "yarn copy:wasm && vitest run"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
