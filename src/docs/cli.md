@@ -101,6 +101,8 @@ suzume-cli -m split "東京都新宿区"
 | `-V, --verbose` | Verbose output |
 | `-VV, --very-verbose` | Very verbose (includes lattice dump) |
 
+The global `-v, --version` and `-h, --help` flags are also available.
+
 ### Tag Extraction
 
 With `-f tags`, Suzume extracts content-word tags and drops low-information tokens by default. The following flags tune what the tag set keeps:
@@ -141,7 +143,7 @@ suzume-cli --no-lemmatize "食べている"
 
 # Normalize ヴ
 suzume-cli --normalize-vu "ヴァイオリン"
-# バイオリン    NOUN    バイオリン
+# バイオリン    NOUN    バイオリン    0    5
 ```
 
 ## dict
@@ -172,6 +174,9 @@ suzume-cli dict lookup すぎる
 
 # Search entries by pattern
 suzume-cli dict search user.tsv "パターン"
+
+# List entries (non-interactive)
+suzume-cli dict list user.tsv --pos=NOUN --pattern="東京*" --limit=20
 ```
 
 ### Interactive Mode
@@ -182,15 +187,20 @@ Launch an interactive REPL for dictionary editing:
 suzume-cli dict -i user.tsv
 ```
 
+`suzume-cli dict interactive user.tsv` and `suzume-cli dict edit user.tsv` are equivalent long-form aliases.
+
 Interactive commands:
 
 | Command | Description |
 |---------|-------------|
 | `add <surface> <pos>` | Add entry |
 | `remove <surface> [pos]` | Remove entry |
-| `list [--pos=POS] [--limit=N]` | List entries |
+| `update <surface> <pos> [conj_type]` | Update an existing entry |
+| `list [--pos=POS] [--pattern=PATTERN] [--limit=N]` | List entries |
 | `search <pattern>` | Search entries |
 | `find <surface>` | Look up in all layers |
+| `layer [N]` | Show or set the working layer (2 = `core.dic`, 3 = `user.dic`) |
+| `import <file.tsv> [--skip-duplicates]` | Import entries from a TSV file |
 | `analyze <text>` | Analyze text with current dictionary |
 | `validate` | Validate dictionary |
 | `compile` | Compile to binary |

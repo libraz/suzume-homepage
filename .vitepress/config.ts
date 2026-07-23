@@ -137,6 +137,7 @@ const docsNav = [
     items: [
       { slug: 'how-it-works', en: 'How It Works', ja: '仕組み' },
       { slug: 'mecab-comparison', en: 'Differences from MeCab', ja: 'MeCab との違い' },
+      { slug: 'pos-differences', en: 'POS Classification', ja: 'POS 分類の違い' },
     ],
   },
   {
@@ -145,6 +146,7 @@ const docsNav = [
     items: [
       { slug: 'api', en: 'JavaScript / WASM', ja: 'JavaScript / WASM' },
       { slug: 'python', en: 'Python', ja: 'Python' },
+      { slug: 'go', en: 'Go', ja: 'Go' },
       { slug: 'cpp', en: 'C / C++', ja: 'C / C++' },
       { slug: 'cli', en: 'CLI', ja: 'CLI' },
     ],

@@ -200,7 +200,8 @@ Tailwind,NOUN
 
 const tags = suzume.generateTags('Next.jsでReactアプリを作成')
 // [{ tag: 'Next.js', pos: 'NOUN' },
-//  { tag: 'Reactアプリ', pos: 'NOUN' },
+//  { tag: 'React', pos: 'NOUN' },
+//  { tag: 'アプリ', pos: 'NOUN' },
 //  { tag: '作成', pos: 'NOUN' }]
 ```
 

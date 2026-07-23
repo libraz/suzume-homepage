@@ -289,7 +289,7 @@ get version(): string
 
 **例:**
 ```typescript
-console.log(suzume.version) // 例: "0.9.6"
+console.log(suzume.version) // 現在のパッケージバージョン、例: "0.9.x"
 ```
 
 ---
@@ -527,6 +527,8 @@ try {
   console.error('WASM の初期化に失敗しました:', message)
 }
 ```
+
+`Suzume.create()` は WASM インスタンスの初期化に失敗すると例外を投げます。`analyze()` と `generateTags()` も、ネイティブ側の解析呼び出しが失敗した場合に `Error` を投げます（ネイティブのエラー内容は `lastError` から取得できます）。
 
 ---
 

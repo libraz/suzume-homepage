@@ -35,6 +35,7 @@ cmake --build build --parallel
 | `BUILD_TESTING` | `ON` | Build test suite |
 | `BUILD_WASM` | `OFF` | Build for WebAssembly (requires Emscripten) |
 | `BUILD_SHARED` | `OFF` | Also build the shared C ABI library used by native bindings |
+| `SUZUME_LIB_SOVERSION` | `ON` | Attach VERSION/SOVERSION to the shared library (off for the flat wheel build) |
 | `SUZUME_EMBED_DICT` | `OFF` | Embed compiled dictionaries and avoid runtime filesystem access |
 | `SUZUME_INSTALL` | `ON` | Generate install/export rules for CMake and pkg-config |
 | `SUZUME_BUILD_EXAMPLES` | `OFF` | Build the native C and C++ integration examples |

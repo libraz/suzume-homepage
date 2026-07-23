@@ -35,6 +35,7 @@ cmake --build build --parallel
 | `BUILD_TESTING` | `ON` | テストスイートをビルド |
 | `BUILD_WASM` | `OFF` | WebAssembly 向けにビルド（Emscripten が必要） |
 | `BUILD_SHARED` | `OFF` | ネイティブバインディング用の共有 C ABI ライブラリもビルド |
+| `SUZUME_LIB_SOVERSION` | `ON` | 共有ライブラリに VERSION/SOVERSION を付与（フラットな wheel ビルドでは無効化） |
 | `SUZUME_EMBED_DICT` | `OFF` | コンパイル済み辞書を埋め込み、実行時のファイルアクセスをなくす |
 | `SUZUME_INSTALL` | `ON` | CMake・pkg-config 用のインストール／エクスポート規則を生成 |
 | `SUZUME_BUILD_EXAMPLES` | `OFF` | ネイティブ C / C++ 連携サンプルをビルド |

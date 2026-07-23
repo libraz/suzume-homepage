@@ -101,6 +101,8 @@ suzume-cli -m split "東京都新宿区"
 | `-V, --verbose` | 詳細出力 |
 | `-VV, --very-verbose` | より詳細な出力（ラティスダンプを含む） |
 
+グローバルフラグとして `-v, --version` と `-h, --help` も使えます。
+
 ### タグ抽出
 
 `-f tags` を指定すると、Suzume は内容語のタグを抽出し、情報量の少ないトークンをデフォルトで除きます。次のフラグでタグ集合に何を残すかを調整できます。
@@ -141,7 +143,7 @@ suzume-cli --no-lemmatize "食べている"
 
 # ヴの正規化
 suzume-cli --normalize-vu "ヴァイオリン"
-# バイオリン    NOUN    バイオリン
+# バイオリン    NOUN    バイオリン    0    5
 ```
 
 ## dict
@@ -172,6 +174,9 @@ suzume-cli dict lookup すぎる
 
 # パターンでエントリを検索
 suzume-cli dict search user.tsv "パターン"
+
+# エントリを一覧表示（非インタラクティブ）
+suzume-cli dict list user.tsv --pos=NOUN --pattern="東京*" --limit=20
 ```
 
 ### インタラクティブモード
@@ -182,15 +187,20 @@ suzume-cli dict search user.tsv "パターン"
 suzume-cli dict -i user.tsv
 ```
 
+`suzume-cli dict interactive user.tsv` と `suzume-cli dict edit user.tsv` は同じ意味の長い形式のエイリアスです。
+
 インタラクティブコマンド:
 
 | コマンド | 説明 |
 |---------|-------------|
 | `add <surface> <pos>` | エントリを追加 |
 | `remove <surface> [pos]` | エントリを削除 |
-| `list [--pos=POS] [--limit=N]` | エントリを一覧表示 |
+| `update <surface> <pos> [conj_type]` | 既存エントリを更新 |
+| `list [--pos=POS] [--pattern=PATTERN] [--limit=N]` | エントリを一覧表示 |
 | `search <pattern>` | エントリを検索 |
 | `find <surface>` | 全レイヤーで検索 |
+| `layer [N]` | 作業レイヤーを表示・変更（2 = `core.dic`、3 = `user.dic`） |
+| `import <file.tsv> [--skip-duplicates]` | TSV ファイルからエントリをインポート |
 | `analyze <text>` | 現在の辞書でテキストを解析 |
 | `validate` | 辞書を検証 |
 | `compile` | バイナリにコンパイル |

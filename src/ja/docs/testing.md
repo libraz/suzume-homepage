@@ -222,7 +222,16 @@ ctest --test-dir build
 
 ## CI
 
-GitHub Actions は、フォーマットと生成ファイルのガードレール、カバレッジ付き C++ ビルド/テスト、Python バインディング検査、WASM テスト、バージョン整合性、C/C++ コンシューマースモークテストを実行します。カバレッジは Codecov にアップロードされます。
+GitHub Actions は push と pull request のたびに4つのジョブを実行します。
+
+| ジョブ | 内容 |
+|--------|------|
+| `lint` | WASM バインディングの lint（`yarn lint`） |
+| `guardrails` | 生成ファイルとコードのガードレール（`check_code_guardrails.sh`、`check_oracle_overrides.py`）、バインディングマニフェスト間のバージョン整合性（`check_version_mirror.sh`） |
+| `build-and-test` | カバレッジ付き C++ ビルドと `ctest`（Codecov にアップロード）、WASM ビルド・サイズチェック・テスト |
+| `python-binding` | Python バインディングの `ruff check` / `ruff format --check`、`mypy`、`pytest` |
+
+`make consumer-smoke` と `make format-check`（C++ の clang-format を含む）はローカルの Makefile ターゲットで、手動検証用です。CI には組み込まれていません。
 
 ## Makefile ターゲット
 

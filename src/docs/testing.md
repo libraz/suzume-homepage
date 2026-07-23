@@ -222,7 +222,16 @@ ctest --test-dir build
 
 ## CI
 
-GitHub Actions runs formatting and generated-file guardrails, C++ build/tests with coverage, Python binding checks, WASM tests, version consistency checks, and C/C++ consumer smoke tests. Coverage is uploaded to Codecov.
+GitHub Actions runs four jobs on every push and pull request:
+
+| Job | What it checks |
+|-----|-----------------|
+| `lint` | WASM binding lint (`yarn lint`) |
+| `guardrails` | Generated-file and code guardrails (`check_code_guardrails.sh`, `check_oracle_overrides.py`), version consistency across binding manifests (`check_version_mirror.sh`) |
+| `build-and-test` | C++ build and `ctest` with coverage, uploaded to Codecov; WASM build, size-check, and test |
+| `python-binding` | `ruff check` / `ruff format --check`, `mypy`, and `pytest` for the Python binding |
+
+`make consumer-smoke` and `make format-check` (which includes clang-format for C++) are local Makefile targets for manual verification — they are not wired into CI.
 
 ## Makefile Targets
 

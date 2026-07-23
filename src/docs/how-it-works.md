@@ -92,16 +92,8 @@ This consistency is separate from the question of which segmentation is "correct
 ## Different Optimization Targets
 
 ::: info Choose by purpose
-Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric.
+Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric. See [When to Use Which](/docs/mecab-comparison) for a full requirement-by-requirement comparison.
 :::
-
-| Requirement | Prefer |
-|-------------|--------|
-| Small self-contained browser/edge bundle | Suzume |
-| Search-friendly units and real-time UI | Suzume |
-| Same tokenizer across WASM, Python, and C/C++ | Suzume |
-| A particular MeCab dictionary's boundaries/taxonomy | MeCab with that dictionary |
-| Exhaustive domain vocabulary out of the box | A suitable full dictionary analyzer |
 
 The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. Only surface normalization (`preserveVu`, `preserveCase`, `preserveSymbols`) and output shaping (`mode`, `lemmatize`, `mergeCompounds`) are tunable via `SuzumeOptions`.
 

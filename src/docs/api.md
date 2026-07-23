@@ -289,7 +289,7 @@ get version(): string
 
 **Example:**
 ```typescript
-console.log(suzume.version) // e.g. "0.9.6"
+console.log(suzume.version) // current package version, e.g. "0.9.x"
 ```
 
 ---
@@ -527,6 +527,8 @@ try {
   console.error('WASM initialization failed:', message)
 }
 ```
+
+`Suzume.create()` throws when the underlying WASM instance fails to initialize. `analyze()` and `generateTags()` also throw an `Error` when the native analysis call fails (a non-zero native error is available via `lastError`).
 
 ---
 
