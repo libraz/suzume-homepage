@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { analysisSampleTexts, baseFormSampleTexts, tagSampleTexts } from '@/data/demoSamples'
 import { Suzume, type Morpheme, type Tag } from '@/wasm/index.js'
 
 const { t, isJa } = useI18n()
@@ -9,37 +10,37 @@ const { t, isJa } = useI18n()
 const tagExamples = computed(() => [
   {
     label: t('useCase.tagExamples.sns'),
-    text: '推しのライブがエモすぎて泣いた。歌が上手いし踊りもキレキレでマジで尊い。来年も絶対行く！'
+    text: tagSampleTexts[0]
   },
   {
     label: t('useCase.tagExamples.blog'),
-    text: '今日は東京で開催されたAIカンファレンスに参加してきました。機械学習や自然言語処理の最新トレンドについて学びました。'
+    text: tagSampleTexts[1]
   }
 ])
 
 const baseExamples = computed(() => [
   {
     label: t('useCase.baseExamples.verb'),
-    text: '彼女は走って、食べて、寝ている。昨日は映画を見た。'
+    text: baseFormSampleTexts[0]
   },
   {
     label: t('useCase.baseExamples.adjective'),
-    text: 'この料理は美味しくて、値段も安かった。店員さんも親切だった。'
+    text: baseFormSampleTexts[1]
   }
 ])
 
 const analyzeExamples = computed(() => [
   {
     label: t('useCase.analyzeExamples.youth'),
-    text: 'それな〜！マジでエモいしバズってるよね。推しが尊すぎてしんどい。'
+    text: analysisSampleTexts[0]
   },
   {
     label: t('useCase.analyzeExamples.tongue'),
-    text: 'すもももももももものうち'
+    text: analysisSampleTexts[1]
   },
   {
     label: t('useCase.analyzeExamples.botchan'),
-    text: '親譲りの無鉄砲で小供の時から損ばかりしている。小学校に居る時分学校の二階から飛び降りて一週間ほど腰を抜かした事がある。なぜそんな無闘をしたと聞く人があるかも知れぬ。別段深い理由でもない。'
+    text: analysisSampleTexts[2]
   }
 ])
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { playgroundSampleTexts } from '@/data/demoSamples'
 import { Suzume, type Morpheme, type Tag } from '@/wasm/index.js'
 
 const { isJa } = useI18n()
@@ -8,15 +9,15 @@ const { isJa } = useI18n()
 const examples = computed(() => [
   {
     label: isJa() ? '活用の復元' : 'Conjugation',
-    text: '昨日ラーメンを食べさせられなかった',
+    text: playgroundSampleTexts[0],
   },
   {
     label: isJa() ? '未知語' : 'Unknown words',
-    text: '生成AIカンファレンスで新しいSDKを試した',
+    text: playgroundSampleTexts[1],
   },
   {
     label: isJa() ? 'タグ抽出' : 'Tags',
-    text: '東京スカイツリーに行って夜景を撮影しました',
+    text: playgroundSampleTexts[2],
   },
 ])
 
@@ -243,11 +244,15 @@ const label = computed(() => ({
   resize: vertical;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
-  padding: 0.75rem;
+  padding: 0.75rem 0.85rem;
   background: var(--vp-c-bg);
   color: var(--vp-c-text-1);
-  font: inherit;
-  line-height: 1.6;
+  font-family: var(--vp-font-family-base);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.7;
 }
 
 .input-label textarea:focus {
