@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { allLiveDemoSampleTexts, typewriterSampleTexts } from '../src/data/demoSamples.js'
+import {
+  allLiveDemoSampleTexts,
+  analysisSampleTexts,
+  baseFormSampleTexts,
+  tagSampleTexts,
+  typewriterSampleTexts,
+} from '../src/data/demoSamples.js'
 import { Suzume } from '../src/wasm/index.js'
 import wasmMeta from '../src/wasm/meta.json'
 
@@ -72,7 +78,7 @@ describe('documented JavaScript samples', () => {
       english.push(...en)
     }
 
-    expect(english).toHaveLength(105)
+    expect(english).toHaveLength(113)
 
     for (const claim of english) {
       const actual = suzume.analyze(claim.input)
@@ -95,20 +101,68 @@ describe('documented JavaScript samples', () => {
     }
   })
 
-  it('analyzes all 58 live demo inputs and preserves their complete displayed text', () => {
-    expect(allLiveDemoSampleTexts).toHaveLength(58)
+  it('analyzes all 61 live demo inputs and preserves their complete normalized text', () => {
+    expect(allLiveDemoSampleTexts).toHaveLength(61)
 
     for (const input of allLiveDemoSampleTexts) {
-      const result = suzumeWithSymbols.analyze(input)
-      expect(result.length, input).toBeGreaterThan(0)
-      expect(result.map(({ surface }) => surface).join(''), input).toBe(input)
-      for (const morpheme of result) {
+      const { normalizedText, morphemes } = suzumeWithSymbols.analyzeWithNormalizedText(input)
+      expect(morphemes.length, input).toBeGreaterThan(0)
+      expect(morphemes.map(({ surface }) => surface).join(''), input).toBe(normalizedText)
+      for (const morpheme of morphemes) {
         expect(morpheme.surface, input).not.toBe('')
         expect(morpheme.pos, `${input}: ${morpheme.surface}`).not.toBe('')
         expect(morpheme.extendedPos, `${input}: ${morpheme.surface}`).not.toBe('')
         expect(morpheme.end, `${input}: ${morpheme.surface}`).toBeGreaterThan(morpheme.start)
       }
     }
+  })
+
+  it('locks the colloquial, dialectal, classical, and technical demo examples', () => {
+    expect(suzume.analyze(analysisSampleTexts[1]).map(({ surface, baseForm }) => [surface, baseForm])).toEqual([
+      ['もう', 'もう'],
+      ['食べ', '食べる'],
+      ['ちゃっ', 'ちゃう'],
+      ['た', 'た'],
+      ['けど', 'けど'],
+      ['まだ', 'まだ'],
+      ['飲ん', '飲む'],
+      ['でる', 'いる'],
+    ])
+    expect(suzume.analyze(analysisSampleTexts[2]).map(({ surface, pos }) => [surface, pos])).toEqual([
+      ['そんな', 'DET'],
+      ['ん', 'PARTICLE'],
+      ['あかん', 'AUX'],
+      ['ねん', 'PARTICLE'],
+      ['知ら', 'VERB'],
+      ['ん', 'AUX'],
+      ['けど', 'PARTICLE'],
+    ])
+    expect(suzume.analyze(analysisSampleTexts[3]).map(({ surface, baseForm }) => [surface, baseForm])).toEqual([
+      ['昔', '昔'],
+      ['男', '男'],
+      ['あり', 'ある'],
+      ['けり', 'けり'],
+      ['花', '花'],
+      ['は', 'は'],
+      ['美しかり', '美しい'],
+      ['けり', 'けり'],
+    ])
+    expect(
+      suzume.analyze(baseFormSampleTexts[2])
+        .filter(({ pos, surface, baseForm }) => (pos === 'VERB' || pos === 'ADJ') && surface !== baseForm)
+        .map(({ surface, baseForm }) => [surface, baseForm]),
+    ).toEqual([
+      ['読めりゃ', '読める'],
+      ['行きゃ', '行く'],
+    ])
+    expect(suzume.generateTags(tagSampleTexts[1], { maxTags: 12 }).map(({ tag }) => tag)).toEqual([
+      '生成',
+      'AIカンファレンス',
+      '機械学習',
+      '自然言語処理',
+      '最新動向',
+      '学ぶ',
+    ])
   })
 
   it('locks the grammar boundaries previously broken in live literary examples', () => {
@@ -143,7 +197,7 @@ describe('documented JavaScript samples', () => {
 
   it('matches the documented tag option examples', () => {
     expect(suzume.generateTags('美しい花が静かに咲いている', {
-      pos: ['noun'],
+      posFilter: ['noun'],
       minLength: 1,
     })).toEqual([{ tag: '花', pos: 'NOUN' }])
 
@@ -166,13 +220,14 @@ describe('documented JavaScript samples', () => {
     ])
   })
 
-  it('silently skips a runtime dictionary line with too few fields', () => {
+  it('loads valid runtime dictionary rows and reports skipped rows', () => {
     const startupWarnings = suzume.dictionaryWarnings
     expect(suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')).toBe(true)
     expect(suzume.analyze('ChatGPT')[0].isUserDict).toBe(true)
-    expect(suzume.dictionaryWarnings).toEqual(startupWarnings)
+    expect(suzume.dictionaryWarnings.slice(0, startupWarnings.length)).toEqual(startupWarnings)
+    expect(suzume.dictionaryWarnings.at(-1)).toContain('line 2')
 
-    expect(suzume.loadUserDictionary('React,NOUN\nNext.js,NOUN\nTailwind,NOUN')).toBe(true)
+    expect(suzume.loadUserDictionary('React\tNOUN\nNext.js\tNOUN\nTailwind\tNOUN')).toBe(true)
     expect(suzume.generateTags('Next.jsでReactアプリを作成')).toEqual([
       { tag: 'Next.js', pos: 'NOUN' },
       { tag: 'React', pos: 'NOUN' },

@@ -1,6 +1,8 @@
-# CLI Reference
+# Native Developer CLI Reference
 
-`suzume-cli` is the command-line front-end to the Suzume tokenizer. It exposes the same analysis engine as the JavaScript, Python, and native C/C++ interfaces, so its flags mirror the options available through those APIs.
+`suzume-cli` is the native developer command for Suzume. It provides analysis as well as dictionary compilation, validation, tests, and benchmarks.
+
+Installing the Python wheel provides a separate, analysis-focused command named `suzume`. See [Python CLI](/docs/python-cli) for that command.
 
 This page covers how to *use* the command. To build the binary from source, see the [Native Build](/docs/native-build) guide.
 
@@ -96,6 +98,7 @@ suzume-cli -m split "東京都新宿区"
 | `--preserve-symbols` | Keep symbols/emoji in output (default: remove) |
 | `--no-user-dict` | Disable user dictionary |
 | `--no-core-dict` | Disable core dictionary |
+| `--skip-env-config` | Ignore scorer configuration environment variables |
 | `--compare` | Compare with/without user dictionary |
 | `--debug` | Show lattice candidates and scores |
 | `-V, --verbose` | Verbose output |
@@ -115,6 +118,8 @@ With `-f tags`, Suzume extracts content-word tags and drops low-information toke
 | `--include-low-info` | off | Keep low-information tokens |
 | `--tag-keep-duplicates` | off | Keep duplicate tags instead of deduplicating |
 | `--tag-use-surface` | off | Use surface forms instead of lemmas |
+| `--tag-pos POS` | all | Keep one POS; repeat to keep more. Particle/auxiliary filters also require the matching `--include-*` flag |
+| `--tag-exclude-basic` | off | Exclude tags whose lemma contains only hiragana |
 | `--tag-min-length LENGTH` | `2` | Minimum tag length in characters |
 | `--tag-max-tags MAX` | `0` | Maximum number of tags (`0` = unlimited) |
 
@@ -122,7 +127,7 @@ With `-f tags`, Suzume extracts content-word tags and drops low-information toke
 # Keep particles and auxiliaries, allow single-character tags
 suzume-cli -f tags --include-particles --include-auxiliaries --tag-min-length 1 "本を読む"
 
-# Limit to the top 5 tags by surface form
+# Keep the first 5 tags and use surface forms
 suzume-cli -f tags --tag-use-surface --tag-max-tags 5 "東京スカイツリーに行きました"
 ```
 
@@ -160,8 +165,8 @@ suzume-cli dict new user.tsv
 suzume-cli dict compile user.tsv           # → user.dic
 suzume-cli dict compile user.tsv out.dic   # custom output
 
-# Decompile binary to TSV
-suzume-cli dict decompile user.dic         # → user.tsv
+# Decompile binary to TSV (refuses to overwrite without --force)
+suzume-cli dict decompile user.dic         # → user.dump.tsv
 
 # Validate dictionary
 suzume-cli dict validate user.tsv
@@ -193,7 +198,7 @@ Interactive commands:
 
 | Command | Description |
 |---------|-------------|
-| `add <surface> <pos>` | Add entry |
+| `add <surface> <pos> [conj_type]` | Add entry; verbs and adjectives require a conjugation type |
 | `remove <surface> [pos]` | Remove entry |
 | `update <surface> <pos> [conj_type]` | Update an existing entry |
 | `list [--pos=POS] [--pattern=PATTERN] [--limit=N]` | List entries |
@@ -203,7 +208,7 @@ Interactive commands:
 | `import <file.tsv> [--skip-duplicates]` | Import entries from a TSV file |
 | `analyze <text>` | Analyze text with current dictionary |
 | `validate` | Validate dictionary |
-| `compile` | Compile to binary |
+| `compile <output.dic>` | Compile to binary |
 | `save` | Save changes |
 | `stats` | Show statistics |
 | `quit` | Exit |
@@ -223,14 +228,14 @@ Suzume uses a layered dictionary system:
 Dictionary source files use TSV format:
 
 ```tsv
-surface	pos	conj_type
 東京	NOUN
 食べる	VERB	ICHIDAN
+読み直し	NOUN	読み直す
 ```
 
-The `conj_type` column is required only for verbs and adjectives.
+Rows use `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]`. The conjugation type is optional; provide it when the loader should expand inflected forms. A third field that is not a recognized conjugation type is treated as the lemma. See [User Dictionaries](/docs/user-dictionary) for the complete format.
 
-**POS values:** `NOUN`, `PROPN`, `VERB`, `ADJECTIVE`, `ADVERB`, `PARTICLE`, `AUXILIARY`, `SYMBOL`, `OTHER`
+**POS values:** `NOUN`, `PROPN`, `VERB`, `ADJ`/`ADJECTIVE`, `ADV`/`ADVERB`, `PARTICLE`, `AUX`/`AUXILIARY`, `CONJUNCTION`, `DETERMINER`, `PRONOUN`, `PREFIX`, `SUFFIX`, `INTERJECTION`, `SYMBOL`/`SYM`, `OTHER`
 
 This dictionary-file POS vocabulary is deliberately more explicit than the abbreviated runtime `Morpheme.pos` values (`NOUN`, `VERB`, `ADJ`, `ADV`, ...) returned by the analysis APIs.
 

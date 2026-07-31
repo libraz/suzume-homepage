@@ -1,16 +1,15 @@
 # Python Bindings
 
-The [`suzume`](https://pypi.org/project/suzume/) package on PyPI provides Python bindings for Suzume. Use it when you want the same Japanese morphological analyzer from Python scripts, data pipelines, or web services without going through the JavaScript/WASM package.
+The [`suzume`](https://pypi.org/project/suzume/) package is a ctypes binding to the native Suzume library. Its wheel contains the shared library and bundled dictionaries.
 
-The bindings are a thin [ctypes](https://docs.python.org/3/library/ctypes.html) layer over the native C++ core. The compiled library and the dictionaries are bundled in the wheel, so there is nothing else to install and no external dictionary files to ship.
+## Requirements and installation
 
-## Requirements
+Suzume requires Python 3.10 or later. PyPI publishes binary wheels for:
 
-- Python 3.10 or later
+- Linux x86_64 (`manylinux2014` / `manylinux_2_17`)
+- macOS arm64, macOS 11 or later
 
-The wheel already contains the native library and dictionaries for the supported platforms, so no C++ compiler or build step is needed.
-
-## Installation
+Windows, macOS x86_64, Linux arm64, and other platforms or architectures are not supported. There is no source distribution, so `pip install` succeeds only when a compatible wheel is available.
 
 ::: code-group
 
@@ -28,178 +27,224 @@ uv add suzume
 
 :::
 
+The wheel also installs a command named `suzume`. See [Python CLI](/docs/python-cli). This is separate from the developer-oriented native command, `suzume-cli`.
+
 ## Quick start
 
-Create an analyzer with `Suzume()`, use it as a context manager so the native handle is released automatically, and iterate over the analyzed morphemes:
+Use `Suzume` as a context manager so its native handle is released on exit:
 
 ```python
 from suzume import Suzume
 
-with Suzume() as sz:
-    for m in sz.analyze("東京都に住んでいます"):
-        print(m.surface, m.pos, m.base_form)
+with Suzume() as analyzer:
+    for morpheme in analyzer.analyze("東京都に住んでいます"):
+        print(morpheme.surface, morpheme.pos, morpheme.base_form)
 ```
 
-Each `analyze()` call returns a `list[Morpheme]`. The analyzer holds a native handle and is not thread-safe, so use one instance per thread. If you cannot use a `with` block, call `close()` explicitly when you are done:
+If a context manager is not practical, call `close()` when finished. `close()` is idempotent.
 
-```python
-sz = Suzume()
-try:
-    morphemes = sz.analyze("東京都に住んでいます")
-finally:
-    sz.close()
-```
+Calls on the same `Suzume` instance are serialized and safe to make from multiple Python threads. To run native analyses in parallel, create a separate instance for each worker.
 
-## Analysis modes
+## Constructor options
 
-Pass `mode` to the constructor to control how text is segmented. It accepts a `Mode` enum member or the equivalent string:
-
-```python
-from suzume import Suzume, Mode
-
-with Suzume(mode=Mode.SEARCH, merge_compounds=True) as sz:
-    morphemes = sz.analyze("東京スカイツリーの展望台")
-
-# Strings work too:
-with Suzume(mode="split") as sz:
-    ...
-```
-
-The available modes are `Mode.NORMAL` (`"normal"`), `Mode.SEARCH` (`"search"`), and `Mode.SPLIT` (`"split"`). See [Analysis Modes](/docs/api) for what each mode does to segmentation.
-
-The constructor is keyword-only. Alongside `mode`, it accepts the normalization and analysis flags `preserve_vu` (default `True`), `preserve_case` (default `True`), `preserve_symbols` (default `False`), `lemmatize` (default `True`), and `merge_compounds` (default `False`).
-
-## Morpheme fields
-
-`analyze()` returns a list of `Morpheme`, a frozen dataclass with snake_case fields:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `surface` | `str` | Surface form as it appears in text |
-| `pos` | `str` | Part of speech in English (UPPERCASE, e.g. `NOUN`) |
-| `base_form` | `str` | Dictionary/base form |
-| `pos_ja` | `str` | Part of speech in Japanese (e.g. 名詞) |
-| `conj_type` | `str \| None` | Conjugation type, or `None` for non-conjugating words |
-| `conj_form` | `str \| None` | Conjugation form, or `None` for non-conjugating words |
-| `extended_pos` | `str` | Stable extended POS code (e.g. `VERB_連用`) |
-| `start` | `int` | Start character offset in normalized text |
-| `end` | `int` | End character offset in normalized text |
-| `is_user_dict` | `bool` | True when matched from a user dictionary |
-| `is_formal_noun` | `bool` | True for formal nouns such as こと and もの |
-| `is_low_info` | `bool` | True when marked as low information for tag generation |
-| `is_unknown` | `bool` | True when generated as an unknown-word candidate |
-| `is_from_dictionary` | `bool` | True when matched from any dictionary |
-| `score` | `float` | Candidate score/cost used by the analyzer |
-
-See the [API Reference](/docs/api) for the full list of `pos` and `extended_pos` values.
-
-## Tag generation
-
-`generate_tags()` extracts keyword tags from text. By default it keeps content words (nouns, verbs, adjectives, adverbs) and filters out particles, auxiliaries, formal nouns, and low-information words:
-
-```python
-from suzume import Suzume
-
-with Suzume() as sz:
-    for tag in sz.generate_tags("東京都の天気予報を確認する"):
-        print(tag.tag, tag.pos)
-```
-
-Each result is a `Tag` dataclass with two fields: `tag` (the keyword text) and `pos` (its part of speech).
-
-`generate_tags()` takes keyword-only options. The `pos_filter` option restricts the result to selected parts of speech and accepts two forms — an iterable of POS names, or a raw bitmask int where `1=noun`, `2=verb`, `4=adjective`, `8=adverb`, and `0` means all:
-
-```python
-with Suzume() as sz:
-    # By name:
-    nouns = sz.generate_tags("美味しいラーメンを食べた", pos_filter=["noun"])
-
-    # Equivalent bitmask (nouns and verbs):
-    tags = sz.generate_tags("美味しいラーメンを食べた", pos_filter=1 | 2)
-
-    # Keep only the top 10 tags:
-    top = sz.generate_tags("東京都の天気予報を確認する", max_tags=10)
-```
-
-The remaining options and their defaults are:
+All constructor arguments are keyword-only:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `pos_filter` | `int \| Iterable[str]` | `0` | POS categories to include (`0`/empty = all) |
-| `exclude_basic` | `bool` | `False` | Exclude words whose lemma is hiragana-only |
-| `use_lemma` | `bool` | `True` | Use the lemma (dictionary form) instead of the surface form |
+| `mode` | `Mode \| str` | `Mode.NORMAL` | Segmentation mode: `normal`, `search`, or `split` |
+| `preserve_vu` | `bool` | `True` | Preserve ヴ variants |
+| `preserve_case` | `bool` | `True` | Preserve ASCII letter case |
+| `preserve_symbols` | `bool` | `False` | Keep symbols and emoji |
+| `lemmatize` | `bool` | `True` | Apply post-analysis lemma correction |
+| `merge_compounds` | `bool` | `False` | Merge consecutive noun compounds |
+| `skip_user_dictionary` | `bool` | `False` | Skip the bundled user dictionary |
+| `skip_core_dictionary` | `bool` | `False` | Skip the bundled core dictionary |
+| `skip_env_config` | `bool` | `False` | Ignore scorer configuration environment variables |
+| `report_scorer_config` | `bool` | `False` | Add scorer configuration diagnostics to `dictionary_warnings` |
+| `scorer_options` | `str \| dict \| None` | `None` | Scorer overrides as a JSON string or mapping |
+
+```python
+from suzume import Mode, Suzume
+
+with Suzume(
+    mode=Mode.SEARCH,
+    merge_compounds=True,
+    skip_env_config=True,
+    scorer_options={"unary": {"noun_prior": 0.25}},
+) as analyzer:
+    morphemes = analyzer.analyze("東京スカイツリーの展望台")
+```
+
+`mode` is mutable. Changing it does not reload the dictionaries:
+
+```python
+with Suzume() as analyzer:
+    analyzer.mode = "split"
+    assert analyzer.mode is Mode.SPLIT
+```
+
+See [Analysis Modes](/docs/api) for the segmentation behavior of each mode.
+
+## Analysis and normalized text
+
+`analyze()` returns `list[Morpheme]`. Each morpheme’s `start` and `end` are character offsets into the normalized text, which may differ from the input.
+
+Use `analyze_with_normalized_text()` when you need the exact string used for those offsets:
+
+```python
+with Suzume(preserve_case=False) as analyzer:
+    result = analyzer.analyze_with_normalized_text("ABCを検索")
+    print(result.normalized_text)
+    print(result.morphemes)
+```
+
+The return value is a frozen `AnalysisResult` dataclass with `normalized_text: str` and `morphemes: list[Morpheme]`.
+
+## Morpheme fields
+
+`Morpheme` is a frozen dataclass:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `surface` | `str` | Surface form in the normalized text |
+| `pos` | `str` | Part of speech in English, such as `NOUN` |
+| `base_form` | `str` | Dictionary or base form |
+| `pos_ja` | `str` | Part of speech in Japanese |
+| `conj_type` | `str \| None` | Conjugation type, or `None` for a non-conjugating word |
+| `conj_form` | `str \| None` | Conjugation form, or `None` for a non-conjugating word |
+| `extended_pos` | `str` | Stable extended POS code |
+| `start` | `int` | Start character offset in normalized text |
+| `end` | `int` | End character offset in normalized text |
+| `is_user_dict` | `bool` | Whether the match came from a user dictionary |
+| `is_formal_noun` | `bool` | Whether the word is a formal noun such as こと or もの |
+| `is_low_info` | `bool` | Whether the word is marked as low information |
+| `is_unknown` | `bool` | Whether the token is an unknown-word candidate |
+| `is_from_dictionary` | `bool` | Whether the match came from any dictionary |
+| `score` | `float` | Candidate score used by the analyzer |
+
+See the [API Reference](/docs/api) for the `pos` and `extended_pos` values.
+
+## Tag generation
+
+`generate_tags()` returns `list[Tag]`. Each `Tag` has `tag` and `pos` fields.
+
+```python
+with Suzume() as analyzer:
+    tags = analyzer.generate_tags(
+        "東京都の天気予報を確認する",
+        pos_filter=["noun", "verb"],
+        max_tags=10,
+    )
+```
+
+`pos_filter` accepts an iterable of names or an integer bitmask:
+
+| Name | Bit |
+|------|----:|
+| `noun` | `1` |
+| `verb` | `2` |
+| `adjective` | `4` |
+| `adverb` | `8` |
+| `particle` | `16` |
+| `auxiliary` | `32` |
+
+`0` or an empty iterable selects all parts of speech. Particles and auxiliaries are still excluded by default; set the corresponding exclusion option to `False` to return them:
+
+```python
+with Suzume() as analyzer:
+    particles = analyzer.generate_tags(
+        "本を読む",
+        pos_filter=["particle"],
+        exclude_particles=False,
+        min_length=1,
+    )
+```
+
+The remaining options are:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `exclude_basic` | `bool` | `False` | Exclude words whose lemma contains only hiragana |
+| `use_lemma` | `bool` | `True` | Use the lemma instead of the surface form |
 | `min_length` | `int` | `2` | Minimum tag length in characters |
-| `max_tags` | `int` | `0` | Maximum number of tags (`0` = unlimited) |
+| `max_tags` | `int` | `0` | Maximum result count (`0` means unlimited) |
 | `exclude_particles` | `bool` | `True` | Exclude particles |
 | `exclude_auxiliaries` | `bool` | `True` | Exclude auxiliaries |
-| `exclude_formal_nouns` | `bool` | `True` | Exclude formal nouns such as こと and もの |
+| `exclude_formal_nouns` | `bool` | `True` | Exclude formal nouns |
 | `exclude_low_info` | `bool` | `True` | Exclude low-information words |
 | `remove_duplicates` | `bool` | `True` | Remove duplicate tags |
 
 ## User dictionaries
 
-Add custom words at runtime from CSV text with `load_user_dict()`:
+`load_user_dict()` loads current TSV or legacy CSV text. It returns the number of installed entries after inflection forms have been expanded:
 
 ```python
-from suzume import Suzume, SuzumeError
+from suzume import Suzume
 
-with Suzume() as sz:
-    try:
-        sz.load_user_dict("ChatGPT,NOUN\n東京スカイツリー,NOUN")
-    except SuzumeError as e:
-        print("failed to load user dictionary:", e)
+dictionary = "食べ直す\tVERB\tGODAN_SA\n"
 
-    for m in sz.analyze("ChatGPTを使う"):
-        print(m.surface, m.pos, m.is_user_dict)
+with Suzume() as analyzer:
+    expanded_count = analyzer.load_user_dict(dictionary)
+    print(expanded_count)
 ```
 
-Pre-compiled binary `.dic` dictionaries can be loaded from memory with `load_binary_dict()`:
+Use `load_binary_dict(bytes)` for a compiled `.dic` dictionary. `clear_user_dictionaries()` removes dictionaries loaded by the caller but retains the bundled user dictionary.
 
 ```python
 from pathlib import Path
-from suzume import Suzume, SuzumeError
+from suzume import Suzume
 
-data = Path("custom.dic").read_bytes()
-
-with Suzume() as sz:
-    try:
-        sz.load_binary_dict(data)
-    except SuzumeError as e:
-        print("failed to load binary dictionary:", e)
+with Suzume() as analyzer:
+    analyzer.load_binary_dict(Path("custom.dic").read_bytes())
+    analyzer.clear_user_dictionaries()
 ```
 
-Both methods raise `SuzumeError` (a subclass of `RuntimeError`) when loading fails. The `dictionary_warnings` property returns any warnings emitted while dictionaries were auto-loaded during construction:
+`has_core_dictionary` reports whether the bundled core dictionary is loaded. `dictionary_warnings` returns dictionary-loading, parsing, and scorer-configuration diagnostics.
+
+## Errors
+
+Native failures raise `SuzumeError`, a `RuntimeError` subclass. Its `code` attribute is a stable `ErrorCode` value, so callers do not need to parse the message:
 
 ```python
-with Suzume() as sz:
-    for warning in sz.dictionary_warnings:
-        print("warning:", warning)
+from suzume import ErrorCode, Suzume, SuzumeError
+
+try:
+    Suzume(scorer_options="{")
+except SuzumeError as error:
+    if error.code is ErrorCode.PARSE:
+        print("invalid scorer configuration")
 ```
+
+| `ErrorCode` | Value |
+|-------------|------:|
+| `SUCCESS` | `0` |
+| `INVALID_UTF8` | `1` |
+| `DICTIONARY_LOAD_FAILED` | `2` |
+| `FILE_NOT_FOUND` | `3` |
+| `PARSE` | `4` |
+| `OUT_OF_MEMORY` | `5` |
+| `INVALID_INPUT` | `6` |
+| `INTERNAL` | `7` |
 
 ## API summary
 
-Instance methods and properties on `Suzume`:
-
 | Member | Description |
 |--------|-------------|
-| `Suzume(*, mode=..., preserve_vu=..., ...)` | Create an analyzer (keyword-only options) |
-| `analyze(text)` | Return `list[Morpheme]` (see [Morpheme fields](#morpheme-fields)) |
-| `generate_tags(text, *, pos_filter=..., ...)` | Extract keyword `Tag`s with filters and limits |
-| `load_user_dict(csv)` | Load a CSV user dictionary; raises `SuzumeError` on failure |
-| `load_binary_dict(data)` | Load a binary `.dic` dictionary; raises `SuzumeError` on failure |
-| `dictionary_warnings` | Warnings from automatic dictionary loading |
-| `close()` | Release the native handle (idempotent) |
-
-The class also implements the context-manager protocol, so `with Suzume() as sz:` calls `close()` automatically on exit.
-
-Module-level function:
-
-| Function | Description |
-|----------|-------------|
-| `suzume.version()` | Return the native Suzume library version string |
+| `Suzume(*, ...)` | Create an analyzer |
+| `analyze(text)` | Return `list[Morpheme]` |
+| `analyze_with_normalized_text(text)` | Return an `AnalysisResult` |
+| `generate_tags(text, *, ...)` | Return filtered keyword tags |
+| `mode` | Read or change the analysis mode |
+| `load_user_dict(text)` | Load TSV or CSV text and return the expanded-entry count |
+| `load_binary_dict(data)` | Load a compiled dictionary |
+| `clear_user_dictionaries()` | Remove caller-loaded dictionaries |
+| `dictionary_warnings` | Return dictionary and scorer diagnostics |
+| `has_core_dictionary` | Report whether the core dictionary is loaded |
+| `close()` | Release the native handle |
+| `version()` | Return the native library version |
 
 ## See also
 
-- [API Reference](/docs/api) for the POS and `extended_pos` value tables and the shared Morpheme concept.
-- [Getting Started](/docs/getting-started) for an introduction to Suzume across all bindings.
-- [Installation](/docs/installation) for the JavaScript/WASM package.
+- [Python CLI](/docs/python-cli) for the `suzume` command installed by the wheel.
+- [Native CLI Reference](/docs/cli) for the separate `suzume-cli` developer tool.
+- [Getting Started](/docs/getting-started) for an introduction shared by all bindings.

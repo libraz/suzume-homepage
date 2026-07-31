@@ -156,14 +156,15 @@ The remaining `TagOptions` fields and their library defaults are:
 
 ## User dictionaries
 
-Add custom words at runtime from CSV data with `LoadUserDictionary()`:
+Add custom words at runtime from the current TSV format with `LoadUserDictionary()`. Legacy three-column CSV is also accepted:
 
 ```go
-if err := s.LoadUserDictionary([]byte("ChatGPT,NOUN\n東京スカイツリー,NOUN")); err != nil {
+source := []byte("東京公園\tNOUN\n点検する\tVERB\tSURU\n")
+if err := s.LoadUserDictionary(source); err != nil {
 	log.Fatal(err)
 }
 
-for _, m := range s.Analyze("ChatGPTを使う") {
+for _, m := range s.Analyze("東京公園を点検する") {
 	fmt.Println(m.Surface, m.POS, m.IsUserDict)
 }
 ```
@@ -180,7 +181,7 @@ if err := s.LoadBinaryDictionary(data); err != nil {
 }
 ```
 
-Both methods return a non-nil `error` when loading fails. `DictionaryWarnings()` returns any warnings emitted while dictionaries were auto-loaded at instance creation, or `nil` when there are none:
+Both methods return a non-nil `error` when loading fails. `DictionaryWarnings()` returns warnings from automatic loading at instance creation and later source/binary dictionary loads, or `nil` when there are none. A partially accepted source dictionary can therefore return no error while still adding a warning:
 
 ```go
 for _, w := range s.DictionaryWarnings() {
@@ -209,9 +210,9 @@ Methods on `*Suzume`:
 | `Analyze(text string) []Morpheme` | Analyze text (see [Morpheme fields](#morpheme-fields)) |
 | `GenerateTags(text string) []Tag` | Extract keyword `Tag`s with the default filters |
 | `GenerateTagsWithOptions(text string, opts TagOptions) []Tag` | Extract keyword `Tag`s with custom filters and limits |
-| `LoadUserDictionary(data []byte) error` | Load a CSV user dictionary |
+| `LoadUserDictionary(data []byte) error` | Load a TSV or legacy CSV user dictionary |
 | `LoadBinaryDictionary(data []byte) error` | Load a binary `.dic` dictionary |
-| `DictionaryWarnings() []string` | Warnings from automatic dictionary loading |
+| `DictionaryWarnings() []string` | Warnings from creation-time and runtime dictionary loading |
 | `Close()` | Release the native handle (safe to call multiple times) |
 
 ## See also

@@ -7,7 +7,7 @@ This page covers how tokens are labeled. For where token boundaries differ — m
 :::
 
 ::: info Reading the comparisons
-In each comparison the **MeCab** row uses MeCab's Japanese POS names, and the **Suzume** row uses the public API tags (`NOUN`, `VERB`, `ADJ`, …) with the Japanese POS name shown next to each code. A colored underline marks every token, so where the two tokenizers split or merge is visible at a glance.
+In each comparison the **MeCab** row uses MeCab's Japanese POS names, and the **Suzume** row uses the public API tags (`NOUN`, `VERB`, `ADJ`, …) with the Japanese POS name shown next to each code. The MeCab output was collected with MeCab 0.996 and `mecab-ipadic` 2.7.0-20070801, without a user dictionary. See the [comparison baseline](/docs/mecab-comparison#comparison-baseline) for details; another dictionary can change both boundaries and POS labels.
 :::
 
 ## Adjective-Derived よく
@@ -36,7 +36,7 @@ MeCab classifies na-adjective stems as nouns (形容動詞語幹). Suzume recogn
 
 <TokenDiff input="きれいな花" mecab="きれい(名詞) / な / 花" suzume="きれい(ADJ) / な / 花" />
 
-Applies to: きれい, しずか, おだやか, げんき, しんちょう, ありきたり, 無限, 滅多
+Examples include きれい, しずか, おだやか, げんき, しんちょう, ありきたり, 無限, and 滅多. Ambiguous nominal readings are resolved from context.
 
 Note: Some 形容動詞語幹 intentionally remain `NOUN`: マジ, 不安, 不要, 乙, 不便, 公式, 可能, 容易, 積極, 健康, 傍若無人
 
@@ -70,11 +70,11 @@ After the connective て/で, subsidiary verbs lose their independent meaning an
 
 **Humble いただく** in polite requests (the negative ご確認いただけません follows the same pattern):
 
-<TokenDiff input="ご確認いただけます" mecab="ご(接頭詞) / 確認(名詞) / いただけ(動詞・非自立) / ます(助動詞)" suzume="ご(PREFIX) / 確認(NOUN) / いただけ(AUX, lemma: いただける) / ます(AUX)" />
+<TokenDiff input="ご確認いただけます" mecab="ご(接頭詞) / 確認(名詞) / いただけ(動詞・自立) / ます(助動詞)" suzume="ご(PREFIX) / 確認(NOUN) / いただけ(AUX, lemma: いただける) / ます(AUX)" />
 
 **Resultative てある is the exception** — ある keeps its existential meaning and remains `VERB`:
 
-<TokenDiff input="並べてある" mecab="並べ(動詞) / て(助詞) / ある(動詞・非自立)" suzume="並べ(VERB) / て(PARTICLE) / ある(VERB)" />
+<TokenDiff input="並べてある" mecab="並べて(副詞) / ある(動詞)" suzume="並べ(VERB) / て(PARTICLE) / ある(VERB)" />
 
 ## Purpose Expressions and Subsidiary ゆく
 
@@ -104,7 +104,7 @@ Productive derivational suffixes receive the dedicated `SUFFIX` tag, and the ste
 
 **Nominalizer さ** turns an adjective into a noun; Suzume keeps the adjective stem visible:
 
-<TokenDiff input="暖かさ" mecab="暖か(名詞・形容動詞語幹) / さ(名詞・接尾)" suzume="暖か(ADJ, lemma: 暖かい) / さ(SUFFIX)" />
+<TokenDiff input="暖かさ" mecab="暖か(形容詞・自立, lemma: 暖かい) / さ(名詞・接尾)" suzume="暖か(ADJ, lemma: 暖かい) / さ(SUFFIX)" />
 
 **X的 + な** is treated as one na-adjective:
 
@@ -116,11 +116,11 @@ Suffixes that change token boundaries — 中, 抜き, 建て, and friends — a
 
 A verb continuative used as a noun keeps `NOUN`, even where a MeCab dictionary labels it a verb form:
 
-<TokenDiff input="動きが速い" mecab="動き(動詞・連用形) / が(助詞) / 速い(形容詞)" suzume="動き(NOUN) / が(PARTICLE) / 速い(ADJ)" />
+<TokenDiff input="推しが尊い" mecab="推し(動詞・連用形, lemma: 推す) / が(助詞) / 尊い(形容詞)" suzume="推し(NOUN) / が(PARTICLE) / 尊い(ADJ)" />
 
-<TokenDiff input="付けの支払い" mecab="付け(動詞・連用形) / の(助詞) / 支払い(名詞)" suzume="付け(NOUN) / の(PARTICLE) / 支払い(NOUN)" />
+<TokenDiff input="終わりが近い" mecab="終わり(動詞・連用形, lemma: 終わる) / が(助詞) / 近い(形容詞)" suzume="終わり(NOUN) / が(PARTICLE) / 近い(ADJ)" />
 
-The same applies to 違い and 推し in the [per-word table](#per-word-pos-differences) below.
+Other deverbal forms are context-dependent; see 違い and 推し in the [per-word table](#per-word-pos-differences) below.
 
 ## Context-Dependent POS
 
@@ -128,21 +128,23 @@ Suzume applies context-aware POS classification for several ambiguous words:
 
 **そう:** `ADJ` before a copula (そうだ = hearsay), `AUX` after an auxiliary (しまいそう = appearance), and `ADV` otherwise.
 
-**でも:** normalized to `PARTICLE` in all uses:
+**でも:** `PARTICLE` after a host, but `CONJ` at the start of a clause:
 
-<TokenDiff input="何でも良い" mecab="何(名詞) / でも(助詞) / 良い(形容詞)" suzume="何(PRON) / でも(PARTICLE) / 良い(ADJ)" />
+<TokenDiff input="何でも良い" mecab="何(名詞) / で(助詞) / も(助詞) / 良い(形容詞)" suzume="何(PRON) / でも(PARTICLE) / 良い(ADJ)" />
 
-**いかが:** `ADV` when not before a copula; before a copula (いかがですか) it keeps MeCab's noun classification.
+<TokenDiff input="でも大丈夫" mecab="でも(接続詞) / 大丈夫(名詞・形容動詞語幹)" suzume="でも(CONJ) / 大丈夫(ADJ)" />
 
-**大変:** `ADJ` before な (大変な) and `ADV` otherwise (大変良い).
+**いかが:** `ADJ` before a copula (いかがですか) and `ADV` otherwise.
 
-**どう:** `ADJ` generally, but `ADV` inside か…どうか / どうか:
+**大変:** `ADJ` before the attributive copula な and before だ/です; it is `ADV` in adverbial use (大変良い) and in isolation.
+
+**どう:** `ADJ` before a copula (どうだ) and `ADV` otherwise, including どうする and か…どうか:
 
 <TokenDiff input="かどうか" mecab="か(助詞) / どう(副詞) / か(助詞)" suzume="か(OTHER) / どう(ADV) / か(PARTICLE)" />
 
 **よう:** the volitional う after a 未然形 is `AUX`, while the formal noun よう in ように/ような is `NOUN`:
 
-<TokenDiff input="見よう" mecab="見(動詞) / よう(助動詞)" suzume="見よ(VERB, lemma: 見る) / う(AUX)" />
+<TokenDiff input="見よう" mecab="見よ(動詞) / う(助動詞)" suzume="見よ(VERB, lemma: 見る) / う(AUX)" />
 
 <TokenDiff input="ような" mecab="よう(名詞・非自立) / な(助動詞)" suzume="よう(NOUN) / な(AUX, lemma: だ)" />
 
@@ -169,6 +171,8 @@ Colloquial copulas and particles that dictionary taxonomies handle unevenly are 
 | 英語はおろか | おろか | `PARTICLE` | "Let alone" particle |
 | そうや | や | `PARTICLE` | Kansai sentence-final particle |
 
+Suzume recognizes some regional predicate tails and particles in context. Examples include `あかん` and `へん` as `AUX`, `ねん` and `さかい` as `PARTICLE`, and the polite copula `どす` as `AUX`. These are grammatical labels, not a claim that every dialectal expression is covered.
+
 ## Katakana Onomatopoeia
 
 MeCab classifies katakana onomatopoeia (reduplication patterns) as nouns. Suzume recognizes them as adverbs:
@@ -177,9 +181,9 @@ MeCab classifies katakana onomatopoeia (reduplication patterns) as nouns. Suzume
 
 Mimetics ending in っと are also kept whole as adverbs:
 
-<TokenDiff input="ぴかぴかっと光る" mecab="ぴかぴかっ(副詞) / と(助詞) / 光る(動詞)" suzume="ぴかぴかっと(ADV) / 光る(VERB)" />
+<TokenDiff input="ぴかぴかっと光る" mecab="ぴかぴか(副詞) / っと(助詞) / 光る(動詞)" suzume="ぴかぴかっと(ADV) / 光る(VERB)" />
 
-<TokenDiff input="ぷるんっとした" mecab="ぷるんっ(副詞) / と(助詞) / し(動詞) / た(助動詞)" suzume="ぷるんっと(ADV) / し(VERB, lemma: する) / た(AUX)" />
+<TokenDiff input="ぷるんっとした" mecab="ぷるんっとした(名詞)" suzume="ぷるんっと(ADV) / し(VERB, lemma: する) / た(AUX)" />
 
 ## で+ある Copula Handling
 
@@ -199,6 +203,12 @@ Suzume assigns `ADJ` rather than `AUX` to ない/なく/なかっ when they func
 
 <TokenDiff input="仕方ない" mecab="仕方(名詞・ナイ形容詞語幹) / ない(助動詞)" suzume="仕方(NOUN) / ない(ADJ)" note="lexical adjective" noteJa="語彙的形容詞" />
 
+The continuative `なく` follows the same distinction. It is `AUX` after a verb or passive/causative stem, but `ADJ` after an adjective continuative or in an independent absence expression:
+
+<TokenDiff input="食べなくて" mecab="食べ(動詞) / なく(助動詞) / て(助詞)" suzume="食べ(VERB) / なく(AUX) / て(PARTICLE)" />
+
+<TokenDiff input="寒くなくて" mecab="寒く(形容詞) / なく(助動詞) / て(助詞)" suzume="寒く(ADJ) / なく(ADJ) / て(PARTICLE)" />
+
 ## Per-Word POS Differences
 
 The following words are classified differently between MeCab and Suzume:
@@ -206,30 +216,31 @@ The following words are classified differently between MeCab and Suzume:
 | Word | MeCab | Suzume | Reason |
 |------|-------|--------|--------|
 | なら | 接続詞 | PARTICLE / VERB (文脈依存) | Conditional particle by default; parsed as the verb なる before negatives or standalone |
-| 違い | 名詞・ナイ形容詞語幹 | NOUN (名詞) | Deverbal noun (違いない → 違い + ない) |
+| 違い | 名詞・ナイ形容詞語幹 | VERB / NOUN (文脈依存) | Standalone is `VERB` (lemma: 違う); 違いない, 違いがある, and modified nominal uses are `NOUN` |
 | 推し | 動詞 | NOUN (名詞) | Modern noun usage |
 | 嫌い | 動詞 | ADJ (形容詞) | Na-adjective |
-| 大変 | 名詞・形容動詞語幹 | ADV (副詞) | Adverb usage |
+| 大変 | 名詞・形容動詞語幹 | ADJ / ADV (文脈依存) | `ADJ` before な/だ/です; `ADV` in adverbial or isolated use |
 | 超 | 接頭詞 | NOUN (名詞) | Modern usage |
 | びっくり | 名詞・サ変接続 | ADV (副詞) | Adverb usage |
 | なるほど | 感動詞 | ADV (副詞) | Adverb usage |
 | たくさん | 名詞・副詞可能 | ADV (副詞) | Adverb usage |
 | いずれ | 名詞・代名詞 | ADV (副詞) | Adverb usage |
 | おめでとう | 感動詞 | ADV (副詞) | Adverb usage |
-| じゃ / ん | 接続詞 + 終助詞 | AUX + AUX (助動詞) | Parsed as copula plus sentence-final form |
+| じゃん | 接続詞 + 終助詞 | PARTICLE (助詞) | Colloquial sentence-final particle |
 | よう | 感動詞 | AUX / NOUN (文脈依存) | Volitional う after 未然形 (見よ + う); formal noun in ように / ような |
 | 時々 | 副詞 | NOUN (名詞) | Noun usage |
 | 遥か | 副詞 | ADJ (形容詞) | Na-adjective |
-| どう | 副詞 | ADJ (形容詞) | ADJ generally; ADV inside か…どうか |
+| どう | 副詞 | ADJ / ADV (文脈依存) | `ADJ` before a copula; `ADV` otherwise |
 | まじ | 助動詞 | ADJ (形容詞) | Adjective (katakana マジ stays NOUN) |
 | っていう | 助詞 | DET (連体詞) | Determiner |
 | という | 助詞 | DET (連体詞) | Determiner |
+| といった | 助詞 | DET (連体詞) | Quotative determiner (`DET_引用`) |
 | まして | 副詞 | CONJ (接続詞) | Conjunction |
 | いわば | 副詞 | CONJ (接続詞) | Conjunction (言わば) |
-| 寒し | 形容詞 | NOUN (名詞) | Archaic noun form |
-| むしろ | 副詞 | ADV (副詞) | Adverb usage (むしろ嬉しい → むしろ + 嬉しい) |
 | その後 | 名詞・副詞可能 | ADV (副詞) | Adverb usage |
 | しどろもどろ | 名詞・形容動詞語幹 | ADV (副詞) | Adverb usage |
+
+`寒し` is not a broad-POS difference: both analyzers label it as an adjective, and Suzume returns the lemma 寒い.
 
 ## POS Granularity
 
@@ -246,10 +257,10 @@ Suzume's basic POS (`pos`) uses a simpler tag set than MeCab's detailed subcateg
 
 The 動詞,非自立 subcategory maps to `AUX` by default. A small set of subsidiary verbs (すぎる, くださる, あげる, くれる, もらう, いく, いる, …) is not blanket-mapped: they stay `VERB` in independent use, and context rules such as the [て-form classification](#て-form-auxiliaries) above assign `AUX` where they act as auxiliaries.
 
-However, the `extendedPos` field provides finer-grained subcategories:
+The `extendedPos` field provides Suzume's own finer-grained taxonomy. The following rows show rough MeCab feature analogues, but a MeCab label does not by itself cause the corresponding Suzume value; dictionary flags, structure, and context determine it.
 
-| MeCab subcategory | Suzume `extendedPos` |
-|-------------------|---------------------|
+| Rough MeCab feature analogue | Suzume `extendedPos` |
+|-------------------------------|---------------------|
 | 名詞,固有名詞 | `NOUN_固有` |
 | 名詞,固有名詞,人名 | `NOUN_名` / `NOUN_姓` |
 | 名詞,数 | `NOUN_数` |
@@ -257,9 +268,23 @@ However, the `extendedPos` field provides finer-grained subcategories:
 | 名詞,形式名詞 | `NOUN_形式` |
 | 動詞,連用形 | `VERB_連用` |
 | 動詞,未然形 | `VERB_未然` |
+| 動詞, 活用形=仮定縮約1 | `VERB_仮定縮約` |
 | 形容詞,連用形 | `ADJ_連用` |
 | 形容動詞語幹 | `ADJ_NA` |
+| 助動詞, 活用型=文語・キ | `AUX_文語過去キ` |
 | 助詞,格助詞 | `PART_格` |
 | 助詞,係助詞 | `PART_係` |
 
-When MeCab-level subcategories are needed, `extendedPos` covers many of these cases. See the [API Reference](/docs/api) ExtendedPOS section for the full list.
+`extendedPos` is not a drop-in replacement for MeCab dictionary features. For example, a proper noun or number can remain plain `NOUN` when Suzume has no dictionary or structural evidence for a narrower class. See the [API Reference](/docs/api) ExtendedPOS section for the full list.
+
+## Contracted Hypotheticals
+
+Suzume recognizes colloquial contracted hypothetical forms as one inflected predicate while preserving the lemma:
+
+<TokenDiff input="行きゃ" mecab="行きゃ(動詞, lemma: 行く)" suzume="行きゃ(VERB, lemma: 行く)" />
+
+<TokenDiff input="読めりゃ" mecab="読めりゃ(動詞, lemma: 読める)" suzume="読めりゃ(VERB, lemma: 読める)" />
+
+<TokenDiff input="早けりゃ" mecab="早けりゃ(形容詞, lemma: 早い)" suzume="早けりゃ(ADJ, lemma: 早い)" />
+
+Verb forms report `VERB_仮定縮約` in `extendedPos`; adjective forms keep their adjective inflection category.

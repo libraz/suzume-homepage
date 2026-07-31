@@ -1,6 +1,8 @@
-# CLI リファレンス
+# ネイティブ開発 CLI リファレンス
 
-`suzume-cli` は Suzume トークナイザーのコマンドライン版です。JavaScript、Python、ネイティブ C/C++ の各インターフェースと同じ解析エンジンを使っているため、フラグもこれらの API のオプションに対応しています。
+`suzume-cli` は Suzume のネイティブ開発コマンドです。解析に加えて、辞書のコンパイルと検証、テスト、ベンチマークを提供します。
+
+Python ホイールは、解析に絞った別の `suzume` コマンドをインストールします。そちらは [Python CLI](/ja/docs/python-cli)を参照してください。
 
 このページはコマンドの使い方を説明します。バイナリをソースからビルドする方法は [ネイティブビルド](/ja/docs/native-build) を参照してください。
 
@@ -41,7 +43,7 @@ echo "東京スカイツリーに行きました" | suzume-cli
 | フォーマット | 説明 |
 |--------|-------------|
 | `morpheme` | デフォルト。`表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
-| `tags` | 内容語の `タグ` TAB `品詞` の組（[タグ抽出](#タグ抽出)を参照） |
+| `tags` | 内容語の `タグ` TAB `品詞` の組（下の「タグ抽出」を参照） |
 | `json` | 解析・デバッグ用フィールドを含む構造化 JSON |
 | `tsv` | `表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
 | `chasen` | ChaSen 風フォーマット（日本語の品詞名と活用情報） |
@@ -96,6 +98,7 @@ suzume-cli -m split "東京都新宿区"
 | `--preserve-symbols` | 記号・絵文字を出力に保持（デフォルト: 除去） |
 | `--no-user-dict` | ユーザー辞書を無効化 |
 | `--no-core-dict` | コア辞書を無効化 |
+| `--skip-env-config` | スコアラー設定用の環境変数を無視 |
 | `--compare` | ユーザー辞書あり/なしの比較 |
 | `--debug` | ラティス候補とスコアを表示 |
 | `-V, --verbose` | 詳細出力 |
@@ -115,6 +118,8 @@ suzume-cli -m split "東京都新宿区"
 | `--include-low-info` | 無効 | 情報量の少ないトークンを残す |
 | `--tag-keep-duplicates` | 無効 | 重複を除去せずそのまま残す |
 | `--tag-use-surface` | 無効 | 原形ではなく表層形を使う |
+| `--tag-pos POS` | すべて | 1つの品詞を残す。複数指定可。助詞・助動詞には対応する `--include-*` も必要 |
+| `--tag-exclude-basic` | 無効 | 原形がひらがなのみのタグを除外 |
 | `--tag-min-length LENGTH` | `2` | タグの最小文字数 |
 | `--tag-max-tags MAX` | `0` | タグの最大数（`0` = 無制限） |
 
@@ -122,7 +127,7 @@ suzume-cli -m split "東京都新宿区"
 # 助詞と助動詞を残し、1文字のタグも許可
 suzume-cli -f tags --include-particles --include-auxiliaries --tag-min-length 1 "本を読む"
 
-# 表層形で上位5件のタグに絞る
+# 表層形を使い、先頭5件のタグに絞る
 suzume-cli -f tags --tag-use-surface --tag-max-tags 5 "東京スカイツリーに行きました"
 ```
 
@@ -160,8 +165,8 @@ suzume-cli dict new user.tsv
 suzume-cli dict compile user.tsv           # → user.dic
 suzume-cli dict compile user.tsv out.dic   # 出力先を指定
 
-# バイナリを TSV に逆コンパイル
-suzume-cli dict decompile user.dic         # → user.tsv
+# バイナリを TSV に逆コンパイル（--force なしでは上書きしない）
+suzume-cli dict decompile user.dic         # → user.dump.tsv
 
 # 辞書を検証
 suzume-cli dict validate user.tsv
@@ -193,7 +198,7 @@ suzume-cli dict -i user.tsv
 
 | コマンド | 説明 |
 |---------|-------------|
-| `add <surface> <pos>` | エントリを追加 |
+| `add <surface> <pos> [conj_type]` | エントリを追加。動詞・形容詞では活用型が必要 |
 | `remove <surface> [pos]` | エントリを削除 |
 | `update <surface> <pos> [conj_type]` | 既存エントリを更新 |
 | `list [--pos=POS] [--pattern=PATTERN] [--limit=N]` | エントリを一覧表示 |
@@ -203,7 +208,7 @@ suzume-cli dict -i user.tsv
 | `import <file.tsv> [--skip-duplicates]` | TSV ファイルからエントリをインポート |
 | `analyze <text>` | 現在の辞書でテキストを解析 |
 | `validate` | 辞書を検証 |
-| `compile` | バイナリにコンパイル |
+| `compile <output.dic>` | バイナリにコンパイル |
 | `save` | 変更を保存 |
 | `stats` | 統計情報を表示 |
 | `quit` | 終了 |
@@ -223,14 +228,14 @@ Suzume は階層型辞書システムを採用しています。
 辞書ソースファイルは TSV フォーマットを使用します。
 
 ```tsv
-surface	pos	conj_type
 東京	NOUN
 食べる	VERB	ICHIDAN
+読み直し	NOUN	読み直す
 ```
 
-`conj_type` 列は動詞・形容詞のみ必要です。
+行形式は `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]` です。活用型は省略可能で、活用形を展開させる場合に指定します。第3列が既知の活用型でなければ原形として扱われます。完全な形式は[ユーザー辞書](/ja/docs/user-dictionary)を参照してください。
 
-**品詞（POS）:** `NOUN`, `PROPN`, `VERB`, `ADJECTIVE`, `ADVERB`, `PARTICLE`, `AUXILIARY`, `SYMBOL`, `OTHER`
+**品詞（POS）:** `NOUN`、`PROPN`、`VERB`、`ADJ`／`ADJECTIVE`、`ADV`／`ADVERB`、`PARTICLE`、`AUX`／`AUXILIARY`、`CONJUNCTION`、`DETERMINER`、`PRONOUN`、`PREFIX`、`SUFFIX`、`INTERJECTION`、`SYMBOL`／`SYM`、`OTHER`
 
 この辞書ファイル用の品詞語彙は、解析 API が返す実行時の `Morpheme.pos` 値（`NOUN`, `VERB`, `ADJ`, `ADV`, ...）よりも意図的に細かく分かれています。
 

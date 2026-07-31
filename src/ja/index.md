@@ -52,6 +52,10 @@ bun add @libraz/suzume
 pip install suzume
 ```
 
+```bash [Go]
+go get github.com/libraz/go-suzume
+```
+
 ```bash [C / C++]
 git clone https://github.com/libraz/suzume.git
 cd suzume && make install
@@ -59,11 +63,11 @@ cd suzume && make install
 
 :::
 
-Python 製のサービスやデータパイプラインで使う場合は [Python バインディングガイド](/ja/docs/python) を参照してください。ネイティブライブラリを C / C++ プロジェクトへリンクする場合は [C / C++ ライブラリガイド](/ja/docs/cpp) を参照してください。
+Python 製のサービスやデータパイプラインでは [Python バインディング](/ja/docs/python)、Go では [Go バインディング](/ja/docs/go)、ネイティブ組み込みでは [C / C++ ライブラリ](/ja/docs/cpp)を参照してください。
 
 ## 使い方
 
-同じ API を各ランタイムから利用できます。
+各バインディングは、言語ごとの命名に合わせて同じ解析モデルを公開します。
 
 ::: code-group
 
@@ -85,6 +89,29 @@ with Suzume() as sz:
         print(m.surface, m.pos, m.base_form)
 ```
 
+```go [Go]
+package main
+
+import (
+  "fmt"
+  "log"
+
+  "github.com/libraz/go-suzume"
+)
+
+func main() {
+  analyzer, err := suzume.New()
+  if err != nil {
+    log.Fatal(err)
+  }
+  defer analyzer.Close()
+
+  for _, m := range analyzer.Analyze("東京都に住んでいます") {
+    fmt.Println(m.Surface, m.POS, m.BaseForm)
+  }
+}
+```
+
 ```cpp [C++]
 #include "suzume/suzume.hpp"
 #include <cstdio>
@@ -92,12 +119,12 @@ with Suzume() as sz:
 int main() {
   suzume::Tokenizer tokenizer;
   for (const suzume::Morpheme& m : tokenizer.analyze("東京都に住んでいます"))
-    std::printf("%s\t%s\t%s\n", m.surface.c_str(), m.pos.c_str(), m.lemma.c_str());
+    std::printf("%s\t%s\t%s\n", m.surface.c_str(), m.pos.c_str(), m.base_form.c_str());
 }
 ```
 
 :::
 
-各トークンは `surface`、`pos`、`baseForm` などのフィールドを持ちます。詳細は [Morpheme リファレンス](/ja/docs/api) を参照してください。
+各トークンは表層形、品詞、原形、オフセットなどを持ちます。バインディングごとの名前は [JavaScript/WASM](/ja/docs/api)、[Python](/ja/docs/python)、[Go](/ja/docs/go)、[C / C++](/ja/docs/cpp) の各リファレンスを参照してください。
 
 </HomeProse>

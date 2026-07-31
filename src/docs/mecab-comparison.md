@@ -4,6 +4,26 @@ Suzume takes a fundamentally different approach to Japanese tokenization than Me
 
 The source of truth for intentional differences is the [Python MeCab normalization pipeline](https://github.com/libraz/suzume/tree/main/scripts/mcp/src/suzume_mcp/core) used to generate test expectations. The rule families below are grouped by their practical purpose.
 
+## Comparison Baseline
+
+Every MeCab boundary and displayed feature on this page was recorded from
+**MeCab 0.996 with mecab-ipadic 2.7.0-20070801** (the UTF-8 IPA dictionary).
+The labels abbreviate MeCab's comma-separated feature fields for readability;
+the comparison does not rewrite its token boundaries. It invokes `mecab` with
+the default configuration and no user dictionary. You can inspect the active
+setup with:
+
+```bash
+mecab --version
+mecab -D
+```
+
+MeCab's output depends on the selected dictionary, its costs, and user
+dictionaries. UniDic, NEologd, or a customized IPA dictionary can produce
+different boundaries and labels from the rows shown here. The normalization
+pipeline linked above starts from this IPA-dictionary output and applies
+Suzume's generalized comparison rules when generating test expectations.
+
 ::: tip Looking for POS label differences?
 This page covers where tokens begin and end. For how the two tools **label** the same tokens — pronouns, na-adjectives, auxiliaries, and other POS assignments — see [POS Classification](/docs/pos-differences).
 :::
@@ -21,13 +41,13 @@ MeCab is a morphological analyzer — its goal is to decompose text into morphem
 | | MeCab | Suzume |
 |--|-------|--------|
 | **Approach** | Dictionary-driven | Feature-driven |
-| **Dictionary** | 50MB+ (required) | Minimal (~<WasmSize /> gzipped, WASM included) |
+| **Dictionary** | External dictionary required; size and output depend on the selected dictionary | Compact dictionaries included (~<WasmSize /> gzipped with the WASM package) |
 | **Unknown words** | Falls back to character types | Pattern-based candidate generation |
-| **Compound handling** | Splits per dictionary | Merges by character type heuristics |
+| **Compound handling** | Boundaries follow the selected dictionary | Dictionary and structural rules; unknown runs may merge |
 | **Target** | Detailed dictionary-based analysis | Compact search/display tokenization across browser, edge, and native runtimes |
 
 ::: tip Core Trade-off
-MeCab follows the entries and costs in the selected dictionary — its boundaries are only as consistent as that dictionary, and equivalent constructions can come out split in one place and merged in another. Suzume uses character-type features and compact rules instead of an exhaustive lexicon, so it merges sequences it cannot reliably split and applies one rule to a whole construction family.
+MeCab follows the entries and costs in the selected dictionary, so changing the dictionary can change boundaries and labels. Suzume combines compact dictionaries with shared character, grammar, and connection rules; unknown same-script runs may stay merged when there is no evidence for an internal boundary.
 :::
 
 ## Merging Rules
@@ -36,7 +56,7 @@ These rules keep sequences together as one token where a dictionary-driven analy
 
 ### Kanji Compounds
 
-Consecutive kanji sequences are merged into a single noun token.
+An unregistered kanji run with no dictionary or grammatical evidence for an internal boundary is normally kept as one noun candidate. Structural rules can still split forms such as `神奈川県 / 横浜市` and `会議 / 中`.
 
 <TokenDiff
   input="経済成長"
@@ -58,7 +78,7 @@ Without a full dictionary, Suzume cannot determine where to split kanji compound
 
 ### Katakana Compounds
 
-Consecutive katakana sequences are merged into a single noun token.
+An unknown ordinary katakana run is normally kept as one noun candidate. Dictionary and shape rules can assign another POS, as with mimetic `ドキドキ(ADV)`.
 
 <TokenDiff
   input="サンプルデータ"
@@ -74,7 +94,7 @@ Consecutive katakana sequences are merged into a single noun token.
 
 <Why>
 
-Same reason as kanji — without dictionary entries for each loanword, splitting would be unreliable. Katakana words are almost always loanword nouns, so merging as a single noun is correct.
+Without dictionary or structural evidence for a boundary, splitting a katakana run would be unreliable. The noun candidate is a default that still competes with dictionary and mimetic candidates.
 
 </Why>
 
@@ -86,7 +106,7 @@ An alphabetic term followed by a katakana term is one compound noun.
 
 ### Numbers and Units
 
-Numbers followed by counters/units are merged into a single token. Includes large number units (万, 億, 兆), decimal numbers, percentages, and alphabetic units.
+Cardinal numbers followed by counters or units are normally merged into one quantity token. This includes large number units (万, 億, 兆), decimal numbers, percentages, and alphabetic units. Ordinal and structural suffix rules can split forms such as `第三 / 回`.
 
 <TokenDiff input="3人" mecab="3 / 人" suzume="3人(NOUN)" />
 
@@ -104,11 +124,11 @@ The same merging applies beyond Arabic numerals.
 
 **Kana-spelled quantities:**
 
-<TokenDiff input="よんにん" mecab="よん / にん" suzume="よんにん(NOUN)" />
+<TokenDiff input="よんにん" mecab="よ(形容詞) / ん(名詞) / に(助詞) / ん(助詞)" suzume="よんにん(NOUN)" />
 
 **Distributive quantities:**
 
-<TokenDiff input="一語一語" mecab="一語 / 一語" suzume="一語一語(NOUN)" />
+<TokenDiff input="一語一語" mecab="一語(名詞) / 一(名詞) / 語(名詞)" suzume="一語一語(NOUN)" />
 
 **Address and lot numbers:**
 
@@ -144,7 +164,7 @@ Dates are atomic units of meaning. Splitting them provides no practical benefit 
 
 ### Proper Nouns and Place Names
 
-Consecutive proper nouns with region suffixes are merged.
+Many place-name components with region suffixes are merged. The structural `県+市` rule is an exception and splits the prefecture from the city.
 
 <TokenDiff input="東京都新宿区" mecab="東京 / 都 / 新宿 / 区" suzume="東京都新宿区(NOUN)" note="place name" noteJa="地名" />
 
@@ -170,15 +190,15 @@ Compound verbs function as single lexical units in Japanese. Splitting them lose
 
 </Why>
 
-### Compound Particles
+### Closed Compound Particles
 
-Multi-word sequences that function as a single particle are kept whole.
+Closed expressions that function as one particle are kept whole.
 
-<TokenDiff input="家族と共に" mecab="家族 / と / 共に" suzume="家族(NOUN) / と共に(PARTICLE)" />
+<TokenDiff input="や否や" mecab="や(助詞) / 否や(名詞)" suzume="や否や(PARTICLE)" />
 
-<TokenDiff input="年を取るにつれて" mecab="年 / を / 取る / に / つれ / て" suzume="年(NOUN) / を(PARTICLE) / 取る(VERB) / につれて(PARTICLE)" />
-
-Suzume also merges かも and のに into single particles where MeCab emits か + も and の + に.
+The selected IPA dictionary already emits expressions such as と共に and, in
+some contexts, につれて as one token, so they are not boundary differences in
+this baseline. Other dictionaries may split them.
 
 <Why>
 
@@ -238,7 +258,7 @@ A verb continuative plus 会, and the destination suffix 行き, form single eve
 
 Certain adjectives ending in ない are treated as single lexical units rather than being split.
 
-<TokenDiff input="だらしない" mecab="だらし(名詞) / ない(形容詞)" suzume="だらしない(ADJ)" />
+<TokenDiff input="だらしない" mecab="だらし(名詞・ナイ形容詞語幹) / ない(助動詞)" suzume="だらしない(ADJ)" />
 
 Main examples handled as one token: だらしない, つまらない, もったいない, くだらない, いたたまれない, ものたりない, こころもとない
 
@@ -256,13 +276,13 @@ Modern colloquial adjectives and verbs are recognized natively.
 
 <TokenDiff input="エモい" mecab="エモ(名詞) / い(動詞)" suzume="エモい(ADJ)" />
 
-Supported adjectives: エモい, キモい, ウザい, ダサい, イタい
+Recognized examples include エモい, キモい, ウザい, ダサい, イタい, ヤバい, their hiragana variants, and compound i-adjectives.
 
-Supported verbs: バズる, ググる, パクる
+Recognized verb examples include バズる, ググる, and パクる.
 
 <Why>
 
-MeCab's dictionary does not include modern slang. Suzume recognizes common slang adjective and verb patterns, including their conjugated forms (エモかった, バズった, ググった, etc.).
+The selected IPADIC baseline contains some colloquial words such as ダサい but lacks many newer entries. Suzume recognizes selected slang patterns and their conjugated forms (エモかった, バズった, ググった, etc.).
 
 </Why>
 
@@ -282,7 +302,7 @@ These stem+と combinations are conventionally used as adverbs and are more usef
 
 ### Noun + Single-Character Suffixes
 
-Nouns followed by single-character suffixes are merged.
+The following closed set of noun + single-character suffix combinations is merged.
 
 <TokenDiff input="報告書" mecab="報告 / 書" suzume="報告書(NOUN)" />
 
@@ -347,6 +367,13 @@ Technical identifiers are merged into single tokens.
 **ASCII dot notation:**
 
 <TokenDiff input="console.log" mecab="console / . / log" suzume="console.log" />
+
+**ASCII word-internal separators:**
+
+<TokenDiff input="data-driven" mecab="data / - / driven" suzume="data-driven" />
+
+The same rule covers apostrophes, ampersands, and slashes when they occur
+between ASCII word characters.
 
 <Why>
 
@@ -414,7 +441,7 @@ Applies to suffixes: さん, ちゃん, 様, 君, 殿, さま
 
 Exceptions: family terms like お兄ちゃん and お母さん, and the collective forms 皆様 / 皆さん, are kept as single tokens.
 
-Short nicknames made from a two- or three-character hiragana stem followed by ちゃん, くん, or さん are merged as a search unit, while names with a kanji stem split from their honorific.
+Short nicknames made from a two- or three-character hiragana stem followed by ちゃん or くん, along with lexicalized family terms, can merge as a search unit. Ordinary さん remains a separate suffix, and names with a kanji stem split from their honorific.
 
 <TokenDiff input="わんちゃん" mecab="わん / ちゃん" suzume="わんちゃん(NOUN)" />
 
@@ -428,11 +455,11 @@ Separating an honorific is more useful for ordinary names, while a short hiragan
 
 Grammaticalized subsidiary verbs — 過ぎる (excess), かねる (inability), そびれる (missed chance), 尽くす (exhaustive) — split off from the main verb and are tagged `AUX`, unlike the lexical [compound verbs](#compound-verbs) that merge. MeCab's own treatment varies with the dictionary: some combinations come out merged (飲み過ぎ), others split with the 非自立 subcategory.
 
-<TokenDiff input="飲み過ぎた" mecab="飲み過ぎ(動詞) / た(助動詞)" suzume="飲み(VERB) / 過ぎ(AUX, lemma: 過ぎる) / た(AUX)" />
+<TokenDiff input="飲み過ぎた" mecab="飲み(動詞) / 過ぎ(動詞・非自立) / た(助動詞)" suzume="飲み(VERB) / 過ぎ(AUX, lemma: 過ぎる) / た(AUX)" />
 
 <TokenDiff input="わかりかねる" mecab="わかり(動詞) / かねる(動詞・非自立)" suzume="わかり(VERB, lemma: わかる) / かねる(AUX)" />
 
-<TokenDiff input="言いそびれた" mecab="言い(動詞) / そびれ(動詞・非自立) / た(助動詞)" suzume="言い(VERB, lemma: 言う) / そびれ(AUX, lemma: そびれる) / た(AUX)" />
+<TokenDiff input="言いそびれた" mecab="言いそびれ(動詞) / た(助動詞)" suzume="言い(VERB, lemma: 言う) / そびれ(AUX, lemma: そびれる) / た(AUX)" />
 
 <TokenDiff input="食べ尽くす" mecab="食べ(動詞) / 尽くす(動詞・非自立)" suzume="食べ(VERB) / 尽くす(AUX)" />
 
@@ -454,11 +481,21 @@ Colloquial emphatic particles are split as single units instead of being fragmen
 
 <TokenDiff input="もうってば" mecab="も(助詞) / うっ(動詞) / て(助詞) / ば(助詞)" suzume="もう(ADV) / ってば(PARTICLE)" />
 
+### Productive Function-Word Chains
+
+Suzume preserves the internal verb and particle boundaries of productive
+constructions instead of treating the whole spelling as a fixed function word.
+
+<TokenDiff input="とすれば" mecab="とすれば(接続詞)" suzume="と(PARTICLE) / すれ(VERB, lemma: する) / ば(PARTICLE)" />
+
+The same rule gives を / もっ / て for をもって. Closed expressions with no
+productive verb boundary remain whole, as in [や否や](#closed-compound-particles).
+
 ### Adverbial Noun + Particle
 
-Sequences that MeCab lexicalizes as one adverb are kept as noun + particle.
+Some sequences that the selected dictionary lexicalizes as one function word are kept as noun + particle.
 
-<TokenDiff input="次に" mecab="次に(副詞)" suzume="次(NOUN) / に(PARTICLE)" />
+<TokenDiff input="次に" mecab="次に(接続詞)" suzume="次(NOUN) / に(PARTICLE)" />
 
 <TokenDiff input="後で行く" mecab="後で(副詞) / 行く" suzume="後(NOUN) / で(PARTICLE) / 行く(VERB)" />
 
@@ -480,9 +517,12 @@ Productive suffixes after a verb stem — がち (tendency), たて (freshness),
 
 <TokenDiff input="忘れがち" mecab="忘れ(動詞) / がち(名詞・接尾)" suzume="忘れ(VERB, lemma: 忘れる) / がち(SUFFIX)" />
 
-<TokenDiff input="できたて" mecab="でき(動詞) / たて(名詞・接尾)" suzume="でき(VERB, lemma: できる) / たて(SUFFIX)" />
+<TokenDiff input="できたて" mecab="でき(動詞) / た(助動詞) / て(助詞)" suzume="でき(VERB, lemma: できる) / たて(SUFFIX)" />
 
-<TokenDiff input="開けっぱなし" mecab="開け(動詞) / っぱなし(名詞・接尾)" suzume="開け(VERB, lemma: 開ける) / っぱなし(SUFFIX)" />
+<TokenDiff input="開けっぱなし" mecab="開けっぱなし(名詞)" suzume="開け(VERB, lemma: 開ける) / っぱなし(SUFFIX)" />
+
+The negative construction 読みっこない follows the same principle:
+読み (`VERB`) / っこ (`SUFFIX`) / ない (`ADJ`).
 
 ### Quantity and State Suffixes
 
@@ -510,9 +550,11 @@ Unlike the closed [nai-adjective](#nai-adjectives) word list, productive "stem +
 
 <TokenDiff input="やりきれない" mecab="やりきれない(形容詞)" suzume="やりきれ(VERB, lemma: やりきれる) / ない(AUX)" />
 
+<TokenDiff input="やむを得ない" mecab="やむを得ない(形容詞)" suzume="やむ(VERB) / を(PARTICLE) / 得(VERB, lemma: 得る) / ない(AUX)" />
+
 ### Kango + として
 
-MeCab treats kango + として as a single adverb. Suzume splits it into the adverb form + する conjugation.
+For fixed tari-adverb constructions such as 依然として, MeCab treats the expression as one adverb. Suzume splits the adverb form from the する conjugation. Productive expressions such as 名詞として already have grammatical boundaries in both analyzers.
 
 <TokenDiff input="依然として" mecab="依然として(副詞)" suzume="依然と(ADV) / し(VERB) / て(PARTICLE)" />
 
@@ -538,10 +580,14 @@ Prefecture and city are distinct administrative levels, and splitting at their b
 
 ### Classical and Literary Endings
 
-Classical inflections split off the same way as their modern counterparts. These are rare in modern text, so a compact summary:
+Classical inflections keep the same grammatical boundaries as their modern
+counterparts. The supported families include negative forms, conjectural and
+obligation auxiliaries, past and perfect auxiliaries, prohibitives, and
+imperatives. A compact sample:
 
 - Classical negative ぬ splits from the 未然形: 知らぬ → 知ら + ぬ (`AUX`)
 - Literary volitional ん splits the same way: 乗り越えん → 乗り越え + ん (`AUX`)
+- Classical past き keeps its own auxiliary boundary: 行かざりき → 行か + ざり + き
 
 ## Normalization
 
@@ -549,13 +595,16 @@ Suzume normalizes grammatical constructions to one consistent shape, even where 
 
 ### Copula Negation
 
-MeCab analyzes じゃ as a conjunction and ない as an adjective. Suzume consistently treats the copula and negative as auxiliaries. Dictionary variants that emit じゃない as one token are normalized to the same boundary, and the following forms なく, なかっ, and な are handled the same way.
+After a nominal predicate, Suzume treats じゃ as the copula and ない as the
+negative auxiliary. An isolated `じゃない` is ambiguous and may instead be one
+adjective token, so the nominal host is part of the comparison.
 
-<TokenDiff input="じゃない" mecab="じゃ(接続詞) / ない(形容詞)" suzume="じゃ(AUX, lemma: だ) / ない(AUX)" />
+<TokenDiff input="本じゃない" mecab="本(名詞) / じゃ(助詞) / ない(助動詞)" suzume="本(NOUN) / じゃ(AUX, lemma: だ) / ない(AUX)" />
 
 <Why>
 
-Splitting copula and negation allows for more granular grammatical analysis.
+The nominal context licenses the copula reading and keeps the negative boundary
+visible.
 
 </Why>
 
@@ -567,19 +616,19 @@ MeCab sometimes merges godan verb 未然形 + causative さ into one token. Suzu
 
 <Why>
 
-MeCab is inconsistent — it splits some causative-passive forms (読ま + さ + れた) but merges others (飲まさ + れた). Suzume normalizes all cases.
+The selected IPADIC analysis splits some causative-passive forms (読ま + さ + れた) but merges others (飲まさ + れた). Suzume applies the same segmentation rule to these constructions.
 
 </Why>
 
 ### Filler Decomposition
 
-Fixed conversational phrases lexicalized as interjections are decomposed into their grammatical parts.
+Fixed conversational phrases lexicalized as fillers are decomposed into their grammatical parts.
 
-<TokenDiff input="そうですね" mecab="そうですね(感動詞)" suzume="そう(ADJ) / です(AUX) / ね(PARTICLE)" />
+<TokenDiff input="そうですね" mecab="そうですね(フィラー)" suzume="そう(ADJ) / です(AUX) / ね(PARTICLE)" />
 
 <Why>
 
-As one opaque interjection the phrase hides its structure. Decomposing it applies the same copula and particle handling as everywhere else.
+As one opaque filler the phrase hides its structure. Decomposing it applies the same copula and particle handling as everywhere else.
 
 </Why>
 
@@ -607,15 +656,13 @@ These are known limitations arising from Suzume's feature-based architecture.
 
 ### Cannot Split Merged Compounds
 
-Since Suzume uses character-type features rather than a dictionary for compound word boundaries, **it cannot split kanji or katakana sequences that should be separate words**.
+Suzume cannot infer arbitrary lexical boundaries inside an otherwise unknown
+same-script compound. It can still split boundaries licensed by grammatical
+rules or compact-dictionary entries.
 
 <TokenDiff input="東京都庁前" mecab="東京 / 都庁 / 前" suzume="東京都庁前(NOUN)" note="Suzume cannot determine the internal boundaries; MeCab splits them from its dictionary" noteJa="Suzume は内部境界を判定できず、MeCab は辞書に基づいて分割します" />
 
-**Workaround:** Use the [user dictionary](/docs/user-dictionary) to register specific words that need to be recognized as separate tokens.
-
-```typescript
-suzume.loadUserDictionary('東京都庁,NOUN')
-```
+**Workaround:** Use the [runtime-loading examples in the user-dictionary guide](/docs/user-dictionary#runtime-loading) to register boundaries required by your application. That page covers JavaScript, Python, Go, C++, C, and the native CLI.
 
 ## When to Use Which
 
@@ -626,4 +673,4 @@ suzume.loadUserDictionary('東京都庁,NOUN')
 | Compatibility with a particular MeCab dictionary/corpus | **MeCab** — preserves that dictionary's boundaries and taxonomy |
 | Real-time UI (input-as-you-type) | **Suzume** — fast, no network latency |
 | Dictionary-defined compound word splitting | **MeCab** — boundaries come from the selected dictionary |
-| Handling unknown / modern words | **Suzume** — robust to unseen vocabulary |
+| Pattern candidates for words absent from the dictionary | **Suzume** — can analyze character sequences without a lexical entry |

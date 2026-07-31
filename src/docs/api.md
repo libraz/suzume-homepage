@@ -1,6 +1,6 @@
 # API Reference
 
-This page documents the JavaScript / WASM binding of Suzume, published to npm as [`@libraz/suzume`](/docs/installation). The Python, C/C++, and CLI interfaces have their own references.
+This page documents the JavaScript / WASM binding of Suzume, published to npm as [`@libraz/suzume`](/docs/installation). Python, Go, C/C++, and the two command-line interfaces have separate guides.
 
 ## Suzume Class
 
@@ -19,12 +19,18 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `wasmPath` | `string` | `undefined` | Custom path to WASM file |
+| `freshWasmModule` | `boolean` | `false` | Instantiate an isolated WASM runtime instead of using the shared cached runtime |
 | `preserveVu` | `boolean` | `true` | Preserve ヴ (don't normalize to ビ etc.) |
 | `preserveCase` | `boolean` | `true` | Preserve case (don't lowercase ASCII) |
 | `preserveSymbols` | `boolean` | `false` | Preserve symbols/emoji in output |
 | `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | Analysis mode. Use `search` or `split` for search-oriented segmentation |
-| `lemmatize` | `boolean` | `true` | Return dictionary forms where available |
+| `lemmatize` | `boolean` | `true` | Keep corrected dictionary forms; POS and conjugation annotations are computed either way |
 | `mergeCompounds` | `boolean` | `false` | Merge consecutive noun compounds where possible |
+| `skipUserDictionary` | `boolean` | `false` | Skip automatic loading of the bundled user dictionary |
+| `skipCoreDictionary` | `boolean` | `false` | Skip automatic loading of the bundled L2 core dictionary |
+| `skipEnvConfig` | `boolean` | `false` | Ignore native scorer configuration environment variables |
+| `reportScorerConfig` | `boolean` | `false` | Add scorer configuration diagnostics to `dictionaryWarnings` |
+| `scorerOptions` | `string \| Record<string, unknown>` | `undefined` | Final-priority scorer overrides, supplied as JSON text or an object serialized to JSON |
 
 **Returns:** `Promise<Suzume>`
 
@@ -42,6 +48,9 @@ const searchSuzume = await Suzume.create({
   preserveVu: false,
   mode: 'search',
   mergeCompounds: true,
+  scorerOptions: {
+    unary: { noun_prior: 0.25 },
+  },
 })
 ```
 
@@ -52,6 +61,32 @@ The `mode` option controls how text is segmented:
 - **`normal`** — balanced segmentation for general use (default).
 - **`search`** — search-oriented output that merges consecutive noun compounds into larger searchable units.
 - **`split`** — the most aggressive segmentation, breaking compounds into their smallest meaningful units.
+
+In `normal` mode, `mergeCompounds` controls noun-compound merging. `search` enables merging, while `split` disables it.
+
+`scorerOptions` is validated during construction, and malformed JSON makes `Suzume.create()` reject. `reportScorerConfig: true` records the active configuration in `dictionaryWarnings`. The WASM build does not read the native scorer environment layer, so `skipEnvConfig` has no additional effect in this binding.
+
+#### Shared WASM runtime
+
+By default, calls with the same `wasmPath` share one cached WASM runtime. Each `Suzume` object has its own analyzer handle and options, but the handles use the same WebAssembly linear memory. `destroy()` releases one handle; it does not unload the cached runtime or affect other handles.
+
+Set `freshWasmModule: true` when an instance must have an isolated runtime. The standalone `version()` function uses the same cache unless it also receives `freshWasmModule: true`.
+
+---
+
+### `mode`
+
+Reads or changes the analysis mode without reloading dictionaries.
+
+```typescript
+get mode(): 'normal' | 'search' | 'split'
+set mode(value: 'normal' | 'search' | 'split')
+```
+
+```typescript
+console.log(suzume.mode) // "normal"
+suzume.mode = 'split'
+```
 
 ---
 
@@ -85,9 +120,41 @@ const result = suzume.analyze('東京に行きました')
 
 ---
 
+### `analyzeWithNormalizedText(text)`
+
+Analyzes text and returns both the morphemes and the exact normalized string their offsets refer to.
+
+```typescript
+interface AnalysisResult {
+  normalizedText: string
+  morphemes: Morpheme[]
+}
+
+analyzeWithNormalizedText(text: string): AnalysisResult
+```
+
+Use the UTF-16 offsets when slicing a JavaScript string:
+
+```typescript
+const { normalizedText, morphemes } =
+  suzume.analyzeWithNormalizedText('🎉𠮷字を読む')
+
+for (const morpheme of morphemes) {
+  const surface = normalizedText.slice(
+    morpheme.startUtf16,
+    morpheme.endUtf16,
+  )
+  console.log(surface)
+}
+```
+
+`start` and `end` are Unicode code-point offsets into `normalizedText`. `startUtf16` and `endUtf16` are JavaScript UTF-16 code-unit offsets and can be passed directly to `String.prototype.slice()`. The two sets differ before or across characters outside the Basic Multilingual Plane, including many emoji and rare kanji. Offsets refer to normalized text, which may differ from the input.
+
+---
+
 ### `generateTags(text, options?)`
 
-Extracts meaningful tags from text. Useful for search indexing, classification, and content analysis. By default extracts content words (nouns, verbs, adjectives, adverbs) while filtering out particles, auxiliaries, formal nouns, and low-information words.
+Generates tags for search indexing, classification, and content analysis. By default it returns content words (nouns, verbs, adjectives, and adverbs) while filtering out particles, auxiliaries, formal nouns, and low-information words.
 
 ```typescript
 generateTags(text: string, options?: TagOptions): Tag[]
@@ -109,7 +176,8 @@ generateTags(text: string, options?: TagOptions): Tag[]
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `pos` | `('noun' \| 'verb' \| 'adjective' \| 'adverb')[]` | all | POS categories to include |
+| `posFilter` | `readonly TagPosFilterName[]` | `undefined` (all) | POS categories to include; an empty array also includes every filterable category |
+| `pos` | `readonly TagPosFilterName[]` | `undefined` | Deprecated alias for `posFilter`; `posFilter` wins when both are present |
 | `excludeBasic` | `boolean` | `false` | Exclude basic verbs/words with hiragana-only lemma |
 | `useLemma` | `boolean` | `true` | Use lemma (dictionary form) instead of surface form |
 | `minLength` | `number` | `2` | Minimum tag length in characters |
@@ -119,6 +187,8 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | `excludeFormalNouns` | `boolean` | `true` | Exclude formal nouns such as こと and もの |
 | `excludeLowInfo` | `boolean` | `true` | Exclude low-information words |
 | `removeDuplicates` | `boolean` | `true` | Remove duplicate tags |
+
+`TagPosFilterName` is `'noun' | 'verb' | 'adjective' | 'adverb' | 'particle' | 'auxiliary'`. Unknown names throw an `Error`. Particles and auxiliaries also require their exclusion option to be disabled.
 
 **Returns:** `Tag[]`
 
@@ -133,10 +203,20 @@ const tags = suzume.generateTags('東京スカイツリーに行きました')
 
 // Nouns only
 const nouns = suzume.generateTags('美しい花が静かに咲いている', {
-  pos: ['noun'],
+  posFilter: ['noun'],
   minLength: 1,
 })
 // [{ tag: '花', pos: 'NOUN' }]
+
+// Particles and auxiliaries
+const functionWords = suzume.generateTags('花が咲きます', {
+  posFilter: ['particle', 'auxiliary'],
+  excludeParticles: false,
+  excludeAuxiliaries: false,
+  minLength: 1,
+})
+// [{ tag: 'が', pos: 'PARTICLE' },
+//  { tag: 'ます', pos: 'AUX' }]
 
 // Exclude basic verbs (hiragana-only lemma like する, いる, ある, なる...)
 const tags2 = suzume.generateTags('新しいプロジェクトを開始して管理する', {
@@ -167,7 +247,7 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 ```
 
 ::: tip excludeBasic
-`excludeBasic: true` filters out words whose lemma (dictionary form) is written entirely in hiragana. This removes common basic verbs like する, いる, ある, なる, いく, くる etc., while keeping kanji-containing verbs like 開始, 管理, 確認. Useful when you want only content-bearing tags.
+`excludeBasic: true` filters out words whose lemma (dictionary form) is written entirely in hiragana. It removes entries such as する, いる, ある, なる, いく, and くる while keeping kanji-containing entries such as 開始, 管理, and 確認.
 :::
 
 <details>
@@ -175,16 +255,18 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 
 The tag generator applies these filters in order:
 
-1. **Particles** — excluded (は, が, を, に, etc.)
-2. **Auxiliaries** — excluded (です, ます, た, etc.)
-3. **Formal nouns** — excluded (こと, もの, ため, etc.)
-4. **Low-info words** — excluded (words marked as low information)
+1. **Particles** — excluded when `excludeParticles` is `true` (default)
+2. **Auxiliaries** — excluded when `excludeAuxiliaries` is `true` (default)
+3. **Formal nouns** — excluded when `excludeFormalNouns` is `true` (default)
+4. **Low-info words** — excluded when `excludeLowInfo` is `true` (default)
 5. **Conjunctions** — always excluded
 6. **Symbols** — always excluded
-7. **POS filter** — if `pos` is set, only matching categories pass
+7. **POS filter** — if `posFilter` is non-empty, only matching categories pass
 8. **Basic words** — if `excludeBasic: true`, words with hiragana-only lemma are excluded
-9. **Min length** — tags shorter than `minLength` characters are excluded
-10. **Deduplication** — duplicate tags are removed
+9. **Tag text** — the lemma or surface is selected according to `useLemma`
+10. **Min length** — tags shorter than `minLength` Unicode characters are excluded
+11. **Deduplication** — duplicate tags are removed when `removeDuplicates` is `true`
+12. **Result limit** — generation stops at `maxTags`; `0` is unlimited
 
 </details>
 
@@ -192,7 +274,7 @@ The tag generator applies these filters in order:
 
 ### `loadUserDictionary(data)`
 
-Loads custom words into the analyzer at runtime.
+Adds source dictionary entries to the analyzer. Loads are cumulative until `clearUserDictionaries()` is called.
 
 ```typescript
 loadUserDictionary(data: string): boolean
@@ -200,33 +282,45 @@ loadUserDictionary(data: string): boolean
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `data` | `string` | Dictionary entries in CSV format |
+| `data` | `string` | Dictionary entries in the current TSV format; legacy CSV is also accepted |
 
-**Returns:** `boolean` - `true` on success
+**Returns:** `boolean` — `true` when at least one expanded entry was installed.
 
-**Format:** `surface,pos[,cost][,lemma]`
+**Current format:** `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]`. The conjugation type is optional; specify it when inflected forms should be expanded. A third field that is not a recognized conjugation type is treated as the lemma. See [User Dictionaries](/docs/user-dictionary) for the complete format.
 
 **Example:**
 ```typescript
 // Single entry
-suzume.loadUserDictionary('ChatGPT,NOUN')
+suzume.loadUserDictionary('ChatGPT\tNOUN\n')
 
 // Multiple entries
 suzume.loadUserDictionary(`
-ChatGPT,NOUN
-スカイツリー,NOUN
-DeepL,NOUN
+ChatGPT	NOUN
+スカイツリー	NOUN
+DeepL	NOUN
 `)
 
-// With optional fields
-suzume.loadUserDictionary('走る,VERB,5000,走る')
+// Conjugating entry
+suzume.loadUserDictionary('検査する\tVERB\tSURU\n')
 ```
+
+---
+
+### `loadUserDictionaryCount(data)`
+
+Loads a source dictionary and returns the number of expanded entries installed.
+
+```typescript
+loadUserDictionaryCount(data: string): number
+```
+
+One source row can install multiple entries when Suzume expands conjugated forms, so the result can exceed the number of rows. A return value of `0` means the load failed; inspect `lastError` and `lastErrorCode`, or use `loadUserDictionaryOrThrow()`. Nonfatal skipped-row and expansion diagnostics are appended to `dictionaryWarnings`.
 
 ---
 
 ### `loadUserDictionaryOrThrow(data)`
 
-Loads a CSV user dictionary and throws an error with C API details when loading fails.
+Loads a source user dictionary and throws a `SuzumeError` with C API details when no entry can be installed.
 
 ```typescript
 loadUserDictionaryOrThrow(data: string): void
@@ -238,7 +332,7 @@ Use this form during setup or tests when a malformed dictionary should fail fast
 
 ### `loadBinaryDictionary(data)`
 
-Loads a pre-compiled binary dictionary (.dic format) at runtime.
+Adds a compiled binary dictionary (`.dic`) at runtime. Binary and source dictionary loads are cumulative.
 
 ```typescript
 loadBinaryDictionary(data: Uint8Array): boolean
@@ -263,8 +357,8 @@ const browserDictData = new Uint8Array(await response.arrayBuffer())
 suzume.loadBinaryDictionary(browserDictData)
 ```
 
-::: tip Binary vs CSV dictionaries
-Binary dictionaries (.dic) load faster than CSV format. Use the `suzume-cli dict compile` command to compile a TSV dictionary into binary format.
+::: tip Binary vs source dictionaries
+Binary dictionaries (`.dic`) load faster than source TSV. Use `suzume-cli dict compile` to compile a TSV dictionary.
 :::
 
 ---
@@ -279,6 +373,28 @@ loadBinaryDictionaryOrThrow(data: Uint8Array): void
 
 ---
 
+### `clearUserDictionaries()`
+
+Removes dictionaries loaded by the caller and clears their runtime warnings. The automatically loaded bundled user dictionary, if present, remains installed.
+
+```typescript
+clearUserDictionaries(): void
+```
+
+---
+
+### `hasCoreDictionary`
+
+Reports whether the bundled L2 core dictionary is loaded.
+
+```typescript
+get hasCoreDictionary(): boolean
+```
+
+This is `false` when the analyzer was created with `skipCoreDictionary: true` or when automatic core-dictionary loading failed.
+
+---
+
 ### `version`
 
 Gets the Suzume version string.
@@ -289,8 +405,32 @@ get version(): string
 
 **Example:**
 ```typescript
-console.log(suzume.version) // current package version, e.g. "0.9.x"
+console.log(suzume.version) // "0.9.8"
 ```
+
+This getter does not require a live analyzer handle and remains available after `destroy()`.
+
+---
+
+### `version(options?)`
+
+Returns the version without creating an analyzer handle.
+
+```typescript
+import { version } from '@libraz/suzume'
+
+const current = await version()
+console.log(current) // "0.9.8"
+```
+
+```typescript
+function version(options?: {
+  wasmPath?: string
+  freshWasmModule?: boolean
+}): Promise<string>
+```
+
+The function is asynchronous because it must instantiate or retrieve the WASM runtime.
 
 ---
 
@@ -302,21 +442,47 @@ Returns the last C API error for the current thread, or an empty string if the l
 get lastError(): string
 ```
 
+Read it immediately after a method returns `false` or `0`; a later C API call can replace it.
+
+---
+
+### `lastErrorCode`
+
+Returns the stable native error category for the last failed C ABI call.
+
+```typescript
+get lastErrorCode(): ErrorCode
+```
+
 ---
 
 ### `dictionaryWarnings`
 
-Returns warnings produced while dictionaries were loaded during construction.
+Returns nonfatal diagnostics recorded for this analyzer.
 
 ```typescript
 get dictionaryWarnings(): string[]
 ```
 
+The array contains constructor-time dictionary-loading diagnostics, optional scorer-configuration diagnostics, and warnings from successful source dictionary loads, such as skipped records or duplicate expanded entries. `clearUserDictionaries()` removes warnings from caller-loaded source dictionaries while retaining construction diagnostics. A fatal load failure is reported through the method's return value or exception and through `lastError` / `lastErrorCode`.
+
+---
+
+### `wasmMemoryBytes()`
+
+Returns the current size of this runtime's WebAssembly linear memory in bytes.
+
+```typescript
+wasmMemoryBytes(): number
+```
+
+Instances on the shared runtime report the same underlying memory size.
+
 ---
 
 ### `destroy()`
 
-Frees WASM memory and resources. Call this when done using the instance.
+Releases this analyzer handle and its allocations. The shared WASM runtime remains cached for other and future instances.
 
 ```typescript
 destroy(): void
@@ -348,8 +514,10 @@ interface Morpheme {
   conjType: string | null  // Conjugation type
   conjForm: string | null  // Conjugation form
   extendedPos: string  // Stable extended POS code (e.g. "VERB_連用")
-  start: number        // Start character offset in normalized text
-  end: number          // End character offset in normalized text
+  start: number        // Start Unicode code-point offset in normalized text
+  end: number          // End Unicode code-point offset in normalized text
+  startUtf16: number   // Start JavaScript UTF-16 offset
+  endUtf16: number     // End JavaScript UTF-16 offset
   isUserDict: boolean
   isFormalNoun: boolean
   isLowInfo: boolean
@@ -370,8 +538,10 @@ interface Morpheme {
 | `conjType` | `string \| null` | Conjugation type (for verbs/adjectives) | `"一段"` |
 | `conjForm` | `string \| null` | Conjugation form | `"連用形"` |
 | `extendedPos` | `string` | Stable extended POS code | `"VERB_連用"` |
-| `start` | `number` | Start character offset in normalized text | `0` |
-| `end` | `number` | End character offset in normalized text | `2` |
+| `start` | `number` | Start Unicode code-point offset in normalized text | `0` |
+| `end` | `number` | End Unicode code-point offset in normalized text | `2` |
+| `startUtf16` | `number` | Start JavaScript UTF-16 offset in normalized text | `0` |
+| `endUtf16` | `number` | End JavaScript UTF-16 offset in normalized text | `2` |
 | `isUserDict` | `boolean` | True when matched from a user dictionary | `false` |
 | `isFormalNoun` | `boolean` | True for formal nouns such as こと and もの | `false` |
 | `isLowInfo` | `boolean` | True when marked as low information for tag generation | `false` |
@@ -412,6 +582,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `VERB_音便` | 音便形: euphonic change | 書い-, 泳い- |
 | `VERB_て形` | て形 | 食べて, 書いて |
 | `VERB_仮定` | 仮定形: conditional | 食べれば, 書けば |
+| `VERB_仮定縮約` | Colloquial conditional with fused ば | 行きゃ, 食べりゃ, すりゃ |
 | `VERB_命令` | 命令形: imperative | 食べろ, 書け |
 | `VERB_連体` | 連体形: attributive | (same as shuushi in modern Japanese) |
 | `VERB_た形` | た形: past | 食べた, 書いた |
@@ -442,6 +613,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `AUX_文語過去` | 文語の過去 | けり |
 | `AUX_文語断定連体` | 文語の断定・連体 | たる |
 | `AUX_文語完了` | 文語の完了 | つ, ぬ |
+| `AUX_文語過去キ` | Classical past auxiliary き and its inflections | き, し, しか |
 | `AUX_文語当為` | 文語の当為 | べし |
 | `AUX_不可能` | 不可能 | かねる |
 | `AUX_授受` | 授受 | あげる, くれる, もらう |
@@ -518,17 +690,44 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 
 ## Error Handling
 
+Native failures are represented by `SuzumeError`, which extends `Error` and carries a stable `ErrorCode`.
+
 ```typescript
-try {
-  const suzume = await Suzume.create()
-  const result = suzume.analyze('テスト')
-} catch (error) {
-  const message = error instanceof Error ? error.message : String(error)
-  console.error('WASM initialization failed:', message)
+enum ErrorCode {
+  Success = 0,
+  InvalidUtf8 = 1,
+  DictionaryLoadFailed = 2,
+  FileNotFound = 3,
+  Parse = 4,
+  OutOfMemory = 5,
+  InvalidInput = 6,
+  Internal = 7,
+}
+
+class SuzumeError extends Error {
+  readonly code: ErrorCode
+  constructor(message: string, code?: ErrorCode)
 }
 ```
 
-`Suzume.create()` throws when the underlying WASM instance fails to initialize. `analyze()` and `generateTags()` also throw an `Error` when the native analysis call fails (a non-zero native error is available via `lastError`).
+```typescript
+import { ErrorCode, Suzume, SuzumeError } from '@libraz/suzume'
+
+try {
+  const suzume = await Suzume.create()
+  suzume.analyze('\uD800') // unpaired UTF-16 surrogate
+} catch (error) {
+  if (error instanceof SuzumeError) {
+    console.error(ErrorCode[error.code], error.message)
+  }
+}
+```
+
+`Suzume.create()`, `analyze()`, `analyzeWithNormalizedText()`, `generateTags()`, the `OrThrow` dictionary methods, mode changes, and `clearUserDictionaries()` throw on native failure. The non-throwing dictionary methods return `false` or `0`; use `lastError` and `lastErrorCode` for details.
+
+::: danger WebAssembly out-of-memory behavior
+An allocation failure aborts the WASM runtime instead of returning a normal `OutOfMemory` result. It does not follow the catchable `SuzumeError` path, and the affected runtime cannot be reused. Because instances share a runtime by default, an abort also invalidates the other handles on that runtime. Process long documents in chunks, and use `freshWasmModule: true` when failure isolation is required.
+:::
 
 ---
 
@@ -566,5 +765,5 @@ class MyApp {
 ```
 
 ::: warning Node.js
-In Node.js, WASM memory is not tracked by V8's heap size. If you create many instances without calling `destroy()`, memory usage will grow even though the GC sees no pressure. Always call `destroy()` explicitly in server-side code.
+In Node.js, WASM memory is not tracked by V8's heap size. If you create many handles without calling `destroy()`, memory usage can grow even though the GC sees no pressure. Call `destroy()` explicitly in server-side code.
 :::

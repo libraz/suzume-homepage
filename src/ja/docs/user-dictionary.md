@@ -1,309 +1,233 @@
 # ユーザー辞書
 
-ドメイン固有の単語を追加して解析精度を向上させます。
+ドメイン固有の語を 1 トークンとして扱いたい場合や、品詞を明示したい場合にユーザー辞書を使います。
+
+## ソース形式
+
+ソース形式はタブ区切りのテキストです。
+
+```text
+surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
+```
+
+| フィールド | 必須 | 説明 |
+|-------------|------|------|
+| `surface` | はい | 辞書が照合する表層形 |
+| `POS` | はい | 品詞 |
+| `conj_type` | いいえ | 活用または固有名詞の種別 |
+| `lemma` | いいえ | 基本形。`lemma` だけを指定するときは `conj_type` を空欄にする |
+
+次の例には、名詞、活用形を展開する動詞、基本形を明示した動詞の表層形が含まれています。
+
+```tsv
+東京公園	NOUN
+点検する	VERB	SURU
+点検した	VERB		点検する
+```
+
+フィールドの間には実際のタブ文字を入れてください。区切り文字は最初のデータ行から決まるため、1 回の読み込みに TSV 行と CSV 行を混在させないでください。空行と、空白を除いた先頭文字が `#` の行は無視されます。
+
+### 品詞の値
+
+| 値 | 説明 | 日本語の別名 |
+|----|------|--------------|
+| `NOUN` | 名詞 | `名詞` |
+| `VERB` | 動詞 | `動詞` |
+| `ADJ` | 形容詞 | `形容詞` |
+| `ADV` | 副詞 | `副詞` |
+| `PARTICLE` | 助詞 | `助詞` |
+| `AUX` | 助動詞 | `助動詞` |
+| `CONJ` | 接続詞 | `接続詞` |
+| `DET` | 連体詞 | `連体詞` |
+| `PRON` | 代名詞 | `代名詞` |
+| `PREFIX` | 接頭辞 | `接頭辞` |
+| `SUFFIX` | 接尾辞 | `接尾辞` |
+| `INTJ` | 感動詞 | `感動詞` |
+| `SYMBOL` | 記号 | `記号` |
+| `OTHER` | その他または句 | `その他` |
+
+パーサーは英語の長い別名として `ADJECTIVE`、`ADVERB`、`AUXILIARY`、`CONJUNCTION`、`DETERMINER`、`PRONOUN`、`INTERJECTION`、`SYM` も受け付けます。`PROPN` と `PROPER_NOUN` は、固有名詞に分類された名詞を作ります。
+
+::: tip 閉じたクラスのエントリ
+`PARTICLE` と `AUX` は受け付けますが、各行について警告が追加されます。文法的な助詞と助動詞は通常、ユーザー辞書ではなく Suzume の組み込み L1 規則に属します。
+:::
+
+### 活用型
+
+活用型や詳しい文法上の分類を示すには `conj_type` を指定します。表層形と活用型が適合する動詞とイ形容詞では、基本形から活用エントリを生成します。
+
+| 値 | 用途 |
+|----|------|
+| `ICHIDAN` | 一段動詞 |
+| `GODAN_KA`, `GODAN_GA`, `GODAN_SA`, `GODAN_TA` | 対応する行の五段動詞 |
+| `GODAN_NA`, `GODAN_BA`, `GODAN_MA`, `GODAN_RA`, `GODAN_WA` | 対応する行の五段動詞 |
+| `SURU`, `KURU` | 不規則動詞 |
+| `I_ADJ`, `NA_ADJ` | イ形容詞またはナ形容詞 |
+| `INTJ` | 感動詞マーカー |
+| `FAMILY`, `GIVEN` | 姓または名のマーカー |
+
+`conj_type` は大文字と小文字を区別します。動詞またはイ形容詞に適合するマーカーを付けると、実行時辞書へ活用形が展開されます。このため、展開後エントリ数はソース行数より多くなることがあります。
+
+### 従来の CSV との互換性
+
+従来の 3 列 CSV 形式も引き続き受け付けます。
+
+```csv
+東京公園,NOUN,5000
+```
+
+3 列目は互換性のために残されたコスト列です。Suzume はこの値を無視するため、照合の優先度は変わりません。新しい辞書は TSV で作り、活用形を展開する場合は `conj_type` を指定してください。
 
 ## 実行時の読み込み
 
-実行時に辞書エントリを 1 回の呼び出しで読み込みます。
+読み込みに成功するたび、同じ解析器へソース辞書またはバイナリ辞書が追加されます。ネイティブ CLI は、繰り返し指定できる各 `--dict` 引数を、そのコマンドで使う解析器へ適用します。
 
 ::: code-group
 
-```typescript [node]
+```typescript [Node]
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
+const source = '東京公園\tNOUN\n点検する\tVERB\tSURU\n'
 
-// 単語を1つ追加
-suzume.loadUserDictionary('ChatGPT,NOUN')
-
-// 複数の単語を追加
-suzume.loadUserDictionary(`
-スカイツリー,NOUN
-ポケモン,NOUN
-DeepL,NOUN
-`)
-```
-
-```python [python]
-from suzume import Suzume
-
-sz = Suzume()
-
-# 単語を1つ追加
-sz.load_user_dict("ChatGPT,NOUN")
-
-# 複数の単語を追加
-sz.load_user_dict(
-    "スカイツリー,NOUN\n"
-    "ポケモン,NOUN\n"
-    "DeepL,NOUN\n"
-)
-```
-
-```bash [cli]
-# -d / --dict で 1 つ以上の辞書を渡す（繰り返し指定可能）
-suzume-cli analyze -d user.csv "スカイツリーとポケモン"
-```
-
-:::
-
-### 結果の確認
-
-`loadUserDictionary()` は `boolean` を返します。渡した辞書データを解析・読み込みできなかった場合は `false` になります。読み込み失敗を扱いたいときはこの値を確認してください。
-
-```typescript
-if (!suzume.loadUserDictionary(data)) {
-  // 辞書を読み込めなかった — フォールバックするかエラーを通知する
+const expandedCount = suzume.loadUserDictionaryCount(source)
+if (expandedCount === 0) {
+  throw new Error(suzume.lastError)
 }
 ```
 
-読み込み失敗で処理を中断したい場合は、fail-fast の派生メソッドを使います。こちらは `false` を返す代わりに、内部の C API の詳細を含むエラーを投げます。
+```python [Python]
+from suzume import Suzume
 
-```typescript
-suzume.loadUserDictionaryOrThrow(data)
+source = "東京公園\tNOUN\n点検する\tVERB\tSURU\n"
+
+with Suzume() as suzume:
+    expanded_count = suzume.load_user_dict(source)
 ```
 
-バイナリ辞書向けのメソッド（`loadBinaryDictionary()` / `loadBinaryDictionaryOrThrow()`）も同じパターンに従います。Python では `load_user_dict()` と `load_binary_dict()` が失敗時に `SuzumeError` を送出します。
+```go [Go]
+package main
 
-::: tip パース動作と起動時の警告
-フィールドが 2 個未満の行は警告なしでスキップされます。一方、未知の品詞や不正な CSV クォートなどは読み込み失敗になります。実行時の失敗は戻り値（または `loadUserDictionaryOrThrow()`）と `lastError` で確認してください。`dictionaryWarnings` は `Suzume.create()` が辞書を自動読み込みした際の警告であり、実行時にスキップした行の一覧ではありません（Python では `dictionary_warnings`）。
+import (
+	"log"
 
-```typescript
-const loaded = suzume.loadUserDictionary('ChatGPT,NOUN\nbroken-line')
-console.log(loaded) // true: "broken-line" は警告なしで無視される
+	"github.com/libraz/go-suzume"
+)
+
+func main() {
+	analyzer, err := suzume.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer analyzer.Close()
+
+	source := []byte("東京公園\tNOUN\n点検する\tVERB\tSURU\n")
+	if err := analyzer.LoadUserDictionary(source); err != nil {
+		log.Fatal(err)
+	}
+}
 ```
+
+```cpp [C++]
+#include "suzume/suzume.hpp"
+
+#include <cstddef>
+
+int main() {
+  suzume::Tokenizer tokenizer;
+  const std::size_t expanded_count =
+      tokenizer.loadUserDictionaryCount("東京公園\tNOUN\n点検する\tVERB\tSURU\n");
+  return expanded_count == 0 ? 1 : 0;
+}
+```
+
+```bash [Native CLI]
+# user.tsv には上と同じタブ区切りの行が入っている。
+# --dict は繰り返し指定でき、コンパイル済みの .dic も受け付ける。
+suzume-cli analyze --dict user.tsv "東京公園を点検する"
+```
+
 :::
 
-## フォーマット
+現在の Go バインディングの `LoadUserDictionary([]byte) error` API は成否を返しますが、展開後エントリ数は返しません。`ClearUserDictionaries` メソッドもありません。C ABI にある操作を Go バインディングでも使えると解釈しないでください。
 
-### 基本形式
+### 戻り値とエラー
 
-```
-表層形,品詞
-```
+| インターフェース | ソース辞書の結果 | 失敗時の詳細 |
+|------------------|------------------|--------------|
+| Node | `loadUserDictionary()` は `boolean`、`loadUserDictionaryCount()` は展開後エントリ数を返す | `lastError` / `lastErrorCode` を読むか、`loadUserDictionaryOrThrow()` を使う |
+| Python | `load_user_dict()` は展開後エントリ数を返す | `SuzumeError` を送出 |
+| Go | `LoadUserDictionary()` は `error` を返す | 取得できる場合はネイティブ側のメッセージを戻り値のエラーに含む |
+| C++ | `loadUserDictionary()` は `bool`、`loadUserDictionaryCount()` は展開後エントリ数を返す | `Tokenizer::lastError()` / `lastErrorCode()` を読む |
+| C ABI | `suzume_load_user_dict()` は `1` または `0`、`suzume_load_user_dict_count()` は展開後エントリ数を返す | `suzume_last_error()` / `suzume_last_error_code()` を読む |
+| ネイティブ CLI | 辞書を読み込めない場合は 0 以外で終了 | 標準エラーへ読み込みエラーを出力 |
 
-| フィールド | 必須 | 説明 |
-|-------|----------|-------------|
-| `表層形` | はい | テキスト中に現れる単語 |
-| `品詞` | はい | 品詞 |
+件数を返す API は失敗時に `0` を返します。ソースの読み込みに成功した場合は、必ず 1 件以上のエントリが追加されます。件数はソース行数ではなく、活用形の展開と重複除去を終えた後に数えます。
 
-### 完全形式
+ソース辞書またはバイナリ辞書の読み込みに失敗しても、解析器へ追加済みの辞書は削除も置換もされません。ソースファイルの先頭にある妥当な行だけが追加されることもありません。成功した読み込みは、明示的に消去するか解析器を破棄するまで加算されます。
 
-```
-表層形,品詞,コスト,基本形
-```
+### 警告と一部だけ妥当な入力
 
-| フィールド | 必須 | 説明 |
-|-------|----------|-------------|
-| `表層形` | はい | テキスト中に現れる単語 |
-| `品詞` | はい | 品詞 |
-| `コスト` | いいえ | 現在パーサーでは無視されます（後述） |
-| `基本形` | いいえ | 辞書形/基本形 |
+実行時のソース読み込みでは、フィールドが 2 個未満のレコードをスキップします。別の行が妥当なら、その行は追加され、スキップした行は警告として記録されます。
 
-## 品詞の値
-
-| 値 | 説明 | 日本語名 |
-|-------|-------------|----------|
-| `NOUN` | 名詞、固有名詞 | 名詞 |
-| `VERB` | 動詞 | 動詞 |
-| `ADJ` | 形容詞 | 形容詞 |
-| `ADV` | 副詞 | 副詞 |
-| `PARTICLE` | 助詞 | 助詞 |
-| `AUX` | 助動詞 | 助動詞 |
-| `PRON` | 代名詞 | 代名詞 |
-| `DET` | 連体詞 | 連体詞 |
-| `CONJ` | 接続詞 | 接続詞 |
-| `INTJ` | 感動詞 | 感動詞 |
-| `PREFIX` | 接頭辞 | 接頭辞 |
-| `SUFFIX` | 接尾辞 | 接尾辞 |
-| `SYMBOL` | 記号 | 記号 |
-| `OTHER` | 未分類 | その他 |
-
-::: tip 日本語の品詞名
-英語の値の代わりに日本語の品詞名（例：`名詞`、`動詞`、`形容詞`）も使用できます。
-:::
-
-## 例
-
-### IT用語
-
-```csv
-ChatGPT,NOUN
-GitHub,NOUN
-TypeScript,NOUN
-WebAssembly,NOUN
-Kubernetes,NOUN
+```text
+missing-pos
+東京公園	NOUN
 ```
 
-### ブランド名
+実行時読み込みの警告は解析器の辞書警告一覧へ追加されます。Node では `dictionaryWarnings`、Python では `dictionary_warnings`、Go では `DictionaryWarnings()`、C++ では `Tokenizer::dictionaryWarnings()`、C では `suzume_dictionary_warning_*` 関数で取得できます。`clearUserDictionaries()` と各言語の対応 API は実行時読み込みの警告を消去しますが、構築時の警告は残します。ネイティブ CLI は現在、`--dict` のソースファイルを処理するときに追加された警告を表示しません。
 
-```csv
-スカイツリー,NOUN
-ポケモン,NOUN
-任天堂,NOUN
-ソニー,NOUN
-```
+すべてのデータ行がスキップされた場合は、読み込めるエントリがないため失敗します。未知の品詞、必須フィールドの空欄、不正な UTF-8、従来 CSV の不正なクォート、想定外の空でない列がある場合も、読み込み全体が失敗します。
 
-### 複合語
+## 呼び出し元が読み込んだ辞書の消去
 
-```csv
-形態素解析,NOUN
-機械学習,NOUN
-自然言語処理,NOUN
-```
+消去すると、その解析器へ明示的に読み込んだソース辞書とバイナリ辞書がすべて削除されます。
 
-### 活用のある動詞
+| インターフェース | 消去操作 |
+|------------------|----------|
+| Node | `suzume.clearUserDictionaries()` |
+| Python | `suzume.clear_user_dictionaries()` |
+| Go | 現在のバインディングでは公開されていない |
+| C++ | `tokenizer.clearUserDictionaries()` |
+| C ABI | `suzume_clear_user_dictionaries(handle)` |
+| ネイティブ CLI | 永続する解析器がないため消去操作もない。辞書は 1 回の実行中だけ有効 |
 
-```csv
-ググる,VERB,5000,ググる
-バズる,VERB,5000,バズる
-```
+自動読み込みされたバンドル済みユーザー辞書は残ります。組み込み辞書とコア辞書にも影響しません。
 
-## エントリが反映されたか確認する
+## 辞書との一致を確認する
 
-各形態素は `isUserDict` を持ち、読み込んだユーザー辞書から一致したトークンの場合に `true` になります。カスタム単語が実際に適用されているかを確認するのに使えます。
-
-```typescript
-suzume.loadUserDictionary('スカイツリー,NOUN')
-
-const result = suzume.analyze('スカイツリーへ行く')
-const skytree = result.find((m) => m.surface === 'スカイツリー')
-
-console.log(skytree?.isUserDict) // true — ユーザー辞書から一致
-```
-
-## コスト列について
-
-`コスト` 列は現在パーサーで**使用されていません**。値が読み取られることはなく、そこに何を書いてもエントリは同じように一致します。可読性のために列を残しても構いませんが、単語選択を制御する目的で値を調整することは当てにしないでください。現状では `5000` と `9000` はまったく同じ挙動になります。
-
-```csv
-# 末尾のコスト値は受け付けられますが無視されます
-東京都,NOUN,5000
-超電磁砲,NOUN,9000
-
-# 同じ意味 — コストを書かなくても同様に一致します
-東京都,NOUN
-超電磁砲,NOUN
-```
-
-## ユースケース
-
-### 検索インデックス
-
-```typescript
-// ドメイン固有の用語を追加してトークン化を改善
-suzume.loadUserDictionary(`
-React,NOUN
-Next.js,NOUN
-Tailwind,NOUN
-`)
-
-const tags = suzume.generateTags('Next.jsでReactアプリを作成')
-// [{ tag: 'Next.js', pos: 'NOUN' },
-//  { tag: 'React', pos: 'NOUN' },
-//  { tag: 'アプリ', pos: 'NOUN' },
-//  { tag: '作成', pos: 'NOUN' }]
-```
-
-### チャットアプリケーション
-
-```typescript
-// スラングや新語を追加
-suzume.loadUserDictionary(`
-草,INTJ
-ワロタ,INTJ
-エモい,ADJ
-`)
-```
-
-### EC サイト
-
-```typescript
-// 製品名やブランドを追加
-suzume.loadUserDictionary(`
-iPhone,NOUN
-MacBook,NOUN
-AirPods,NOUN
-`)
-```
-
-## ベストプラクティス
-
-1. **エントリは最小限に** - 誤ってトークン化される単語のみ追加
-2. **大文字の品詞を使用** - `noun` ではなく `NOUN`（日本語名の `名詞` も可）
-3. **段階的にテスト** - 数語追加して結果を確認
-4. **複合語を考慮** - 1トークンにしたい場合は `東京都` を追加
+解析結果の各形態素は、Node では `isUserDict`、Python と C++ では `is_user_dict`、Go では `IsUserDict`、C では `SUZUME_MORPHEME_USER_DICT` フラグを持ちます。選択されたトークンがユーザー辞書に由来する場合は真になります。バンドル済みユーザー辞書との一致も含まれます。
 
 ## バイナリ辞書
 
-より高速な読み込みのため、辞書を `suzume-cli` ツールでバイナリ形式（.dic）にプリコンパイルできます：
+起動時間を短くしたい場合や、同じ辞書を繰り返し読み込む場合は、ソース TSV をコンパイルします。
 
 ```bash
-# TSVをバイナリにコンパイル
-suzume-cli dict compile user.tsv   # → user.dic
+suzume-cli dict compile user.tsv   # user.dic を書き出す
 ```
 
-バイナリ辞書を実行時に読み込み：
+Node と C++ では `loadBinaryDictionary()`、Python では `load_binary_dict()`、Go では `LoadBinaryDictionary()`、C では `suzume_load_binary_dict()` に `.dic` のバイト列を渡します。ネイティブ CLI は `--dict` で `.dic` のパスを受け付けます。
 
-```typescript
-// Node.js
-import { readFile } from 'fs/promises'
-const dictData = new Uint8Array(await readFile('user.dic'))
-suzume.loadBinaryDictionary(dictData)
+バイナリ辞書も追加で読み込まれ、失敗時は追加済みの辞書を維持します。現在の `.dic` 形式はバージョン 4 です。Suzume は別のバイナリ形式版を拒否するため、TSV ソースを保管し、必要になったときに現在の CLI で再コンパイルしてください。
 
-// ブラウザ
-const response = await fetch('/dictionaries/user.dic')
-const browserDictData = new Uint8Array(await response.arrayBuffer())
-suzume.loadBinaryDictionary(browserDictData)
-```
-
-::: tip パフォーマンス
-バイナリ辞書はCSV形式よりも大幅に高速に読み込めます。大規模なカスタム語彙を使用する本番環境に最適です。
-:::
-
-### .dic フォーマット概要
-
-バイナリ辞書は以下の構造を持つコンパクトな形式です：
-
-```
-[ヘッダー (16 bytes, マジック: "SZMD")]
-[フロントコーディングされた表層形テーブル]
-[品詞 / 拡張品詞の文法パレット]
-[省略可能なパック済みレコードパレット]
-[可変サイズのエントリ配列 (1 エントリあたり 1、2、または 3 bytes)]
-[省略可能な長さ付き・重複排除済み原形テーブル (UTF-8)]
-```
-
-- **表層形テーブル** — ソート済み表層形の共通接頭辞を共有してコンパクトに格納
-- **文法パレット** — エントリが参照する品詞/拡張品詞の組み合わせを重複排除
-- **レコードパレット** — サイズを削減できる場合、頻出するパック済みレコードを 1 byte のインデックスに置換
-- **可変サイズのエントリ配列** — 辞書ごとに文法のみ、パック、ワイド、レコードパレットの各形式から選択
-- **原形の表現** — 表層形と異なる原形だけを保持し、すべての原形が近傍の表層形にある場合は相対インデックスを使って原形テーブル自体を省略
-
-現在の pre-1.0 フォーマットは version 3 で、古いフォーマット版のデコードは意図的にサポートしていません。コンパイル時に動詞・形容詞は活用形に展開され、全エントリがソートされます。読み込み時に、コンパクトな表層形テーブルから実行時用のダブル配列トライを再構築します。
+ファイルは 16 バイトの `SZMD` ヘッダー、前方差分で圧縮した表層形テーブル、文法パレット、可変長のエントリ配列、省略可能な重複除去済み基本形テーブルで構成されます。同じ表層形に異なる文法エントリを保持できます。
 
 ## 永続化
 
-辞書エントリはメモリに保存され、インスタンスが破棄されると失われます。永続化するには：
+呼び出し元が読み込んだ辞書は解析器のインスタンス内にあり、解析器を破棄すると失われます。アプリケーション側で TSV ソースまたはコンパイル済み `.dic` を保存し、新しい解析器ごとに読み込んでください。
 
-```typescript
-// 初期化時にストレージから読み込み
-const savedDict = localStorage.getItem('myDictionary')
-if (savedDict) {
-  suzume.loadUserDictionary(savedDict)
-}
+## 推奨事項
 
-// 新しい単語を追加時に保存
-function addWord(word: string, pos: string) {
-  const entry = `${word},${pos}`
-  suzume.loadUserDictionary(entry)
+1. 実際のタブ文字を使った現行 TSV で作成する。
+2. 現在の分割または品詞を修正したい語だけを追加する。
+3. 活用形が必要な動詞と形容詞には `conj_type` を指定する。
+4. 読み込みごとに展開後エントリ数または各バインディングのエラーを確認する。
+5. 代表的な文を解析し、ユーザー辞書フラグを確認する。
 
-  // ストレージに追記
-  const current = localStorage.getItem('myDictionary') || ''
-  localStorage.setItem('myDictionary', current + '\n' + entry)
-}
-```
+## 関連ページ
 
-## 関連情報
-
-- [API リファレンス](/ja/docs/api) — 辞書読み込みメソッド（`loadUserDictionary` / `loadUserDictionaryOrThrow` / `loadBinaryDictionary` / `loadBinaryDictionaryOrThrow`、`dictionaryWarnings`）と Morpheme のフィールド（`isUserDict`、`isFromDictionary`）。
+- [API リファレンス](/ja/docs/api) — 辞書メソッド、エラー、警告、形態素のフィールド。
+- [C / C++ ライブラリ](/ja/docs/cpp) — C++ ラッパーと安定した C ABI。
+- [Python API](/ja/docs/python) — Python の戻り値と例外。
+- [Go バインディング](/ja/docs/go) — cgo API。
+- [ネイティブ CLI](/ja/docs/cli) — 辞書ファイルのコンパイル、確認、読み込み。

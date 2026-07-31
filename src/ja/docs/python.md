@@ -1,16 +1,15 @@
 # Python バインディング
 
-PyPI の [`suzume`](https://pypi.org/project/suzume/) パッケージは Suzume の Python バインディングです。Python スクリプト、データパイプライン、Web サービスから、JavaScript/WASM パッケージを介さずに同じ日本語形態素解析器を使えます。
+[`suzume`](https://pypi.org/project/suzume/) パッケージは、Suzume のネイティブライブラリを呼び出す ctypes バインディングです。ホイールには共有ライブラリと同梱辞書が含まれます。
 
-このバインディングはネイティブ C++ コアを薄く包んだ [ctypes](https://docs.python.org/3/library/ctypes.html) レイヤーです。コンパイル済みライブラリと辞書はホイールに同梱されているため、追加でインストールするものはなく、外部辞書ファイルを同梱する必要もありません。
+## 動作要件とインストール
 
-## 必要環境
+Python 3.10 以上が必要です。PyPI では次の環境向けにバイナリホイールを公開しています。
 
-- Python 3.10 以上
+- Linux x86_64（`manylinux2014` / `manylinux_2_17`）
+- macOS arm64、macOS 11 以降
 
-対応プラットフォーム向けのネイティブライブラリと辞書はホイールに含まれているため、C++ コンパイラやビルド手順は不要です。
-
-## インストール
+Windows、macOS x86_64、Linux arm64、その他のプラットフォームやアーキテクチャには対応していません。ソースディストリビューションも公開していないため、互換性のあるホイールがない環境では `pip install` できません。
 
 ::: code-group
 
@@ -28,178 +27,224 @@ uv add suzume
 
 :::
 
+ホイールをインストールすると `suzume` コマンドも使えるようになります。詳しくは [Python CLI](/ja/docs/python-cli) を参照してください。開発者向けのネイティブコマンド `suzume-cli` とは別のものです。
+
 ## クイックスタート
 
-`Suzume()` で解析器を作成し、コンテキストマネージャーとして使うことでネイティブハンドルを自動的に解放し、解析された形態素を反復処理します。
+コンテキストマネージャーを使うと、終了時に `Suzume` のネイティブハンドルが解放されます。
 
 ```python
 from suzume import Suzume
 
-with Suzume() as sz:
-    for m in sz.analyze("東京都に住んでいます"):
-        print(m.surface, m.pos, m.base_form)
+with Suzume() as analyzer:
+    for morpheme in analyzer.analyze("東京都に住んでいます"):
+        print(morpheme.surface, morpheme.pos, morpheme.base_form)
 ```
 
-`analyze()` は毎回 `list[Morpheme]` を返します。解析器はネイティブハンドルを保持しておりスレッドセーフではないため、スレッドごとに 1 インスタンスを使ってください。`with` ブロックを使えない場合は、使い終わったら明示的に `close()` を呼び出します。
+コンテキストマネージャーを使わない場合は、最後に `close()` を呼び出してください。`close()` は複数回呼び出しても安全です。
+
+同じ `Suzume` インスタンスへの呼び出しは直列化されるため、複数の Python スレッドから安全に共有できます。ネイティブ解析を並列実行する場合は、ワーカーごとに別のインスタンスを作成してください。
+
+## コンストラクタオプション
+
+コンストラクタの引数はすべてキーワード専用です。
+
+| オプション | 型 | 既定値 | 説明 |
+|-----------|----|--------|------|
+| `mode` | `Mode \| str` | `Mode.NORMAL` | 分割モード: `normal`、`search`、`split` |
+| `preserve_vu` | `bool` | `True` | ヴの異体表記を保持 |
+| `preserve_case` | `bool` | `True` | ASCII 英字の大文字・小文字を保持 |
+| `preserve_symbols` | `bool` | `False` | 記号と絵文字を保持 |
+| `lemmatize` | `bool` | `True` | 解析後に原形を補正 |
+| `merge_compounds` | `bool` | `False` | 連続する名詞複合語を結合 |
+| `skip_user_dictionary` | `bool` | `False` | 同梱ユーザー辞書を読み込まない |
+| `skip_core_dictionary` | `bool` | `False` | 同梱コア辞書を読み込まない |
+| `skip_env_config` | `bool` | `False` | スコアラー設定用の環境変数を無視 |
+| `report_scorer_config` | `bool` | `False` | スコアラー設定の診断を `dictionary_warnings` に追加 |
+| `scorer_options` | `str \| dict \| None` | `None` | JSON 文字列またはマッピングで指定するスコアラーの上書き設定 |
 
 ```python
-sz = Suzume()
-try:
-    morphemes = sz.analyze("東京都に住んでいます")
-finally:
-    sz.close()
+from suzume import Mode, Suzume
+
+with Suzume(
+    mode=Mode.SEARCH,
+    merge_compounds=True,
+    skip_env_config=True,
+    scorer_options={"unary": {"noun_prior": 0.25}},
+) as analyzer:
+    morphemes = analyzer.analyze("東京スカイツリーの展望台")
 ```
 
-## 解析モード
-
-コンストラクタに `mode` を渡すと、テキストの分割方法を制御できます。`Mode` 列挙型のメンバー、または同等の文字列を指定できます。
+`mode` は後から変更できます。変更しても辞書は再読み込みされません。
 
 ```python
-from suzume import Suzume, Mode
-
-with Suzume(mode=Mode.SEARCH, merge_compounds=True) as sz:
-    morphemes = sz.analyze("東京スカイツリーの展望台")
-
-# 文字列でも指定できます:
-with Suzume(mode="split") as sz:
-    ...
+with Suzume() as analyzer:
+    analyzer.mode = "split"
+    assert analyzer.mode is Mode.SPLIT
 ```
 
-指定できるモードは `Mode.NORMAL`（`"normal"`）、`Mode.SEARCH`（`"search"`）、`Mode.SPLIT`（`"split"`）です。各モードが分割に与える影響は [解析モード](/ja/docs/api) を参照してください。
+各モードの分割動作は [解析モード](/ja/docs/api) を参照してください。
 
-コンストラクタはキーワード専用引数です。`mode` に加えて、正規化・解析のフラグである `preserve_vu`（既定 `True`）、`preserve_case`（既定 `True`）、`preserve_symbols`（既定 `False`）、`lemmatize`（既定 `True`）、`merge_compounds`（既定 `False`）を受け取ります。
+## 解析と正規化後テキスト
+
+`analyze()` は `list[Morpheme]` を返します。各形態素の `start` と `end` は正規化後テキスト上の文字オフセットで、入力テキスト上の位置とは異なる場合があります。
+
+オフセットが参照する文字列も必要な場合は `analyze_with_normalized_text()` を使います。
+
+```python
+with Suzume(preserve_case=False) as analyzer:
+    result = analyzer.analyze_with_normalized_text("ABCを検索")
+    print(result.normalized_text)
+    print(result.morphemes)
+```
+
+戻り値は frozen dataclass の `AnalysisResult` で、`normalized_text: str` と `morphemes: list[Morpheme]` を持ちます。
 
 ## Morpheme のフィールド
 
-`analyze()` は `Morpheme` のリストを返します。これは snake_case のフィールドを持つ frozen dataclass です。
+`Morpheme` は frozen dataclass です。
 
 | フィールド | 型 | 説明 |
-|-----------|-----|------|
-| `surface` | `str` | テキスト中に現れる表層形 |
-| `pos` | `str` | 英語の品詞（大文字、例: `NOUN`） |
+|-----------|----|------|
+| `surface` | `str` | 正規化後テキスト中の表層形 |
+| `pos` | `str` | 英語の品詞。例: `NOUN` |
 | `base_form` | `str` | 辞書形・原形 |
-| `pos_ja` | `str` | 日本語の品詞（例: 名詞） |
+| `pos_ja` | `str` | 日本語の品詞 |
 | `conj_type` | `str \| None` | 活用型。活用しない語では `None` |
 | `conj_form` | `str \| None` | 活用形。活用しない語では `None` |
-| `extended_pos` | `str` | 安定した拡張品詞コード（例: `VERB_連用`） |
+| `extended_pos` | `str` | 安定した拡張品詞コード |
 | `start` | `int` | 正規化後テキストにおける開始文字オフセット |
 | `end` | `int` | 正規化後テキストにおける終了文字オフセット |
-| `is_user_dict` | `bool` | ユーザー辞書にマッチした場合 True |
-| `is_formal_noun` | `bool` | こと・もの などの形式名詞で True |
-| `is_low_info` | `bool` | タグ生成向けに低情報量と判定された場合 True |
-| `is_unknown` | `bool` | 未知語候補として生成された場合 True |
-| `is_from_dictionary` | `bool` | いずれかの辞書にマッチした場合 True |
-| `score` | `float` | 解析器が用いる候補スコア・コスト |
+| `is_user_dict` | `bool` | ユーザー辞書にマッチしたか |
+| `is_formal_noun` | `bool` | こと・ものなどの形式名詞か |
+| `is_low_info` | `bool` | 低情報量の語としてマークされているか |
+| `is_unknown` | `bool` | 未知語候補か |
+| `is_from_dictionary` | `bool` | いずれかの辞書にマッチしたか |
+| `score` | `float` | 解析器が使った候補スコア |
 
-`pos` と `extended_pos` の全一覧は [API リファレンス](/ja/docs/api) を参照してください。
+`pos` と `extended_pos` の値は [API リファレンス](/ja/docs/api) を参照してください。
 
 ## タグ生成
 
-`generate_tags()` はテキストからキーワードタグを抽出します。既定では内容語（名詞、動詞、形容詞、副詞）を残し、助詞、助動詞、形式名詞、低情報量の語を除外します。
+`generate_tags()` は `list[Tag]` を返します。各 `Tag` は `tag` と `pos` のフィールドを持ちます。
+
+```python
+with Suzume() as analyzer:
+    tags = analyzer.generate_tags(
+        "東京都の天気予報を確認する",
+        pos_filter=["noun", "verb"],
+        max_tags=10,
+    )
+```
+
+`pos_filter` には品詞名のイテラブルまたは整数ビットマスクを指定できます。
+
+| 名前 | ビット |
+|------|-------:|
+| `noun` | `1` |
+| `verb` | `2` |
+| `adjective` | `4` |
+| `adverb` | `8` |
+| `particle` | `16` |
+| `auxiliary` | `32` |
+
+`0` または空のイテラブルはすべての品詞を選択します。ただし、助詞と助動詞は既定で除外されます。結果に含めるには、対応する除外オプションを `False` にしてください。
+
+```python
+with Suzume() as analyzer:
+    particles = analyzer.generate_tags(
+        "本を読む",
+        pos_filter=["particle"],
+        exclude_particles=False,
+        min_length=1,
+    )
+```
+
+その他のオプションは次のとおりです。
+
+| オプション | 型 | 既定値 | 説明 |
+|-----------|----|--------|------|
+| `exclude_basic` | `bool` | `False` | 原形がひらがなのみの語を除外 |
+| `use_lemma` | `bool` | `True` | 表層形ではなく原形を使用 |
+| `min_length` | `int` | `2` | タグの最小文字数 |
+| `max_tags` | `int` | `0` | 最大件数（`0` は無制限） |
+| `exclude_particles` | `bool` | `True` | 助詞を除外 |
+| `exclude_auxiliaries` | `bool` | `True` | 助動詞を除外 |
+| `exclude_formal_nouns` | `bool` | `True` | 形式名詞を除外 |
+| `exclude_low_info` | `bool` | `True` | 低情報量の語を除外 |
+| `remove_duplicates` | `bool` | `True` | 重複タグを除去 |
+
+## ユーザー辞書
+
+`load_user_dict()` は現行の TSV または旧形式の CSV テキストを読み込みます。戻り値は、活用形を展開した後にインストールされたエントリ数です。
 
 ```python
 from suzume import Suzume
 
-with Suzume() as sz:
-    for tag in sz.generate_tags("東京都の天気予報を確認する"):
-        print(tag.tag, tag.pos)
+dictionary = "食べ直す\tVERB\tGODAN_SA\n"
+
+with Suzume() as analyzer:
+    expanded_count = analyzer.load_user_dict(dictionary)
+    print(expanded_count)
 ```
 
-結果はそれぞれ `Tag` dataclass で、`tag`（キーワードのテキスト）と `pos`（その品詞）の 2 フィールドを持ちます。
-
-`generate_tags()` はキーワード専用のオプションを取ります。`pos_filter` オプションは結果を特定の品詞に絞り込むもので、2 つの形式を受け付けます。品詞名のイテラブル、または `1=名詞`、`2=動詞`、`4=形容詞`、`8=副詞`、`0=すべて` を表す生のビットマスク int です。
-
-```python
-with Suzume() as sz:
-    # 名前で指定:
-    nouns = sz.generate_tags("美味しいラーメンを食べた", pos_filter=["noun"])
-
-    # 同等のビットマスク（名詞と動詞）:
-    tags = sz.generate_tags("美味しいラーメンを食べた", pos_filter=1 | 2)
-
-    # 上位 10 件のタグのみ残す:
-    top = sz.generate_tags("東京都の天気予報を確認する", max_tags=10)
-```
-
-残りのオプションと既定値は次のとおりです。
-
-| オプション | 型 | 既定値 | 説明 |
-|-----------|-----|-------|------|
-| `pos_filter` | `int \| Iterable[str]` | `0` | 対象とする品詞カテゴリ（`0`・空 = すべて） |
-| `exclude_basic` | `bool` | `False` | 原形がひらがなのみの語を除外 |
-| `use_lemma` | `bool` | `True` | 表層形ではなく原形（辞書形）を使う |
-| `min_length` | `int` | `2` | タグの最小文字数 |
-| `max_tags` | `int` | `0` | タグの最大件数（`0` = 無制限） |
-| `exclude_particles` | `bool` | `True` | 助詞を除外 |
-| `exclude_auxiliaries` | `bool` | `True` | 助動詞を除外 |
-| `exclude_formal_nouns` | `bool` | `True` | こと・もの などの形式名詞を除外 |
-| `exclude_low_info` | `bool` | `True` | 低情報量の語を除外 |
-| `remove_duplicates` | `bool` | `True` | 重複するタグを除去 |
-
-## ユーザー辞書
-
-`load_user_dict()` で、CSV テキストからカスタム語を実行時に追加できます。
-
-```python
-from suzume import Suzume, SuzumeError
-
-with Suzume() as sz:
-    try:
-        sz.load_user_dict("ChatGPT,NOUN\n東京スカイツリー,NOUN")
-    except SuzumeError as e:
-        print("ユーザー辞書の読み込みに失敗:", e)
-
-    for m in sz.analyze("ChatGPTを使う"):
-        print(m.surface, m.pos, m.is_user_dict)
-```
-
-コンパイル済みのバイナリ `.dic` 辞書は、`load_binary_dict()` でメモリから読み込めます。
+コンパイル済みの `.dic` 辞書は `load_binary_dict(bytes)` で読み込みます。`clear_user_dictionaries()` は呼び出し側が読み込んだ辞書を削除しますが、同梱ユーザー辞書は残します。
 
 ```python
 from pathlib import Path
-from suzume import Suzume, SuzumeError
+from suzume import Suzume
 
-data = Path("custom.dic").read_bytes()
-
-with Suzume() as sz:
-    try:
-        sz.load_binary_dict(data)
-    except SuzumeError as e:
-        print("バイナリ辞書の読み込みに失敗:", e)
+with Suzume() as analyzer:
+    analyzer.load_binary_dict(Path("custom.dic").read_bytes())
+    analyzer.clear_user_dictionaries()
 ```
 
-どちらのメソッドも、読み込みに失敗すると `SuzumeError`（`RuntimeError` のサブクラス）を送出します。`dictionary_warnings` プロパティは、構築時に辞書が自動読み込みされた際に発生した警告を返します。
+`has_core_dictionary` は同梱コア辞書が読み込まれているかを返します。`dictionary_warnings` は辞書読み込み、解析、スコアラー設定の診断を返します。
+
+## エラー
+
+ネイティブ処理の失敗時は、`RuntimeError` のサブクラスである `SuzumeError` が送出されます。`code` 属性は安定した `ErrorCode` 値なので、メッセージを解析せずに処理を分岐できます。
 
 ```python
-with Suzume() as sz:
-    for warning in sz.dictionary_warnings:
-        print("警告:", warning)
+from suzume import ErrorCode, Suzume, SuzumeError
+
+try:
+    Suzume(scorer_options="{")
+except SuzumeError as error:
+    if error.code is ErrorCode.PARSE:
+        print("スコアラー設定が不正です")
 ```
+
+| `ErrorCode` | 値 |
+|-------------|---:|
+| `SUCCESS` | `0` |
+| `INVALID_UTF8` | `1` |
+| `DICTIONARY_LOAD_FAILED` | `2` |
+| `FILE_NOT_FOUND` | `3` |
+| `PARSE` | `4` |
+| `OUT_OF_MEMORY` | `5` |
+| `INVALID_INPUT` | `6` |
+| `INTERNAL` | `7` |
 
 ## API 概要
 
-`Suzume` のインスタンスメソッドとプロパティ:
-
 | メンバー | 説明 |
 |---------|------|
-| `Suzume(*, mode=..., preserve_vu=..., ...)` | 解析器を作成（キーワード専用オプション） |
-| `analyze(text)` | `list[Morpheme]` を返す（[Morpheme のフィールド](#morpheme-のフィールド)を参照） |
-| `generate_tags(text, *, pos_filter=..., ...)` | フィルターや件数制限付きでキーワード `Tag` を抽出 |
-| `load_user_dict(csv)` | CSV ユーザー辞書を読み込む。失敗時は `SuzumeError` を送出 |
-| `load_binary_dict(data)` | バイナリ `.dic` 辞書を読み込む。失敗時は `SuzumeError` を送出 |
-| `dictionary_warnings` | 自動辞書読み込み時の警告 |
-| `close()` | ネイティブハンドルを解放（冪等） |
-
-このクラスはコンテキストマネージャープロトコルも実装しているため、`with Suzume() as sz:` は終了時に自動で `close()` を呼び出します。
-
-モジュールレベルの関数:
-
-| 関数 | 説明 |
-|------|------|
-| `suzume.version()` | ネイティブ Suzume ライブラリのバージョン文字列を返す |
+| `Suzume(*, ...)` | 解析器を作成 |
+| `analyze(text)` | `list[Morpheme]` を返す |
+| `analyze_with_normalized_text(text)` | `AnalysisResult` を返す |
+| `generate_tags(text, *, ...)` | フィルター済みのキーワードタグを返す |
+| `mode` | 解析モードを取得または変更 |
+| `load_user_dict(text)` | TSV または CSV テキストを読み込み、展開後エントリ数を返す |
+| `load_binary_dict(data)` | コンパイル済み辞書を読み込む |
+| `clear_user_dictionaries()` | 呼び出し側が読み込んだ辞書を削除 |
+| `dictionary_warnings` | 辞書とスコアラーの診断を返す |
+| `has_core_dictionary` | コア辞書が読み込まれているかを返す |
+| `close()` | ネイティブハンドルを解放 |
+| `version()` | ネイティブライブラリのバージョンを返す |
 
 ## 関連ページ
 
-- [API リファレンス](/ja/docs/api) — 品詞と `extended_pos` の値一覧、および共通の Morpheme の概念。
-- [はじめに](/ja/docs/getting-started) — すべてのバインディングに共通する Suzume の入門。
-- [インストール](/ja/docs/installation) — JavaScript/WASM パッケージ。
+- [Python CLI](/ja/docs/python-cli) — ホイールがインストールする `suzume` コマンド。
+- [ネイティブ CLI リファレンス](/ja/docs/cli) — 別配布の開発者向け `suzume-cli`。
+- [はじめに](/ja/docs/getting-started) — 全バインディング共通の入門。

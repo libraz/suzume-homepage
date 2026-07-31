@@ -156,14 +156,15 @@ tags := s.GenerateTagsWithOptions("美味しいラーメンを食べた", opts)
 
 ## ユーザー辞書
 
-`LoadUserDictionary()` で、CSV データからカスタム語を実行時に追加できます。
+`LoadUserDictionary()` で、現行の TSV 形式からカスタム語を実行時に追加できます。従来の 3 列 CSV も受け付けます。
 
 ```go
-if err := s.LoadUserDictionary([]byte("ChatGPT,NOUN\n東京スカイツリー,NOUN")); err != nil {
+source := []byte("東京公園\tNOUN\n点検する\tVERB\tSURU\n")
+if err := s.LoadUserDictionary(source); err != nil {
 	log.Fatal(err)
 }
 
-for _, m := range s.Analyze("ChatGPTを使う") {
+for _, m := range s.Analyze("東京公園を点検する") {
 	fmt.Println(m.Surface, m.POS, m.IsUserDict)
 }
 ```
@@ -180,7 +181,7 @@ if err := s.LoadBinaryDictionary(data); err != nil {
 }
 ```
 
-どちらのメソッドも、読み込みに失敗すると非 nil の `error` を返します。`DictionaryWarnings()` は、インスタンス作成時の辞書自動読み込みで発生した警告を返します（ない場合は `nil`）。
+どちらのメソッドも、読み込みに失敗すると非 nil の `error` を返します。`DictionaryWarnings()` は、インスタンス作成時の自動読み込みと、その後のソース／バイナリ辞書読み込みで発生した警告を返します（ない場合は `nil`）。一部の行だけを受理したソース辞書は、エラーを返さずに警告を追加する場合があります。
 
 ```go
 for _, w := range s.DictionaryWarnings() {
@@ -206,12 +207,12 @@ for _, w := range s.DictionaryWarnings() {
 
 | メソッド | 説明 |
 |---------|------|
-| `Analyze(text string) []Morpheme` | テキストを解析（[Morpheme のフィールド](#morpheme-のフィールド)を参照） |
+| `Analyze(text string) []Morpheme` | テキストを解析（上の「Morpheme のフィールド」を参照） |
 | `GenerateTags(text string) []Tag` | 既定フィルターでキーワード `Tag` を抽出 |
 | `GenerateTagsWithOptions(text string, opts TagOptions) []Tag` | フィルターや件数制限を指定して `Tag` を抽出 |
-| `LoadUserDictionary(data []byte) error` | CSV ユーザー辞書を読み込む |
+| `LoadUserDictionary(data []byte) error` | TSV または従来 CSV のユーザー辞書を読み込む |
 | `LoadBinaryDictionary(data []byte) error` | バイナリ `.dic` 辞書を読み込む |
-| `DictionaryWarnings() []string` | 自動辞書読み込み時の警告 |
+| `DictionaryWarnings() []string` | 作成時と実行時の辞書読み込み警告 |
 | `Close()` | ネイティブハンドルを解放（何度呼んでも安全） |
 
 ## 関連ページ

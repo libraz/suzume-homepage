@@ -1,6 +1,6 @@
 # Testing Guide
 
-Suzume has a comprehensive test suite covering C++ core logic, WASM bindings, and CLI functionality. This guide explains how to run tests, add new ones, and use the built-in benchmark tools.
+The core repository tests the C++ core, WASM and Python bindings, native CLI, MCP oracle, examples, and cross-binding parity. The Go binding is maintained and tested in its own repository.
 
 ## Test Architecture
 
@@ -11,14 +11,15 @@ Suzume has a comprehensive test suite covering C++ core logic, WASM bindings, an
 | WASM | Vitest | `bindings/wasm/tests/` | JS/C API, memory layout, generated ABI compatibility |
 | Python | pytest | `bindings/python/tests/` | Analyze/tags API, errors, ABI layout |
 | CLI | Built-in | `test` / `test benchmark` | Single/batch tests and benchmarks |
+| Go | Go test | [`go-suzume`](https://github.com/libraz/go-suzume) | cgo API, ownership, dictionaries, and concurrency |
 
 ## Running Tests
 
 ### C++ Tests
 
 ```bash
-# Build and run all tests
-make test
+# Build dictionaries and run the native tests
+make native-test
 
 # Or manually:
 cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -50,10 +51,22 @@ make wasm-test
 
 ```bash
 make python-test
-# Direct equivalent: (cd bindings/python && uv run --extra dev pytest)
+# Run pytest only after the Rye environment is provisioned:
+(cd bindings/python && rye run pytest -q)
 ```
 
-The pytest suite (`bindings/python/tests/`) covers the analyze and tags APIs and the ABI struct layout.
+`make python-test` also builds the binding and dictionaries, then runs Ruff and mypy.
+
+### Go Tests
+
+Run the binding tests from the separate `go-suzume` repository:
+
+```bash
+make test
+make test-race
+```
+
+The first command builds the native library and runs `go test ./... -count=1`; the second runs the race-detector suite.
 
 ### CLI Test Command
 
@@ -199,17 +212,19 @@ Metrics reported include initialization time, first-analysis latency, median ste
 
 ```bash
 # AddressSanitizer
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON
-cmake --build build && ctest --test-dir build
+cmake -B build-asan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_ASAN=ON
+cmake --build build-asan && ctest --test-dir build-asan
 
 # UndefinedBehaviorSanitizer
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_UBSAN=ON
-cmake --build build && ctest --test-dir build
+cmake -B build-ubsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_UBSAN=ON
+cmake --build build-ubsan && ctest --test-dir build-ubsan
 
 # ThreadSanitizer
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_TSAN=ON
-cmake --build build && ctest --test-dir build
+cmake -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_TSAN=ON
+cmake --build build-tsan && ctest --test-dir build-tsan
 ```
+
+`make asan` is the standard aggregate for AddressSanitizer, LeakSanitizer, and UndefinedBehaviorSanitizer.
 
 ### With Coverage
 
@@ -222,24 +237,27 @@ ctest --test-dir build
 
 ## CI
 
-GitHub Actions runs four jobs on every push and pull request:
+For changes outside the documentation-only ignore paths, GitHub Actions runs on pushes to `main` and `develop`, and on pull requests targeting `main`. The workflow defines seven jobs; `python-binding` is skipped only for a direct push to `develop`.
 
 | Job | What it checks |
 |-----|-----------------|
-| `lint` | WASM binding lint (`yarn lint`) |
-| `guardrails` | Generated-file and code guardrails (`check_code_guardrails.sh`, `check_oracle_overrides.py`), version consistency across binding manifests (`check_version_mirror.sh`) |
-| `build-and-test` | C++ build and `ctest` with coverage, uploaded to Codecov; WASM build, size-check, and test |
+| `lint` | WASM lint plus Ruff checks for the MCP server and repository Python scripts |
+| `guardrails` | Generated-file, mirrored-enum, oracle, compound, and version-consistency checks |
+| `mcp-tests` | MCP/oracle tests against MeCab + IPADIC and golden-expectation synchronization |
+| `sanitizers` | Native ASan, LSan, and UBSan checks |
+| `manylinux-toolchain` | Compile the shared core with the oldest supported manylinux toolchain |
+| `build-and-test` | Native tests and examples with coverage, WASM build/size/tests, and binding parity |
 | `python-binding` | `ruff check` / `ruff format --check`, `mypy`, and `pytest` for the Python binding |
 
-`make consumer-smoke` and `make format-check` (which includes clang-format for C++) are local Makefile targets for manual verification — they are not wired into CI.
+`make consumer-smoke` runs in `build-and-test`. `make format-check` (including C++ clang-format) remains a local verification target and is not wired into CI.
 
 ## Makefile Targets
 
 | Target | Description |
 |--------|-------------|
-| `make test` | Build dictionaries + run all C++ tests |
+| `make test` | Run native, MCP, Python, WASM, example, consumer, parity, and guardrail checks |
 | `make build` | Build the project |
-| `make dict` | Build dictionaries only |
+| `make dict` | Build the project, then compile dictionaries |
 | `make wasm-test` | Build WASM + run WASM tests |
 | `make python-test` | Build and test the Python binding, including lint/type checks |
 | `make examples` | Build the in-tree C and C++ examples |

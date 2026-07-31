@@ -1,6 +1,6 @@
 # テストガイド
 
-Suzume は C++ コアロジック、WASM バインディング、CLI 機能をカバーする包括的なテストスイートを備えています。このガイドでは、テストの実行方法、新しいテストの追加方法、ベンチマークツールの使い方を説明します。
+コアリポジトリでは、C++ コア、WASM・Python バインディング、ネイティブ CLI、MCP オラクル、サンプル、バインディング間整合性をテストします。Go バインディングは別リポジトリで管理・テストしています。
 
 ## テストアーキテクチャ
 
@@ -11,14 +11,15 @@ Suzume は C++ コアロジック、WASM バインディング、CLI 機能を�
 | WASM | Vitest | `bindings/wasm/tests/` | JS/C API、メモリレイアウト、生成 ABI の互換性 |
 | Python | pytest | `bindings/python/tests/` | analyze/tags API、エラー、ABI レイアウト |
 | CLI | 組み込み | `test` / `test benchmark` | 単体/バッチテストとベンチマーク |
+| Go | Go test | [`go-suzume`](https://github.com/libraz/go-suzume) | cgo API、所有権、辞書、並行実行 |
 
 ## テストの実行
 
 ### C++ テスト
 
 ```bash
-# ビルドして全テストを実行
-make test
+# 辞書をビルドしてネイティブテストを実行
+make native-test
 
 # 手動で実行する場合:
 cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -50,10 +51,22 @@ make wasm-test
 
 ```bash
 make python-test
-# 直接実行する場合: (cd bindings/python && uv run --extra dev pytest)
+# Rye 環境を準備済みで pytest だけ実行する場合:
+(cd bindings/python && rye run pytest -q)
 ```
 
-pytest スイート（`bindings/python/tests/`）は analyze / tags API と ABI 構造体レイアウトをカバーします。
+`make python-test` はバインディングと辞書をビルドし、Ruff と mypy も実行します。
+
+### Go テスト
+
+別リポジトリ `go-suzume` でバインディングテストを実行します。
+
+```bash
+make test
+make test-race
+```
+
+前者はネイティブライブラリをビルドして `go test ./... -count=1` を実行し、後者は race detector 付きテストを実行します。
 
 ### CLI テストコマンド
 
@@ -199,17 +212,19 @@ suzume-cli test benchmark -f corpus.txt
 
 ```bash
 # AddressSanitizer
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON
-cmake --build build && ctest --test-dir build
+cmake -B build-asan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_ASAN=ON
+cmake --build build-asan && ctest --test-dir build-asan
 
 # UndefinedBehaviorSanitizer
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_UBSAN=ON
-cmake --build build && ctest --test-dir build
+cmake -B build-ubsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_UBSAN=ON
+cmake --build build-ubsan && ctest --test-dir build-ubsan
 
 # ThreadSanitizer
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_TSAN=ON
-cmake --build build && ctest --test-dir build
+cmake -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_TSAN=ON
+cmake --build build-tsan && ctest --test-dir build-tsan
 ```
+
+`make asan` は AddressSanitizer、LeakSanitizer、UndefinedBehaviorSanitizer の標準一括ターゲットです。
 
 ### カバレッジ付き
 
@@ -222,24 +237,27 @@ ctest --test-dir build
 
 ## CI
 
-GitHub Actions は push と pull request のたびに4つのジョブを実行します。
+ドキュメントだけの変更を除き、GitHub Actions は `main` と `develop` への push、および `main` 向け pull request で動きます。ワークフローには7つのジョブがあり、`python-binding` だけは `develop` への直接 push ではスキップされます。
 
 | ジョブ | 内容 |
 |--------|------|
-| `lint` | WASM バインディングの lint（`yarn lint`） |
-| `guardrails` | 生成ファイルとコードのガードレール（`check_code_guardrails.sh`、`check_oracle_overrides.py`）、バインディングマニフェスト間のバージョン整合性（`check_version_mirror.sh`） |
-| `build-and-test` | カバレッジ付き C++ ビルドと `ctest`（Codecov にアップロード）、WASM ビルド・サイズチェック・テスト |
+| `lint` | WASM の lint、MCP サーバーとリポジトリ内 Python スクリプトの Ruff 検査 |
+| `guardrails` | 生成ファイル、列挙値ミラー、オラクル、複合語、バージョン整合性の検査 |
+| `mcp-tests` | MeCab + IPADIC を使う MCP／オラクルテストと期待値同期 |
+| `sanitizers` | ネイティブの ASan・LSan・UBSan 検査 |
+| `manylinux-toolchain` | サポート対象で最古の manylinux ツールチェーンによる共有コアのコンパイル |
+| `build-and-test` | カバレッジ付きネイティブテストとサンプル、WASM ビルド・サイズ・テスト、バインディング間整合性 |
 | `python-binding` | Python バインディングの `ruff check` / `ruff format --check`、`mypy`、`pytest` |
 
-`make consumer-smoke` と `make format-check`（C++ の clang-format を含む）はローカルの Makefile ターゲットで、手動検証用です。CI には組み込まれていません。
+`make consumer-smoke` は `build-and-test` で実行されます。`make format-check`（C++ の clang-format を含む）はローカル検証用で、CI には組み込まれていません。
 
 ## Makefile ターゲット
 
 | ターゲット | 説明 |
 |-----------|------|
-| `make test` | 辞書ビルド + 全 C++ テスト実行 |
+| `make test` | ネイティブ、MCP、Python、WASM、サンプル、コンシューマー、バインディング整合性、ガードレールを検査 |
 | `make build` | プロジェクトをビルド |
-| `make dict` | 辞書のみビルド |
+| `make dict` | プロジェクトをビルド後、辞書をコンパイル |
 | `make wasm-test` | WASM ビルド + WASM テスト実行 |
 | `make python-test` | Python バインディングをビルドし、lint・型検査を含めてテスト |
 | `make examples` | リポジトリ内の C/C++ サンプルをビルド |

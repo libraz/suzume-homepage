@@ -6,14 +6,14 @@ The biggest question: how can Suzume tokenize Japanese text in about <WasmSize /
 
 ### The Short Answer
 
-| Traditional (MeCab) | Suzume |
-|---------------------|--------|
-| Stores every word with all metadata | Stores only essential words |
-| Pre-computed connection costs for all word pairs | Computes connections on the fly |
-| Requires full dictionary to handle any input | Uses pattern rules for unknown words |
+| MeCab with an IPADIC-style dictionary | Suzume |
+|---------------------------------------|--------|
+| Loads a broad word list with morphological metadata | Stores selected words and exceptions |
+| Loads a pre-computed connection-cost matrix | Computes connections from compact rules |
+| Uses dictionary entries plus unknown-word definitions | Uses dictionary entries plus pattern-generated candidates |
 
 ::: tip Key Insight
-MeCab's dictionary is like a phone book with every person's name. Suzume is like knowing the rules of how Japanese names are formed — you can recognize new names without listing them all.
+The dictionary selected for MeCab supplies its vocabulary, labels, and connection costs. Suzume instead keeps a smaller lexical set and generates additional candidates from character and grammar patterns. The exact MeCab setup used elsewhere in these docs is recorded in the [comparison baseline](/docs/mecab-comparison#comparison-baseline).
 :::
 
 ### The Three Pillars
@@ -50,13 +50,13 @@ Instead of storing every word, Suzume recognizes patterns:
 
 | Pattern | Rule | Result |
 |---------|------|--------|
-| `[カタカナ]+` | Foreign loanwords are nouns | noun |
-| `[漢字]+` | Kanji compounds are usually nouns | noun |
-| `[漢字]+する` | Kanji + する = verbal noun | verb |
+| `[カタカナ]+` | Generate a noun candidate | noun candidate |
+| `[漢字]+` | Generate a compound-noun candidate | noun candidate |
+| `[漢字]+する` | Generate a verbal-noun construction | verb candidate |
 | `[ひらがな]+い` | Ending in い = adjective candidate | adjective |
 
 ::: info Why This Works
-Japanese has regular patterns. Katakana words are almost always nouns (loanwords). Kanji compounds are usually nouns. This regularity lets us infer POS without storing each word.
+Japanese character types and inflectional endings provide useful candidate signals. Suzume combines those signals with dictionary entries and surrounding connection scores; a pattern match alone does not guarantee the final POS or boundary.
 :::
 
 Try it with your own text:
@@ -65,7 +65,7 @@ Try it with your own text:
 
 ## 3. Dynamic Connection Scoring
 
-MeCab pre-computes a huge connection cost matrix:
+A MeCab dictionary such as IPADIC includes a pre-computed connection-cost matrix:
 
 ```
 # Which word can follow which? (simplified)
@@ -81,11 +81,11 @@ Suzume computes connection scores dynamically using compact rules:
 
 ## Consistency of Analysis
 
-Suzume decides parts of speech and boundaries from rules (character type, conjugation, connection rules) rather than from per-word dictionary entries. This has a property distinct from size: the same construction is always handled by the same rule, so grammatically similar inputs are decided the same way.
+Suzume decides parts of speech and boundaries from both dictionary entries and shared rules for character types, conjugation, and connections. Applying shared rules across many candidates reduces reliance on individually tuned lexical entries, although context and competing candidates can still change the result.
 
-When analysis depends on a dictionary and a cost table, each decision is governed by values recorded per entry. Entries are added over a long period by many hands, so grammatically similar words can end up treated differently. A rule-based approach keeps the decision criteria in one place, which makes that kind of variation less likely.
+In a dictionary-and-cost-table design, entries with similar grammatical roles can still carry different labels or costs. Shared construction rules reduce that source of variation, while dictionary candidates and surrounding context continue to affect the selected path.
 
-For example, the colloquial copula "じゃ" is classified as an auxiliary consistently, whether it is followed by "ない", "なかっ", or "な". The causative-passive rules likewise aim to normalize equivalent constructions instead of depending on per-word entries (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
+For example, after a nominal predicate, "じゃ" is analyzed as the auxiliary lemma "だ" in "本じゃない", "本じゃなかった", and "本じゃな". The following "な" in the last example is a particle, and an isolated "じゃない" can instead be analyzed as one adjective. The causative-passive rules likewise aim to normalize equivalent constructions while still resolving them in context (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
 
 This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Limitations](/docs/mecab-comparison)).
 
@@ -95,7 +95,7 @@ This consistency is separate from the question of which segmentation is "correct
 Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric. See [When to Use Which](/docs/mecab-comparison) for a full requirement-by-requirement comparison.
 :::
 
-The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. Only surface normalization (`preserveVu`, `preserveCase`, `preserveSymbols`) and output shaping (`mode`, `lemmatize`, `mergeCompounds`) are tunable via `SuzumeOptions`.
+The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. `SuzumeOptions` controls normalization and segmentation, dictionary loading, scorer configuration, and whether a JavaScript instance uses an isolated WASM runtime. See the API reference for the complete option set.
 
 ::: tip Tuning tokenization
 `mode: 'search' | 'split'` and `mergeCompounds` let you adjust how aggressively compounds are segmented or merged for your use case. See the [API reference](/docs/api) for details.
@@ -144,11 +144,11 @@ The rules are stored, not every conjugated form.
 
 | Question | Answer |
 |----------|--------|
-| Why is MeCab big? | Stores every word + pre-computed costs |
+| Why is the MeCab + IPADIC setup larger? | IPADIC supplies a broad lexicon and pre-computed connection costs |
 | Why is Suzume small? | Stores rules + minimal dictionary |
 | Are MeCab and Suzume outputs interchangeable? | No. Their goals, boundaries, and POS taxonomies differ |
 | When to use MeCab? | When a MeCab dictionary's lexical coverage and analysis conventions are required |
-| When to use Suzume? | Compact search/display tokenization across browser, edge, Python, and C/C++ |
+| When to use Suzume? | Compact search/display tokenization across browsers, server runtimes, Python, Go, and C/C++ |
 
 ## See also
 

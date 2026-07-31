@@ -13,13 +13,13 @@ const softwareApplicationJsonLd = {
   '@type': 'SoftwareApplication',
   name: 'Suzume',
   applicationCategory: 'DeveloperApplication',
-  operatingSystem: 'Any (Browser, Node.js, Deno, Bun)',
+  operatingSystem: 'Browser, Node.js, Deno, Bun, Linux, macOS',
   offers: {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'USD'
   },
-  description: `Lightweight Japanese tokenizer that runs in the browser. Unlike MeCab, no server or large dictionary files required. Under ${sizeLabelText} gzipped, robust to unknown words.`,
+  description: `Lightweight Japanese tokenizer that runs in the browser. Unlike MeCab, no server or external dictionary setup is required. Under ${sizeLabelText} gzipped, with pattern-based unknown-word candidates.`,
   url: siteUrl,
   downloadUrl: githubUrl,
   softwareVersion: SUZUME_VERSION,
@@ -41,7 +41,7 @@ const faqJsonLd = {
       name: 'What is Suzume?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Suzume is a lightweight, feature-driven Japanese tokenizer available through WebAssembly, Python, and native C/C++. Unlike exhaustive dictionary analyzers, it uses compact dictionaries and rules and is robust to unknown words. The WebAssembly package runs in browsers, Node.js, Deno, and Bun.'
+        text: 'Suzume is a lightweight, feature-driven Japanese tokenizer available through WebAssembly, Python, Go, and native C/C++. It combines compact dictionaries with grammatical rules and can analyze words that are not in its dictionaries. The WebAssembly package runs in browsers, Node.js, Deno, and Bun.'
       }
     },
     {
@@ -49,7 +49,7 @@ const faqJsonLd = {
       name: 'How does Suzume handle unknown words?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Suzume generates candidates from character patterns (kanji sequences, katakana sequences, alphanumeric compounds) and evaluates them alongside dictionary entries using Viterbi algorithm. This makes it robust to neologisms and domain-specific terms.'
+        text: 'Suzume generates candidates from character patterns (kanji sequences, katakana sequences, and alphanumeric compounds) and evaluates them alongside dictionary entries with Viterbi scoring. Words that are absent from its dictionaries can therefore still receive token and part-of-speech candidates.'
       }
     },
     {
@@ -65,7 +65,7 @@ const faqJsonLd = {
       name: 'How do I add custom words to Suzume?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Use loadUserDictionary() to add custom words at runtime. Format: "word,pos" (e.g., "ChatGPT,NOUN"). You can add brand names, technical terms, or domain-specific vocabulary without rebuilding the dictionary.'
+        text: 'Use loadUserDictionary() to add custom words at runtime. The current text format is tab-separated, for example "東京公園\\tNOUN". You can also load a dictionary compiled by the native command-line tool.'
       }
     },
     {
@@ -73,7 +73,7 @@ const faqJsonLd = {
       name: 'What is the difference between Suzume and MeCab?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'MeCab requires large dictionary files (50MB+) and server-side installation. Suzume uses feature-based analysis with a minimal dictionary, runs on WebAssembly in the browser, and handles unknown words gracefully. Choose Suzume for client-side processing without server infrastructure.'
+        text: 'MeCab is an analysis engine used with an external dictionary, and its boundaries and labels depend on the selected dictionary. Suzume ships compact dictionaries and grammatical rules with its WebAssembly package, so it can run entirely in a browser. The documentation compares Suzume with MeCab 0.996 and mecab-ipadic 2.7.0-20070801.'
       }
     },
     {
@@ -81,7 +81,7 @@ const faqJsonLd = {
       name: 'How is Suzume different from kuromoji.js?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: `kuromoji.js requires downloading a 20MB+ dictionary on first load, causing slow initial page loads. Suzume is under ${sizeLabelText} gzipped and loads instantly. Suzume also handles unknown words better and has a simpler API.`
+        text: `kuromoji.js and Suzume use different dictionaries and output conventions. Suzume packages compact dictionaries and rules with its WebAssembly module, which is under ${sizeLabelText} gzipped; compare boundary, part-of-speech, and dictionary requirements before choosing either tokenizer.`
       }
     },
     {
@@ -89,7 +89,7 @@ const faqJsonLd = {
       name: 'Can I use Suzume for SEO keyword extraction?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes, Suzume can extract nouns and compound words from Japanese text, making it ideal for auto-tagging blog posts, generating hashtags, or building keyword analysis tools - all without server infrastructure.'
+        text: 'Suzume can generate filtered keyword tags from analyzed Japanese text. Applications can select parts of speech, minimum length, lemma or surface output, duplicate handling, and result limits; the WebAssembly package can perform this locally without an analysis server.'
       }
     },
     {
@@ -97,7 +97,7 @@ const faqJsonLd = {
       name: 'Is Suzume suitable for production use?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes, Suzume is production-ready. It is compiled from C++ to WebAssembly for near-native performance, includes full TypeScript support, and works in all modern browsers, Node.js, Deno, and Bun.'
+        text: 'Suzume provides a typed JavaScript API for browsers and server runtimes with WebAssembly support, plus Python, Go, and native C/C++ bindings. Validate its segmentation, supported platforms, memory behavior, and dictionary coverage against your production requirements.'
       }
     },
     {
@@ -146,9 +146,10 @@ const docsNav = [
     items: [
       { slug: 'api', en: 'JavaScript / WASM', ja: 'JavaScript / WASM' },
       { slug: 'python', en: 'Python', ja: 'Python' },
+      { slug: 'python-cli', en: 'Python CLI', ja: 'Python CLI' },
       { slug: 'go', en: 'Go', ja: 'Go' },
       { slug: 'cpp', en: 'C / C++', ja: 'C / C++' },
-      { slug: 'cli', en: 'CLI', ja: 'CLI' },
+      { slug: 'cli', en: 'Native Developer CLI', ja: 'ネイティブ開発 CLI' },
     ],
   },
   {
@@ -173,7 +174,7 @@ export default defineConfig({
   srcDir: 'src',
 
   title: 'Suzume - Japanese Tokenizer for the Browser',
-  description: `Lightweight Japanese tokenizer that runs in the browser. No server, no large dictionary files. Under ${sizeLabelText}, robust to unknown words. MeCab alternative for frontend.`,
+  description: `Lightweight Japanese tokenizer for browsers and server runtimes. The WebAssembly package is under ${sizeLabelText} gzipped and includes compact dictionaries plus pattern-based unknown-word candidates.`,
 
   // Sitemap
   sitemap: {
@@ -198,7 +199,7 @@ export default defineConfig({
     // OGP
     ['meta', { property: 'og:site_name', content: 'Suzume' }],
     ['meta', { property: 'og:title', content: 'Suzume - Japanese Tokenizer That Works in the Browser' }],
-    ['meta', { property: 'og:description', content: `Tired of MeCab setup? Suzume brings lightweight Japanese tokenization to the frontend. Under ${sizeLabelText}, no server required, robust to unknown words.` }],
+    ['meta', { property: 'og:description', content: `Suzume brings Japanese tokenization to browsers and server runtimes. Its WebAssembly package is under ${sizeLabelText} gzipped and requires no analysis server.` }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: siteUrl }],
     ['meta', { property: 'og:image', content: `${siteUrl}/og-image.png` }],
@@ -221,7 +222,7 @@ export default defineConfig({
       label: '日本語',
       lang: 'ja',
       title: 'Suzume - ブラウザで動く日本語トークナイザー',
-      description: `ブラウザで動く軽量日本語トークナイザー。MeCab不要、辞書ファイル不要、サーバー不要。${sizeLabelText}以下でフロントエンド完結。`,
+      description: `ブラウザで動く軽量日本語トークナイザー。MeCabや外部辞書のセットアップ、サーバーは不要。${sizeLabelText}以下でフロントエンド完結。`,
       themeConfig: {
         siteTitle: 'Suzume',
         nav: [
