@@ -9,7 +9,7 @@ const comparisonLink = computed(() =>
   isJa() ? '/ja/docs/mecab-comparison' : '/docs/mecab-comparison'
 )
 
-// Comparison data: TinySegmenter (lightweight) → Suzume (balanced) → MeCab-based (heavyweight)
+// Comparison data: TinySegmenter (lightweight) → Suzume (balanced) → dictionary-based analyzers
 const tools = ['TinySegmenter', 'Suzume', 'kuromoji', 'MeCab']
 
 const features = computed(() => [
@@ -21,7 +21,7 @@ const features = computed(() => [
     name: t('comparison.dictionary'),
     values: [
       t('comparison.notRequired'),
-      t('comparison.notRequired'),
+      t('comparison.bundled'),
       t('comparison.required'),
       t('comparison.required')
     ]

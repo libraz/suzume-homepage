@@ -46,7 +46,7 @@
     "subtitle": "TinySegmenter's light footprint, closer to MeCab's detail — Suzume sits between them.",
     "feature": "Feature",
     "browserRun": "Browser",
-    "dictionary": "Dictionary",
+    "dictionary": "External Dictionary Setup",
     "bundleSize": "Bundle Size",
     "serverFree": "Server-free",
     "unknownWords": "Unknown Words",
@@ -55,6 +55,7 @@
     "compound": "Compound Nouns",
     "customDict": "Custom Dictionary",
     "notRequired": "Not required",
+    "bundled": "Bundled",
     "required": "Required",
     "na": "N/A",
     "light": "Light",
@@ -66,7 +67,7 @@
   "useCase": {
     "eyebrow": "Playground",
     "title": "Try it on your own text",
-    "subtitle": "Every demo runs entirely in your browser — paste your own text and watch it tokenize.",
+    "subtitle": "Choose an everyday, colloquial, dialectal, or classical example, or paste your own text. Processing stays in your browser.",
     "tagGen": "Tag Generation",
     "baseFormTab": "Normalize",
     "analyzeTab": "Tokenize",
@@ -93,16 +94,19 @@
     "examples": "Examples",
     "tagExamples": {
       "sns": "SNS Post",
-      "blog": "Blog Post"
+      "tech": "Tech Article"
     },
     "baseExamples": {
       "verb": "Verb Forms",
-      "adjective": "Adjectives"
+      "adjective": "Adjectives",
+      "colloquial": "Colloquial"
     },
     "analyzeExamples": {
-      "youth": "Youth slang",
-      "tongue": "Tongue twister",
-      "botchan": "Botchan"
+      "everyday": "Everyday",
+      "colloquial": "Colloquial",
+      "dialect": "Dialect",
+      "classical": "Classical",
+      "ambiguous": "Ambiguous"
     }
   },
   "typewriter": {

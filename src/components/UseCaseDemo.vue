@@ -13,7 +13,7 @@ const tagExamples = computed(() => [
     text: tagSampleTexts[0]
   },
   {
-    label: t('useCase.tagExamples.blog'),
+    label: t('useCase.tagExamples.tech'),
     text: tagSampleTexts[1]
   }
 ])
@@ -26,21 +26,33 @@ const baseExamples = computed(() => [
   {
     label: t('useCase.baseExamples.adjective'),
     text: baseFormSampleTexts[1]
+  },
+  {
+    label: t('useCase.baseExamples.colloquial'),
+    text: baseFormSampleTexts[2]
   }
 ])
 
 const analyzeExamples = computed(() => [
   {
-    label: t('useCase.analyzeExamples.youth'),
+    label: t('useCase.analyzeExamples.everyday'),
     text: analysisSampleTexts[0]
   },
   {
-    label: t('useCase.analyzeExamples.tongue'),
+    label: t('useCase.analyzeExamples.colloquial'),
     text: analysisSampleTexts[1]
   },
   {
-    label: t('useCase.analyzeExamples.botchan'),
+    label: t('useCase.analyzeExamples.dialect'),
     text: analysisSampleTexts[2]
+  },
+  {
+    label: t('useCase.analyzeExamples.classical'),
+    text: analysisSampleTexts[3]
+  },
+  {
+    label: t('useCase.analyzeExamples.ambiguous'),
+    text: analysisSampleTexts[4]
   }
 ])
 

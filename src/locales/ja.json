@@ -46,7 +46,7 @@
     "subtitle": "TinySegmenter の軽さと、MeCab に近い詳しさ。Suzume はその中間に位置します。",
     "feature": "機能",
     "browserRun": "ブラウザ動作",
-    "dictionary": "辞書ファイル",
+    "dictionary": "外部辞書の準備",
     "bundleSize": "バンドルサイズ",
     "serverFree": "サーバー不要",
     "unknownWords": "未知語対応",
@@ -55,6 +55,7 @@
     "compound": "複合名詞判定",
     "customDict": "カスタム辞書",
     "notRequired": "不要",
+    "bundled": "同梱",
     "required": "必須",
     "na": "N/A",
     "light": "軽量",
@@ -66,7 +67,7 @@
   "useCase": {
     "eyebrow": "プレイグラウンド",
     "title": "自分のテキストで試す",
-    "subtitle": "どのデモもブラウザ内だけで動作します。手元の文章を貼り付けて、その場でトークナイズを確認できます。",
+    "subtitle": "日常文・口語・方言・古語の例文を選ぶか、手元の文章を貼り付けて試せます。処理はブラウザ内で完結します。",
     "tagGen": "タグ生成",
     "baseFormTab": "正規化",
     "analyzeTab": "トークン化",
@@ -93,16 +94,19 @@
     "examples": "例文",
     "tagExamples": {
       "sns": "SNS投稿",
-      "blog": "ブログ記事"
+      "tech": "技術記事"
     },
     "baseExamples": {
       "verb": "動詞の活用",
-      "adjective": "形容詞"
+      "adjective": "形容詞",
+      "colloquial": "口語"
     },
     "analyzeExamples": {
-      "youth": "若者言葉",
-      "tongue": "早口言葉",
-      "botchan": "坊っちゃん"
+      "everyday": "日常文",
+      "colloquial": "口語",
+      "dialect": "方言",
+      "classical": "古語",
+      "ambiguous": "曖昧な分割"
     }
   },
   "typewriter": {
