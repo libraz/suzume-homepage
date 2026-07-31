@@ -12,8 +12,8 @@ export const WASM_SIZE_BYTES = meta.size
 export const WASM_GZIP_BYTES = meta.gzipSize
 export const WASM_SIZE_KB = Math.ceil(meta.size / 1024)
 export const WASM_GZIP_KB = Math.ceil(meta.gzipSize / 1024)
-export const WASM_SIZE = `${WASM_SIZE_KB}KB`
-export const WASM_GZIP_SIZE = `${WASM_GZIP_KB}KB`
+export const WASM_SIZE = `${WASM_SIZE_KB}KiB`
+export const WASM_GZIP_SIZE = `${WASM_GZIP_KB}KiB`
 
 // Build provenance.
 export const SUZUME_VERSION = meta.version

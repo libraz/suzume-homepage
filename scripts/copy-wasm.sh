@@ -9,7 +9,14 @@ DEST_DIR="src/wasm"
 WASM_FILES=("suzume.wasm" "suzume.js")
 # index.js imports the compact ABI tables emitted alongside it. Keep the list
 # explicit so a partial copy fails early instead of surfacing as a Vite error.
-JS_FILES=("index.js" "index.d.ts" "abi_labels.js" "abi_layout.js")
+JS_FILES=(
+  "index.js"
+  "index.d.ts"
+  "abi_labels.js"
+  "abi_layout.js"
+  "decode.js"
+  "decode.d.ts"
+)
 
 echo "📦 Copying WASM files from suzume..."
 

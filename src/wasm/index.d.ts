@@ -10,10 +10,26 @@
  * console.log(result);
  * ```
  */
+export declare enum ErrorCode {
+    Success = 0,
+    InvalidUtf8 = 1,
+    DictionaryLoadFailed = 2,
+    FileNotFound = 3,
+    Parse = 4,
+    OutOfMemory = 5,
+    InvalidInput = 6,
+    Internal = 7
+}
+export declare class SuzumeError extends Error {
+    readonly code: ErrorCode;
+    constructor(message: string, code?: ErrorCode);
+}
 /**
  * Options for creating a Suzume instance
  */
 export interface SuzumeOptions {
+    /** Create an isolated WASM runtime instead of sharing the cached module, default: false */
+    freshWasmModule?: boolean;
     /** Preserve ヴ (don't normalize to ビ etc.), default: true */
     preserveVu?: boolean;
     /** Preserve case (don't lowercase ASCII), default: true */
@@ -22,11 +38,22 @@ export interface SuzumeOptions {
     preserveSymbols?: boolean;
     /** Analysis mode, default: normal */
     mode?: 'normal' | 'search' | 'split';
-    /** Apply lemmatization, default: true */
+    /** Retain corrected lemmas; conjugation/POS annotations are always computed. Default: true */
     lemmatize?: boolean;
     /** Merge consecutive noun compounds, default: false */
     mergeCompounds?: boolean;
+    /** Skip automatic loading of the bundled user dictionary, default: false */
+    skipUserDictionary?: boolean;
+    /** Skip automatic loading of the bundled core dictionary, default: false */
+    skipCoreDictionary?: boolean;
+    /** Ignore native scorer configuration environment variables, default: false */
+    skipEnvConfig?: boolean;
+    /** Add scorer configuration diagnostics to dictionaryWarnings, default: false */
+    reportScorerConfig?: boolean;
+    /** Final-priority scorer override JSON, or an object serialized to JSON */
+    scorerOptions?: string | Record<string, unknown>;
 }
+type AnalysisMode = NonNullable<SuzumeOptions['mode']>;
 /**
  * Morpheme - A single unit of morphological analysis
  */
@@ -45,10 +72,14 @@ export interface Morpheme {
     conjForm: string | null;
     /** Stable extended POS code (e.g., "VERB_連用", "AUX_過去") */
     extendedPos: string;
-    /** Start character offset in normalized text */
+    /** Start Unicode code-point offset in normalized text */
     start: number;
-    /** End character offset in normalized text */
+    /** End Unicode code-point offset in normalized text */
     end: number;
+    /** Start JavaScript UTF-16 offset, suitable for normalizedText.slice() */
+    startUtf16: number;
+    /** End JavaScript UTF-16 offset, suitable for normalizedText.slice() */
+    endUtf16: number;
     /** True if matched from a user dictionary */
     isUserDict: boolean;
     /** True if the morpheme is a formal noun */
@@ -62,6 +93,11 @@ export interface Morpheme {
     /** Candidate score/cost */
     score: number;
 }
+/** Normalized input together with its morphemes. */
+export interface AnalysisResult {
+    normalizedText: string;
+    morphemes: Morpheme[];
+}
 /**
  * Tag entry with POS information
  */
@@ -74,9 +110,19 @@ export interface Tag {
 /**
  * Options for tag generation
  */
+export type TagPosFilterName = 'noun' | 'verb' | 'adjective' | 'adverb' | 'particle' | 'auxiliary';
 export interface TagOptions {
-    /** POS categories to include (default: all content words) */
-    pos?: ('noun' | 'verb' | 'adjective' | 'adverb')[];
+    /**
+     * POS categories to include. An empty array includes all filterable POS,
+     * matching the native `pos_filter = 0` default.
+     */
+    posFilter?: readonly TagPosFilterName[];
+    /**
+     * Deprecated alias for `posFilter`. When both are present, `posFilter` wins.
+     *
+     * @deprecated Use `posFilter` instead.
+     */
+    pos?: readonly TagPosFilterName[];
     /** Exclude basic/common words with hiragana-only lemma (default: false) */
     excludeBasic?: boolean;
     /** Use lemma instead of surface form (default: true) */
@@ -108,15 +154,28 @@ export declare class Suzume {
     private module;
     private handle;
     private cleanupRef;
-    private _analyze;
+    private _analyzeN;
+    private _setMode;
+    private _mode;
     private _resultFree;
-    private _generateTags;
-    private _generateTagsWithOptions;
+    private _generateTagsN;
+    private _generateTagsWithOptionsN;
     private _tagsFree;
-    private _loadUserDict;
+    private _loadUserDictCount;
     private _loadBinaryDict;
+    private _clearUserDictionaries;
+    private _hasCoreDictionary;
     private _version;
     private _lastError;
+    private _lastErrorCode;
+    private _conjugationTypeLabel;
+    private _extendedPosLabel;
+    private _conjugationFormLabel;
+    private _posLabel;
+    private readonly _posLabels;
+    private readonly _conjugationTypeLabels;
+    private readonly _conjugationFormLabels;
+    private readonly _extendedPosLabels;
     private _dictionaryWarningCount;
     private _dictionaryWarning;
     private layouts;
@@ -138,6 +197,14 @@ export declare class Suzume {
      * @returns Array of morphemes
      */
     analyze(text: string): Morpheme[];
+    /** Current analysis mode for this instance. */
+    get mode(): AnalysisMode;
+    /** Change analysis mode without reloading dictionaries. */
+    set mode(value: AnalysisMode);
+    /**
+     * Analyze text and return the exact normalized text used for offsets.
+     */
+    analyzeWithNormalizedText(text: string): AnalysisResult;
     /**
      * Generate tags from Japanese text
      *
@@ -149,14 +216,18 @@ export declare class Suzume {
     /**
      * Load user dictionary from string data
      *
-     * @param data - Dictionary data in CSV format
+     * @param data - Dictionary data in current TSV format (legacy CSV is also accepted)
      * @returns true on success
      */
     loadUserDictionary(data: string): boolean;
     /**
+     * Load user dictionary and return the number of installed expanded entries.
+     */
+    loadUserDictionaryCount(data: string): number;
+    /**
      * Load user dictionary from string data, throwing with C API details on failure.
      *
-     * @param data - Dictionary data in CSV format
+     * @param data - Dictionary data in current TSV format (legacy CSV is also accepted)
      */
     loadUserDictionaryOrThrow(data: string): void;
     /**
@@ -173,6 +244,10 @@ export declare class Suzume {
      */
     loadBinaryDictionaryOrThrow(data: Uint8Array): void;
     /**
+     * Remove caller-loaded dictionaries while retaining the bundled user dictionary.
+     */
+    clearUserDictionaries(): void;
+    /**
      * Get Suzume version string
      */
     get version(): string;
@@ -180,20 +255,32 @@ export declare class Suzume {
      * Last C API error for this thread, or empty string if the last C API call succeeded.
      */
     get lastError(): string;
-    /**
-     * Dictionary warnings produced while auto-loading dictionaries at construction.
-     */
+    /** Stable native error category for the last failed C ABI call. */
+    get lastErrorCode(): ErrorCode;
+    /** Current WebAssembly linear-memory size in bytes. */
+    wasmMemoryBytes(): number;
+    /** Dictionary-loading, parsing, and scorer-configuration diagnostics. */
     get dictionaryWarnings(): string[];
+    /** Whether the bundled L2 core dictionary is loaded. */
+    get hasCoreDictionary(): boolean;
     /**
-     * Destroy the Suzume instance and free resources.
-     * Called automatically via FinalizationRegistry when garbage collected,
-     * but can be called explicitly for immediate cleanup.
+     * Destroy this analyzer handle. The shared WASM runtime remains cached for
+     * other and future Suzume instances.
      */
     destroy(): void;
     private ensureAlive;
     private withUtf8String;
     private consumeTags;
+    private conjugationTypeLabel;
     private parseResult;
     private parseTags;
+    private posLabel;
+    private conjugationFormLabel;
+    private extendedPosLabel;
 }
 export default Suzume;
+/** Return the package version without creating an analyzer handle. */
+export declare function version(options?: {
+    wasmPath?: string;
+    freshWasmModule?: boolean;
+}): Promise<string>;
