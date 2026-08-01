@@ -70,12 +70,18 @@ The wheel contains the native library and dictionaries and also installs the `su
 
 ## Go
 
-Add the cgo binding to a Go module, then build its bundled C++ core once:
+The cgo binding builds its C++ core from source, which `go get` cannot do inside the read-only module cache. Clone it, build once, and reference the checkout from your module:
 
 ```bash
+git clone https://github.com/libraz/go-suzume.git
+cd go-suzume && make lib
+```
+
+Then, from your own module:
+
+```bash
+go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
 go get github.com/libraz/go-suzume
-cd $(go env GOPATH)/pkg/mod/github.com/libraz/go-suzume@latest
-make lib
 ```
 
 Go 1.26 or later, CGO, a C++17 compiler, and CMake 3.15 or later are required. The resulting application embeds its dictionaries and does not need external dictionary files at runtime. See the [Go bindings guide](/docs/go) for initialization, ownership, options, and API details.

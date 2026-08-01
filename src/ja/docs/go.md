@@ -14,27 +14,23 @@ Python ホイールと違いコンパイル済みバイナリは同梱されて�
 
 ## インストール
 
-プロジェクトにモジュールを追加します。
-
-```bash
-go get github.com/libraz/go-suzume
-```
-
-初回利用の前に C++ 静的ライブラリをビルドします。
-
-```bash
-cd $(go env GOPATH)/pkg/mod/github.com/libraz/go-suzume@latest
-make lib
-```
-
-クローンして直接ビルドすることもできます。
+静的ライブラリと辞書はどちらも C++ ソースから生成され、Go モジュールには含まれません。そのため `go get` だけではビルドできません。リポジトリをクローンして一度ビルドします。
 
 ```bash
 git clone https://github.com/libraz/go-suzume.git
 cd go-suzume
 make lib    # Suzume の C++ ソースを取得して libsuzume.a をビルド
-make test   # テストを実行
+make test   # 任意: テストを実行
 ```
+
+利用側のモジュールからは、このチェックアウトを参照します。
+
+```bash
+go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
+go get github.com/libraz/go-suzume
+```
+
+ビルド成果物はチェックアウト先に書き込まれるため、書き込み可能なディレクトリに置いてください。Go のモジュールキャッシュは読み取り専用なので、そこにはビルドできません。
 
 ## クイックスタート
 

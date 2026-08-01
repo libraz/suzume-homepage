@@ -70,12 +70,18 @@ Python 3.10 以上が必要です。PyPI では Linux x86_64（`manylinux2014` /
 
 ## Go
 
-cgo バインディングを Go モジュールへ追加し、同梱される C++ コアを一度ビルドします：
+cgo バインディングは C++ コアをソースからビルドしますが、読み取り専用の Go モジュールキャッシュ内では `go get` だけでビルドできません。クローンして一度ビルドし、利用側のモジュールからそのチェックアウトを参照します：
 
 ```bash
+git clone https://github.com/libraz/go-suzume.git
+cd go-suzume && make lib
+```
+
+利用側のモジュールでは次のようにします：
+
+```bash
+go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
 go get github.com/libraz/go-suzume
-cd $(go env GOPATH)/pkg/mod/github.com/libraz/go-suzume@latest
-make lib
 ```
 
 Go 1.26 以降、CGO、C++17 コンパイラ、CMake 3.15 以降が必要です。ビルドしたアプリケーションには辞書が埋め込まれるため、実行時に外部辞書ファイルは不要です。初期化、所有権、オプション、API の詳細は [Go バインディング](/ja/docs/go) を参照してください。

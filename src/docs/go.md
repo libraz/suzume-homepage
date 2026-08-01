@@ -14,27 +14,23 @@ Unlike the Python wheel, the module does not ship a precompiled binary: the Suzu
 
 ## Installation
 
-Add the module to your project:
-
-```bash
-go get github.com/libraz/go-suzume
-```
-
-Then build the C++ static library before first use:
-
-```bash
-cd $(go env GOPATH)/pkg/mod/github.com/libraz/go-suzume@latest
-make lib
-```
-
-Or clone and build directly:
+The static library and the dictionaries are both produced from the C++ sources, and neither is published inside the Go module, so `go get` on its own is not enough. Clone the repository and build it once:
 
 ```bash
 git clone https://github.com/libraz/go-suzume.git
 cd go-suzume
 make lib    # Fetches the Suzume C++ source and builds libsuzume.a
-make test   # Run the tests
+make test   # Optional: run the tests
 ```
+
+Then point your module at the checkout:
+
+```bash
+go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
+go get github.com/libraz/go-suzume
+```
+
+The build writes into the checkout, so keep it in a directory you can write to. The Go module cache is read-only and cannot host the build.
 
 ## Quick start
 
