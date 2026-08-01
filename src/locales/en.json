@@ -60,6 +60,7 @@
     "na": "N/A",
     "light": "Light",
     "accurate": "Accurate",
+    "builtIn": "Built-in",
     "guideTitle": "There is more to the difference than this table",
     "guideDescription": "See concrete examples of token boundaries, dictionary dependence, and unknown-word handling.",
     "guideLink": "Read the MeCab comparison"

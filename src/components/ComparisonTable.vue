@@ -9,17 +9,27 @@ const comparisonLink = computed(() =>
   isJa() ? '/ja/docs/mecab-comparison' : '/docs/mecab-comparison'
 )
 
-// Comparison data: TinySegmenter (lightweight) → Suzume (balanced) → dictionary-based analyzers
-const tools = ['TinySegmenter', 'Suzume', 'kuromoji', 'MeCab']
+// Ordered by what the application has to ship: the platform built-in, then a
+// lightweight segmenter, then Suzume, then the dictionary-based analyzers.
+const tools: { name: string; tag?: string }[] = [
+  { name: 'Intl.Segmenter', tag: 'comparison.builtIn' },
+  { name: 'TinySegmenter', tag: 'comparison.light' },
+  { name: 'Suzume' },
+  { name: 'kuromoji' },
+  { name: 'MeCab', tag: 'comparison.accurate' }
+]
+
+const suzumeIndex = tools.findIndex((tool) => tool.name === 'Suzume')
 
 const features = computed(() => [
   {
     name: t('comparison.browserRun'),
-    values: ['yes', 'yes', 'partial', 'no']
+    values: ['yes', 'yes', 'yes', 'partial', 'no']
   },
   {
     name: t('comparison.dictionary'),
     values: [
+      t('comparison.notRequired'),
       t('comparison.notRequired'),
       t('comparison.bundled'),
       t('comparison.required'),
@@ -28,31 +38,31 @@ const features = computed(() => [
   },
   {
     name: t('comparison.bundleSize'),
-    values: ['~10KB', WASM_GZIP_SIZE, '~20MB', t('comparison.na')]
+    values: ['0KB', '~10KB', WASM_GZIP_SIZE, '~20MB', t('comparison.na')]
   },
   {
     name: t('comparison.serverFree'),
-    values: ['yes', 'yes', 'partial', 'no']
+    values: ['yes', 'yes', 'yes', 'partial', 'no']
   },
   {
     name: t('comparison.posInfo'),
-    values: ['no', 'yes', 'yes', 'yes']
+    values: ['no', 'no', 'yes', 'yes', 'yes']
   },
   {
     name: t('comparison.lemma'),
-    values: ['no', 'yes', 'yes', 'yes']
+    values: ['no', 'no', 'yes', 'yes', 'yes']
   },
   {
     name: t('comparison.compound'),
-    values: ['no', 'no', 'yes', 'yes']
+    values: ['no', 'no', 'no', 'yes', 'yes']
   },
   {
     name: t('comparison.customDict'),
-    values: ['no', 'yes', 'yes', 'yes']
+    values: ['no', 'no', 'yes', 'yes', 'yes']
   },
   {
     name: t('comparison.unknownWords'),
-    values: ['partial', 'yes', 'partial', 'partial']
+    values: ['partial', 'partial', 'yes', 'partial', 'partial']
   }
 ])
 
@@ -84,10 +94,9 @@ function getCellDisplay(value: string) {
         <thead>
           <tr>
             <th class="feature-col">{{ t('comparison.feature') }}</th>
-            <th v-for="(tool, i) in tools" :key="tool" :class="{ highlight: tool === 'Suzume' }">
-              {{ tool }}
-              <span v-if="i === 0" class="tool-tag light">{{ t('comparison.light') }}</span>
-              <span v-else-if="i === tools.length - 1" class="tool-tag heavy">{{ t('comparison.accurate') }}</span>
+            <th v-for="tool in tools" :key="tool.name" :class="{ highlight: tool.name === 'Suzume' }">
+              {{ tool.name }}
+              <span v-if="tool.tag" class="tool-tag">{{ t(tool.tag) }}</span>
             </th>
           </tr>
         </thead>
@@ -97,7 +106,7 @@ function getCellDisplay(value: string) {
             <td
               v-for="(value, i) in feature.values"
               :key="i"
-              :class="[getCellClass(value), { highlight: i === 1 }]"
+              :class="[getCellClass(value), { highlight: i === suzumeIndex }]"
             >
               {{ getCellDisplay(value) }}
             </td>
@@ -138,7 +147,7 @@ function getCellDisplay(value: string) {
 
 .comparison-table {
   width: 100%;
-  min-width: 700px;
+  min-width: 840px;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
@@ -189,10 +198,6 @@ function getCellDisplay(value: string) {
   margin-top: 0.25rem;
   padding: 0.125rem 0.375rem;
   border-radius: 4px;
-}
-
-.tool-tag.light,
-.tool-tag.heavy {
   color: var(--vp-c-text-2);
   background: var(--vp-c-default-soft, var(--vp-c-bg-soft));
 }

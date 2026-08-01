@@ -60,6 +60,7 @@
     "na": "N/A",
     "light": "軽量",
     "accurate": "高精度",
+    "builtIn": "標準",
     "guideTitle": "比較表だけでは見えない、設計思想の違い",
     "guideDescription": "分割単位・辞書への依存・未知語処理を具体例で解説します。",
     "guideLink": "MeCabとの違いを読む"
