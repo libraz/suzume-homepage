@@ -59,7 +59,7 @@ func main() {
 }
 ```
 
-`Analyze()` returns a `[]Morpheme` slice, or `nil` when the input produces no morphemes or the call fails — check the package-level `LastError()` when a `nil` result is unexpected. `Close()` is safe to call multiple times, and a finalizer frees the handle as a fallback, but deferring `Close()` explicitly is the intended pattern.
+`Analyze()` returns a `[]Morpheme` slice, or `nil` when the input produces no morphemes or the call fails. It does not return an error, and `LastError()` cannot reliably distinguish these cases: the native diagnostic belongs to the current OS thread, while the Go runtime may move the goroutine before it reads the value. `Close()` is safe to call multiple times, and a finalizer frees the handle as a fallback, but deferring `Close()` explicitly is the intended pattern.
 
 An instance holds native mutable state and is not safe for concurrent calls. Use one instance per goroutine, or serialize access; separate instances may run concurrently, and creating one is inexpensive.
 
@@ -73,7 +73,7 @@ At package init, the embedded dictionaries are written to a content-addressed ca
 
 ```go
 opts := suzume.DefaultExtendedOptions()
-opts.Mode = suzume.ModeSearch // Finer segmentation, merges noun compounds
+opts.Mode = suzume.ModeSearch // Search-oriented segmentation; merges noun compounds
 opts.MergeCompounds = true
 
 s, err := suzume.NewWithExtendedOptions(opts)
@@ -85,7 +85,7 @@ defer s.Close()
 
 The available modes are `ModeNormal` (default), `ModeSearch`, and `ModeSplit`. See [Analysis Modes](/docs/api) for what each mode does to segmentation.
 
-For the common case of tweaking only normalization, `NewWithOptions(Options)` takes just the three toggles `PreserveVu`, `PreserveCase`, and `PreserveSymbols`, keeping the library defaults for mode and lemmatization.
+For the common case of tweaking only normalization, `NewWithOptions(Options)` takes just the three toggles `PreserveVu`, `PreserveCase`, and `PreserveSymbols`, keeping the library defaults for mode and lemmatization. `PreserveSymbols` controls punctuation-like `SYMBOL` tokens; content-bearing symbols and emoji remain `OTHER` either way.
 
 ## Morpheme fields
 
@@ -97,8 +97,8 @@ For the common case of tweaking only normalization, `NewWithOptions(Options)` ta
 | `POS` | `string` | Part of speech in English (UPPERCASE, e.g. `NOUN`) |
 | `BaseForm` | `string` | Dictionary/base form |
 | `POSJa` | `string` | Part of speech in Japanese (e.g. 名詞) |
-| `ConjType` | `string` | Conjugation type; empty for non-conjugating words |
-| `ConjForm` | `string` | Conjugation form; empty for non-conjugating words |
+| `ConjType` | `string` | Conjugation type; may be empty even when `IsConjugatable` is true |
+| `ConjForm` | `string` | Conjugation form; meaningful when `IsConjugatable` is true |
 | `ExtendedPOS` | `string` | Stable extended POS code (e.g. `VERB_連用`) |
 | `Start` | `int` | Start character offset in normalized text |
 | `End` | `int` | End character offset in normalized text |
@@ -107,9 +107,10 @@ For the common case of tweaking only normalization, `NewWithOptions(Options)` ta
 | `IsLowInfo` | `bool` | True when marked as low information for tag generation |
 | `IsUnknown` | `bool` | True when generated as an unknown-word candidate |
 | `IsFromDictionary` | `bool` | True when matched from any dictionary |
+| `IsConjugatable` | `bool` | True when the conjugation fields carry meaning |
 | `Score` | `float32` | Candidate score/cost used by the analyzer |
 
-`ConjType` and `ConjForm` are populated only for verbs and adjectives; every other part of speech leaves them empty.
+`IsConjugatable` includes auxiliaries as well as verbs and adjectives. A conjugatable morpheme can still have an empty `ConjType` when no conjugation type applies.
 
 See the [API Reference](/docs/api) for the full list of `POS` and `ExtendedPOS` values.
 
@@ -197,7 +198,8 @@ Package-level functions:
 | `DefaultExtendedOptions() ExtendedOptions` | Library-default `ExtendedOptions` starting point |
 | `DefaultTagOptions() TagOptions` | Library-default `TagOptions` starting point |
 | `Version() string` | Native Suzume library version string |
-| `LastError() string` | Last native error message, or empty when none |
+| `LastError() string` | Current OS thread's native diagnostic; unreliable as a later failure check from Go |
+| `LastErrorCode() ErrorCode` | Current OS thread's native diagnostic code, with the same thread-affinity caveat |
 
 Methods on `*Suzume`:
 

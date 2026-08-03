@@ -59,7 +59,7 @@ func main() {
 }
 ```
 
-`Analyze()` は `[]Morpheme` スライスを返します。入力から形態素が得られない場合や呼び出しが失敗した場合は `nil` を返すため、想定外の `nil` はパッケージレベルの `LastError()` で原因を確認してください。`Close()` は何度呼んでも安全で、ファイナライザによる解放も予備として用意されていますが、明示的に `defer` するのが想定された使い方です。
+`Analyze()` は `[]Morpheme` スライスを返します。入力から形態素が得られない場合も、呼び出しが失敗した場合も `nil` になり、戻り値だけでは区別できません。`LastError()` も確実な判定には使えません。ネイティブの診断は現在の OS スレッドに属し、値を読む前に Go ランタイムがゴルーチンを別スレッドへ移す可能性があるためです。`Close()` は何度呼んでも安全で、ファイナライザによる解放も予備として用意されていますが、明示的に `defer` するのが想定された使い方です。
 
 インスタンスはネイティブ側の可変状態を保持しており、並行呼び出しには安全ではありません。ゴルーチンごとに 1 インスタンスを使うか、アクセスを直列化してください。別々のインスタンスは並行に動作でき、作成コストも小さいものです。
 
@@ -73,7 +73,7 @@ func main() {
 
 ```go
 opts := suzume.DefaultExtendedOptions()
-opts.Mode = suzume.ModeSearch // 細かめの分割で、名詞複合語を結合
+opts.Mode = suzume.ModeSearch // 検索向けに分割し、名詞複合語を結合
 opts.MergeCompounds = true
 
 s, err := suzume.NewWithExtendedOptions(opts)
@@ -85,7 +85,7 @@ defer s.Close()
 
 指定できるモードは `ModeNormal`（既定）、`ModeSearch`、`ModeSplit` です。各モードが分割に与える影響は [解析モード](/ja/docs/api) を参照してください。
 
-正規化だけを調整したい場合は `NewWithOptions(Options)` が使えます。`PreserveVu`、`PreserveCase`、`PreserveSymbols` の 3 つのトグルだけを受け取り、モードと原形化はライブラリの既定値のままにします。
+正規化だけを調整したい場合は `NewWithOptions(Options)` が使えます。`PreserveVu`、`PreserveCase`、`PreserveSymbols` の 3 つのトグルだけを受け取り、モードと原形化はライブラリの既定値のままにします。`PreserveSymbols` が制御するのは句読点などの `SYMBOL` トークンで、内容を持つ記号と絵文字は設定にかかわらず `OTHER` として残ります。
 
 ## Morpheme のフィールド
 
@@ -97,8 +97,8 @@ defer s.Close()
 | `POS` | `string` | 英語の品詞（大文字、例: `NOUN`） |
 | `BaseForm` | `string` | 辞書形・原形 |
 | `POSJa` | `string` | 日本語の品詞（例: 名詞） |
-| `ConjType` | `string` | 活用型。活用しない語では空文字列 |
-| `ConjForm` | `string` | 活用形。活用しない語では空文字列 |
+| `ConjType` | `string` | 活用型。`IsConjugatable` が true でも空文字列の場合あり |
+| `ConjForm` | `string` | 活用形。`IsConjugatable` が true の場合に意味を持つ |
 | `ExtendedPOS` | `string` | 安定した拡張品詞コード（例: `VERB_連用`） |
 | `Start` | `int` | 正規化後テキストにおける開始文字オフセット |
 | `End` | `int` | 正規化後テキストにおける終了文字オフセット |
@@ -107,9 +107,10 @@ defer s.Close()
 | `IsLowInfo` | `bool` | タグ生成向けに低情報量と判定された場合 true |
 | `IsUnknown` | `bool` | 未知語候補として生成された場合 true |
 | `IsFromDictionary` | `bool` | いずれかの辞書にマッチした場合 true |
+| `IsConjugatable` | `bool` | 活用フィールドが意味を持つ場合 true |
 | `Score` | `float32` | 解析器が用いる候補スコア・コスト |
 
-`ConjType` と `ConjForm` が設定されるのは動詞と形容詞のみで、それ以外の品詞では空文字列のままです。
+`IsConjugatable` は動詞・形容詞だけでなく助動詞でも true になります。活用可能な形態素でも、該当する活用型がなければ `ConjType` は空文字列です。
 
 `POS` と `ExtendedPOS` の全一覧は [API リファレンス](/ja/docs/api) を参照してください。
 
@@ -197,13 +198,14 @@ for _, w := range s.DictionaryWarnings() {
 | `DefaultExtendedOptions() ExtendedOptions` | ライブラリ既定値の `ExtendedOptions`（起点として使用） |
 | `DefaultTagOptions() TagOptions` | ライブラリ既定値の `TagOptions`（起点として使用） |
 | `Version() string` | ネイティブ Suzume ライブラリのバージョン文字列 |
-| `LastError() string` | 直近のネイティブエラーメッセージ。ない場合は空文字列 |
+| `LastError() string` | 現在の OS スレッドのネイティブ診断。Go から後で失敗原因を確認する用途には不確実 |
+| `LastErrorCode() ErrorCode` | 現在の OS スレッドの診断コード。スレッドに関する制約は `LastError()` と同じ |
 
 `*Suzume` のメソッド:
 
 | メソッド | 説明 |
 |---------|------|
-| `Analyze(text string) []Morpheme` | テキストを解析（上の「Morpheme のフィールド」を参照） |
+| `Analyze(text string) []Morpheme` | テキストを解析（[Morpheme のフィールド](#morpheme-のフィールド)を参照） |
 | `GenerateTags(text string) []Tag` | 既定フィルターでキーワード `Tag` を抽出 |
 | `GenerateTagsWithOptions(text string, opts TagOptions) []Tag` | フィルターや件数制限を指定して `Tag` を抽出 |
 | `LoadUserDictionary(data []byte) error` | TSV または従来 CSV のユーザー辞書を読み込む |
