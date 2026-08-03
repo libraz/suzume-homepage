@@ -176,7 +176,7 @@ The C accessors are `suzume_set_mode()` and `suzume_mode()`. An invalid handle m
 |-------------------------|---------|---------|
 | `preserve_vu` | `true` | Preserve ヴ during normalization |
 | `preserve_case` | `true` | Preserve ASCII case |
-| `preserve_symbols` | `false` | Keep symbols and emoji in output |
+| `preserve_symbols` | `false` | Keep punctuation-like `SYMBOL` tokens; content symbols and emoji remain `OTHER` either way |
 | `mode` | Normal | Analysis mode |
 | `lemmatize` | `true` | Apply corrected source lemmas |
 | `merge_compounds` | `false` | Merge consecutive noun compounds |
@@ -186,6 +186,8 @@ The C accessors are `suzume_set_mode()` and `suzume_mode()`. An invalid handle m
 | `report_scorer_config` | `false` | Add scorer configuration to dictionary warnings |
 | `scorer_options_json` | empty / NULL | JSON scorer overrides |
 | `data_directory` | empty / NULL | Exclusive dictionary directory; empty uses normal search paths |
+
+Content-bearing symbols such as currency, units, arrows, technical marks, and emoji remain `OTHER` with the default options. `preserve_symbols` controls punctuation-like `SYMBOL` tokens such as `。`.
 
 In C, initialize the struct before changing fields:
 

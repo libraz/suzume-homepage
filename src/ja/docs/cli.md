@@ -43,7 +43,7 @@ echo "東京スカイツリーに行きました" | suzume-cli
 | フォーマット | 説明 |
 |--------|-------------|
 | `morpheme` | デフォルト。`表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
-| `tags` | 内容語の `タグ` TAB `品詞` の組（下の「タグ抽出」を参照） |
+| `tags` | 内容語の `タグ` TAB `品詞` の組（[タグ抽出](#タグ抽出)を参照） |
 | `json` | 解析・デバッグ用フィールドを含む構造化 JSON |
 | `tsv` | `表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
 | `chasen` | ChaSen 風フォーマット（日本語の品詞名と活用情報） |
@@ -75,13 +75,16 @@ suzume-cli -f chasen "食べている"
 
 ```bash
 # 通常モード（デフォルト）
-suzume-cli -m normal "東京都新宿区"
+suzume-cli -m normal "API開発と高層ビル群"
+# API開発 / と / 高層 / ビル / 群
 
 # 検索モード（名詞複合語を保持）
-suzume-cli -m search "東京都新宿区"
+suzume-cli -m search "API開発と高層ビル群"
+# API開発 / と / 高層ビル群
 
 # 分割モード（細粒度の分割）
-suzume-cli -m split "東京都新宿区"
+suzume-cli -m split "API開発と高層ビル群"
+# API / 開発 / と / 高層 / ビル / 群
 ```
 
 ### オプション
@@ -95,7 +98,7 @@ suzume-cli -m split "東京都新宿区"
 | `--merge-compounds` | 連続する名詞複合語を結合（デフォルトは無効） |
 | `--normalize-vu` | ヴ をビ等に正規化（デフォルト: 保持） |
 | `--lowercase` | ASCII を小文字に変換（デフォルト: 保持） |
-| `--preserve-symbols` | 記号・絵文字を出力に保持（デフォルト: 除去） |
+| `--preserve-symbols` | 句読点などの `SYMBOL` を出力に保持（既定：除去）。内容を持つ記号と絵文字は設定にかかわらず `OTHER` として保持 |
 | `--no-user-dict` | ユーザー辞書を無効化 |
 | `--no-core-dict` | コア辞書を無効化 |
 | `--skip-env-config` | スコアラー設定用の環境変数を無視 |

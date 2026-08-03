@@ -129,11 +129,12 @@ CDNから直接読み込むこともできます：
 
 ```html
 <script type="module">
-  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume@0.9.8/dist/index.js'
+  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume/dist/index.js'
 
   const suzume = await Suzume.create()
   const result = suzume.analyze('こんにちは')
   console.log(result)
+  suzume.destroy()
 </script>
 ```
 

@@ -54,7 +54,7 @@ All constructor arguments are keyword-only:
 | `mode` | `Mode \| str` | `Mode.NORMAL` | Segmentation mode: `normal`, `search`, or `split` |
 | `preserve_vu` | `bool` | `True` | Preserve ヴ variants |
 | `preserve_case` | `bool` | `True` | Preserve ASCII letter case |
-| `preserve_symbols` | `bool` | `False` | Keep symbols and emoji |
+| `preserve_symbols` | `bool` | `False` | Keep punctuation-like `SYMBOL` tokens; content symbols and emoji remain `OTHER` either way |
 | `lemmatize` | `bool` | `True` | Apply post-analysis lemma correction |
 | `merge_compounds` | `bool` | `False` | Merge consecutive noun compounds |
 | `skip_user_dictionary` | `bool` | `False` | Skip the bundled user dictionary |
@@ -62,6 +62,8 @@ All constructor arguments are keyword-only:
 | `skip_env_config` | `bool` | `False` | Ignore scorer configuration environment variables |
 | `report_scorer_config` | `bool` | `False` | Add scorer configuration diagnostics to `dictionary_warnings` |
 | `scorer_options` | `str \| dict \| None` | `None` | Scorer overrides as a JSON string or mapping |
+
+Content-bearing symbols such as currency, units, arrows, technical marks, and emoji remain `OTHER` by default. `preserve_symbols` controls punctuation-like `SYMBOL` tokens such as `。`.
 
 ```python
 from suzume import Mode, Suzume

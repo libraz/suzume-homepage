@@ -30,10 +30,11 @@ For browser usage without a build step:
 
 ```html
 <script type="module">
-  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume@0.9.8/dist/index.js'
+  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume/dist/index.js'
 
   const suzume = await Suzume.create()
   // ...
+  suzume.destroy() // when finished
 </script>
 ```
 

@@ -30,10 +30,11 @@ bun add @libraz/suzume
 
 ```html
 <script type="module">
-  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume@0.9.8/dist/index.js'
+  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume/dist/index.js'
 
   const suzume = await Suzume.create()
   // ...
+  suzume.destroy() // 使い終わったら解放
 </script>
 ```
 

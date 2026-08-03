@@ -22,7 +22,7 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `freshWasmModule` | `boolean` | `false` | 共有キャッシュを使わず、独立した WASM ランタイムを作成 |
 | `preserveVu` | `boolean` | `true` | ヴを保持（ビ等に正規化しない） |
 | `preserveCase` | `boolean` | `true` | 大文字小文字を保持（ASCII を小文字化しない） |
-| `preserveSymbols` | `boolean` | `false` | 記号・絵文字を出力に保持 |
+| `preserveSymbols` | `boolean` | `false` | 句読点などの `SYMBOL` トークンを保持。絵文字や内容を持つ記号は、この設定にかかわらず `OTHER` として保持 |
 | `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | 解析モード。検索向けの分割には `search` または `split` を使用 |
 | `lemmatize` | `boolean` | `true` | 補正した辞書形を保持。品詞と活用情報はこの設定にかかわらず計算 |
 | `mergeCompounds` | `boolean` | `false` | 連続する名詞複合を可能な範囲で結合 |
@@ -32,15 +32,19 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `reportScorerConfig` | `boolean` | `false` | スコアラー設定の診断情報を `dictionaryWarnings` に追加 |
 | `scorerOptions` | `string \| Record<string, unknown>` | `undefined` | 最優先で適用するスコアラー設定。JSON 文字列または JSON 化されるオブジェクト |
 
+通貨・単位記号、矢印、数学・技術記号、絵文字はテキストの内容を持つため、既定の解析でも `OTHER` として残ります。`preserveSymbols: true` は、`。` などの句読点もトークンとして必要な場合に指定します。
+
 **戻り値:** `Promise<Suzume>`
 
 **例:**
 ```typescript
 // 通常の使用
 const defaultSuzume = await Suzume.create()
+defaultSuzume.destroy()
 
 // カスタム WASM パス
 const customWasmSuzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
+customWasmSuzume.destroy()
 
 // オプション指定
 const searchSuzume = await Suzume.create({
@@ -52,6 +56,7 @@ const searchSuzume = await Suzume.create({
     unary: { noun_prior: 0.25 },
   },
 })
+searchSuzume.destroy()
 ```
 
 **解析モード:**
@@ -148,7 +153,7 @@ for (const morpheme of morphemes) {
 }
 ```
 
-`start` と `end` は `normalizedText` 内の Unicode コードポイント単位の位置です。`startUtf16` と `endUtf16` は JavaScript の UTF-16 コードユニット単位で、そのまま `String.prototype.slice()` に渡せます。絵文字や一部の漢字など、基本多言語面の外にある文字より後ろ、またはその文字をまたぐ範囲では両者の値が異なります。オフセットは入力ではなく正規化後の文字列を参照します。
+`start` と `end` は `normalizedText` 内の Unicode コードポイント単位の位置です。`startUtf16` と `endUtf16` は JavaScript の UTF-16 コードユニット単位で、そのまま `String.prototype.slice()` に渡せます。絵文字や一部の漢字など、基本多言語面の外にある文字より後ろ、またはその文字をまたぐ範囲では両者の値が異なります。オフセットは入力ではなく正規化後の文字列を参照します。内容を持つ記号と絵文字は、`preserveSymbols` が `false` でも `OTHER` として既定の出力に残るため、その範囲も欠けません。
 
 ---
 
@@ -405,7 +410,7 @@ get version(): string
 
 **例:**
 ```typescript
-console.log(suzume.version) // "0.9.8"
+console.log(suzume.version) // "0.9.9"
 ```
 
 このゲッターは解析ハンドルを必要とせず、`destroy()` 後も利用できます。
@@ -420,7 +425,7 @@ console.log(suzume.version) // "0.9.8"
 import { version } from '@libraz/suzume'
 
 const current = await version()
-console.log(current) // "0.9.8"
+console.log(current) // "0.9.9"
 ```
 
 ```typescript
@@ -713,13 +718,16 @@ class SuzumeError extends Error {
 ```typescript
 import { ErrorCode, Suzume, SuzumeError } from '@libraz/suzume'
 
+let suzume: Suzume | undefined
 try {
-  const suzume = await Suzume.create()
+  suzume = await Suzume.create()
   suzume.analyze('\uD800') // 対になっていない UTF-16 サロゲート
 } catch (error) {
   if (error instanceof SuzumeError) {
     console.error(ErrorCode[error.code], error.message)
   }
+} finally {
+  suzume?.destroy()
 }
 ```
 

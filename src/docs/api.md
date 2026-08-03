@@ -22,7 +22,7 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `freshWasmModule` | `boolean` | `false` | Instantiate an isolated WASM runtime instead of using the shared cached runtime |
 | `preserveVu` | `boolean` | `true` | Preserve ヴ (don't normalize to ビ etc.) |
 | `preserveCase` | `boolean` | `true` | Preserve case (don't lowercase ASCII) |
-| `preserveSymbols` | `boolean` | `false` | Preserve symbols/emoji in output |
+| `preserveSymbols` | `boolean` | `false` | Preserve punctuation-like `SYMBOL` tokens; emoji and content-bearing symbols remain `OTHER` regardless of this option |
 | `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | Analysis mode. Use `search` or `split` for search-oriented segmentation |
 | `lemmatize` | `boolean` | `true` | Keep corrected dictionary forms; POS and conjugation annotations are computed either way |
 | `mergeCompounds` | `boolean` | `false` | Merge consecutive noun compounds where possible |
@@ -32,15 +32,19 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `reportScorerConfig` | `boolean` | `false` | Add scorer configuration diagnostics to `dictionaryWarnings` |
 | `scorerOptions` | `string \| Record<string, unknown>` | `undefined` | Final-priority scorer overrides, supplied as JSON text or an object serialized to JSON |
 
+Currency and unit signs, arrows, mathematical or technical marks, and emoji carry text content, so the default analysis keeps them as `OTHER`. Set `preserveSymbols: true` only when punctuation-like tokens such as `。` must also appear in the result.
+
 **Returns:** `Promise<Suzume>`
 
 **Example:**
 ```typescript
 // Default usage
 const defaultSuzume = await Suzume.create()
+defaultSuzume.destroy()
 
 // Custom WASM path
 const customWasmSuzume = await Suzume.create({ wasmPath: '/path/to/suzume.wasm' })
+customWasmSuzume.destroy()
 
 // With options
 const searchSuzume = await Suzume.create({
@@ -52,6 +56,7 @@ const searchSuzume = await Suzume.create({
     unary: { noun_prior: 0.25 },
   },
 })
+searchSuzume.destroy()
 ```
 
 **Analysis modes:**
@@ -148,7 +153,7 @@ for (const morpheme of morphemes) {
 }
 ```
 
-`start` and `end` are Unicode code-point offsets into `normalizedText`. `startUtf16` and `endUtf16` are JavaScript UTF-16 code-unit offsets and can be passed directly to `String.prototype.slice()`. The two sets differ before or across characters outside the Basic Multilingual Plane, including many emoji and rare kanji. Offsets refer to normalized text, which may differ from the input.
+`start` and `end` are Unicode code-point offsets into `normalizedText`. `startUtf16` and `endUtf16` are JavaScript UTF-16 code-unit offsets and can be passed directly to `String.prototype.slice()`. The two sets differ before or across characters outside the Basic Multilingual Plane, including many emoji and rare kanji. Offsets refer to normalized text, which may differ from the input. Content-bearing symbols and emoji stay in the default output as `OTHER`, so their ranges remain represented even when `preserveSymbols` is `false`.
 
 ---
 
@@ -405,7 +410,7 @@ get version(): string
 
 **Example:**
 ```typescript
-console.log(suzume.version) // "0.9.8"
+console.log(suzume.version) // "0.9.9"
 ```
 
 This getter does not require a live analyzer handle and remains available after `destroy()`.
@@ -420,7 +425,7 @@ Returns the version without creating an analyzer handle.
 import { version } from '@libraz/suzume'
 
 const current = await version()
-console.log(current) // "0.9.8"
+console.log(current) // "0.9.9"
 ```
 
 ```typescript
@@ -713,13 +718,16 @@ class SuzumeError extends Error {
 ```typescript
 import { ErrorCode, Suzume, SuzumeError } from '@libraz/suzume'
 
+let suzume: Suzume | undefined
 try {
-  const suzume = await Suzume.create()
+  suzume = await Suzume.create()
   suzume.analyze('\uD800') // unpaired UTF-16 surrogate
 } catch (error) {
   if (error instanceof SuzumeError) {
     console.error(ErrorCode[error.code], error.message)
   }
+} finally {
+  suzume?.destroy()
 }
 ```
 

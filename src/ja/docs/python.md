@@ -54,7 +54,7 @@ with Suzume() as analyzer:
 | `mode` | `Mode \| str` | `Mode.NORMAL` | 分割モード: `normal`、`search`、`split` |
 | `preserve_vu` | `bool` | `True` | ヴの異体表記を保持 |
 | `preserve_case` | `bool` | `True` | ASCII 英字の大文字・小文字を保持 |
-| `preserve_symbols` | `bool` | `False` | 記号と絵文字を保持 |
+| `preserve_symbols` | `bool` | `False` | 句読点などの `SYMBOL` を保持。内容を持つ記号と絵文字は設定にかかわらず `OTHER` として保持 |
 | `lemmatize` | `bool` | `True` | 解析後に原形を補正 |
 | `merge_compounds` | `bool` | `False` | 連続する名詞複合語を結合 |
 | `skip_user_dictionary` | `bool` | `False` | 同梱ユーザー辞書を読み込まない |
@@ -62,6 +62,8 @@ with Suzume() as analyzer:
 | `skip_env_config` | `bool` | `False` | スコアラー設定用の環境変数を無視 |
 | `report_scorer_config` | `bool` | `False` | スコアラー設定の診断を `dictionary_warnings` に追加 |
 | `scorer_options` | `str \| dict \| None` | `None` | JSON 文字列またはマッピングで指定するスコアラーの上書き設定 |
+
+通貨・単位記号、矢印、技術記号、絵文字は、既定でも `OTHER` として残ります。`preserve_symbols` が制御するのは、`。` など句読点系の `SYMBOL` トークンです。
 
 ```python
 from suzume import Mode, Suzume

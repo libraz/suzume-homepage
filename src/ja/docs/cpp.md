@@ -176,7 +176,7 @@ C のアクセサーは `suzume_set_mode()` と `suzume_mode()` です。無効�
 |------------------------------|--------|------|
 | `preserve_vu` | `true` | 正規化時に ヴ を保持 |
 | `preserve_case` | `true` | ASCII の大文字／小文字を保持 |
-| `preserve_symbols` | `false` | 記号と絵文字を出力に保持 |
+| `preserve_symbols` | `false` | 句読点などの `SYMBOL` を保持。内容を持つ記号と絵文字は設定にかかわらず `OTHER` として保持 |
 | `mode` | Normal | 解析モード |
 | `lemmatize` | `true` | 修正済み原形を適用 |
 | `merge_compounds` | `false` | 連続する複合名詞を結合 |
@@ -186,6 +186,8 @@ C のアクセサーは `suzume_set_mode()` と `suzume_mode()` です。無効�
 | `report_scorer_config` | `false` | スコアラー設定を辞書警告へ追加 |
 | `scorer_options_json` | 空 / NULL | JSON 形式のスコアラー上書き設定 |
 | `data_directory` | 空 / NULL | 排他的に使う辞書ディレクトリ。空なら通常の探索先を使用 |
+
+通貨・単位記号、矢印、技術記号、絵文字は、既定のオプションでも `OTHER` として残ります。`preserve_symbols` が制御するのは、`。` など句読点系の `SYMBOL` トークンです。
 
 C では構造体を初期化してからフィールドを変更します。
 

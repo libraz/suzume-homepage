@@ -55,15 +55,17 @@ Backslashes, tabs, and line breaks inside one-line TAB output are escaped.
 | `-m, --mode MODE` | Use `normal`, `search`, or `split` segmentation |
 | `--normalize-vu` | Normalize ヴ variants instead of preserving them |
 | `--lowercase` | Normalize ASCII letters to lowercase |
-| `--preserve-symbols` | Keep symbols and emoji |
+| `--preserve-symbols` | Keep punctuation-like `SYMBOL` tokens; content symbols and emoji remain `OTHER` either way |
 | `--no-lemmatize` | Disable post-analysis lemma correction |
 | `--merge-compounds` | Merge consecutive noun compounds |
 | `--skip-env-config` | Ignore scorer configuration environment variables |
 
 ```bash
 suzume --mode split --lowercase "ABCと東京都"
-suzume --normalize-vu --preserve-symbols "ヴァイオリン🎻"
+suzume --normalize-vu --preserve-symbols "ヴァイオリン、ビオラ"
 ```
+
+Currency and unit signs, arrows, technical marks, and emoji remain `OTHER` by default. `--preserve-symbols` adds punctuation-like tokens such as `、` and `。`.
 
 Run `suzume --help` for the current option summary and `suzume --version` for the installed native library version.
 

@@ -53,6 +53,10 @@ pip install suzume
 ```
 
 ```bash [Go]
+git clone https://github.com/libraz/go-suzume.git
+cd go-suzume && make lib
+cd /path/to/your/module
+go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
 go get github.com/libraz/go-suzume
 ```
 
@@ -76,8 +80,12 @@ import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
 
-for (const m of suzume.analyze('東京都に住んでいます')) {
-  console.log(m.surface, m.pos, m.baseForm)
+try {
+  for (const m of suzume.analyze('東京都に住んでいます')) {
+    console.log(m.surface, m.pos, m.baseForm)
+  }
+} finally {
+  suzume.destroy()
 }
 ```
 

@@ -90,9 +90,13 @@ import { Suzume } from '@libraz/suzume'
 const suzume = await Suzume.create()
 const source = '東京公園\tNOUN\n点検する\tVERB\tSURU\n'
 
-const expandedCount = suzume.loadUserDictionaryCount(source)
-if (expandedCount === 0) {
-  throw new Error(suzume.lastError)
+try {
+  const expandedCount = suzume.loadUserDictionaryCount(source)
+  if (expandedCount === 0) {
+    throw new Error(suzume.lastError)
+  }
+} finally {
+  suzume.destroy()
 }
 ```
 

@@ -55,15 +55,17 @@ suzume --format tags "東京の公園に行く"
 | `-m, --mode MODE` | `normal`、`search`、`split` の分割モードを使用 |
 | `--normalize-vu` | ヴの異体表記を保持せず正規化 |
 | `--lowercase` | ASCII 英字を小文字に正規化 |
-| `--preserve-symbols` | 記号と絵文字を保持 |
+| `--preserve-symbols` | 句読点などの `SYMBOL` を保持。内容を持つ記号と絵文字は設定にかかわらず `OTHER` として保持 |
 | `--no-lemmatize` | 解析後の原形補正を無効化 |
 | `--merge-compounds` | 連続する名詞複合語を結合 |
 | `--skip-env-config` | スコアラー設定用の環境変数を無視 |
 
 ```bash
 suzume --mode split --lowercase "ABCと東京都"
-suzume --normalize-vu --preserve-symbols "ヴァイオリン🎻"
+suzume --normalize-vu --preserve-symbols "ヴァイオリン、ビオラ"
 ```
+
+通貨・単位記号、矢印、技術記号、絵文字は、既定でも `OTHER` として残ります。`--preserve-symbols` を指定すると、`、` や `。` など句読点系のトークンも加わります。
 
 現在のオプション一覧は `suzume --help`、インストール済みネイティブライブラリのバージョンは `suzume --version` で確認できます。
 

@@ -75,13 +75,16 @@ suzume-cli -f chasen "食べている"
 
 ```bash
 # Normal mode (default)
-suzume-cli -m normal "東京都新宿区"
+suzume-cli -m normal "API開発と高層ビル群"
+# API開発 / と / 高層 / ビル / 群
 
 # Search mode (keeps noun compounds)
-suzume-cli -m search "東京都新宿区"
+suzume-cli -m search "API開発と高層ビル群"
+# API開発 / と / 高層ビル群
 
 # Split mode (fine-grained segmentation)
-suzume-cli -m split "東京都新宿区"
+suzume-cli -m split "API開発と高層ビル群"
+# API / 開発 / と / 高層 / ビル / 群
 ```
 
 ### Options
@@ -95,7 +98,7 @@ suzume-cli -m split "東京都新宿区"
 | `--merge-compounds` | Merge consecutive noun compounds (off by default) |
 | `--normalize-vu` | Normalize ヴ to ビ etc. (default: preserve) |
 | `--lowercase` | Convert ASCII to lowercase (default: preserve) |
-| `--preserve-symbols` | Keep symbols/emoji in output (default: remove) |
+| `--preserve-symbols` | Keep punctuation-like `SYMBOL` tokens (default: remove); content symbols and emoji remain `OTHER` either way |
 | `--no-user-dict` | Disable user dictionary |
 | `--no-core-dict` | Disable core dictionary |
 | `--skip-env-config` | Ignore scorer configuration environment variables |
