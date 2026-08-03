@@ -78,7 +78,7 @@ describe('documented JavaScript samples', () => {
       english.push(...en)
     }
 
-    expect(english).toHaveLength(113)
+    expect(english).toHaveLength(115)
 
     for (const claim of english) {
       const actual = suzume.analyze(claim.input)
@@ -192,6 +192,24 @@ describe('documented JavaScript samples', () => {
       { surface: '食べ', pos: 'VERB', baseForm: '食べる', start: 0, end: 2 },
       { surface: 'て', pos: 'PARTICLE', baseForm: 'て', start: 2, end: 3 },
       { surface: 'いる', pos: 'AUX', baseForm: 'いる', start: 3, end: 5 },
+    ])
+  })
+
+  it('keeps content symbols by default and limits preserveSymbols to punctuation', () => {
+    expect(suzume.analyze('価格は€50🎉。').map(({ surface, pos }) => `${surface}(${pos})`)).toEqual([
+      '価格(NOUN)',
+      'は(PARTICLE)',
+      '€(OTHER)',
+      '50(NOUN)',
+      '🎉(OTHER)',
+    ])
+    expect(suzumeWithSymbols.analyze('価格は€50🎉。').map(({ surface, pos }) => `${surface}(${pos})`)).toEqual([
+      '価格(NOUN)',
+      'は(PARTICLE)',
+      '€(OTHER)',
+      '50(NOUN)',
+      '🎉(OTHER)',
+      '。(SYMBOL)',
     ])
   })
 

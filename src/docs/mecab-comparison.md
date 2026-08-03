@@ -120,6 +120,12 @@ Suzume also preserves search-unit boundaries around quantities.
 
 <TokenDiff input="三ヶ月間入院" mecab="三 / ヶ月 / 間 / 入院" suzume="三ヶ月間(NOUN) / 入院" />
 
+Comma-grouped numerals stay whole. A following counter remains a separate `SUFFIX`, while a currency amount stays one search unit.
+
+<TokenDiff input="1,000人" mecab="1 / , / 000 / 人" suzume="1,000(NOUN) / 人(SUFFIX)" />
+
+<TokenDiff input="1,000円" mecab="1 / , / 000 / 円" suzume="1,000円(NOUN)" />
+
 The same merging applies beyond Arabic numerals.
 
 **Kana-spelled quantities:**
@@ -332,7 +338,7 @@ A "verb + 方" expression is a lexical search unit for a method, so keeping it w
 
 ### Everyday Hiragana Words
 
-Common words normally written in hiragana are recognized as single tokens even without dictionary support, where analysis could otherwise fragment them: おととい, ひこうき, みっつ, and calendar compounds such as 翌営業日.
+Common words normally written in hiragana are kept intact through pattern rules and the compact L2 dictionary. Rules cover forms such as おととい, ひこうき, みっつ, and calendar compounds such as 翌営業日. Lexical evidence resolves ambiguous all-hiragana nouns whose characters can also be particles or inflectional endings: みず, てがみ, ひらがな, にわ, いりぐち, はにわ, あけぼの, and くだもの.
 
 ### Prolonged Sound Marks
 
@@ -592,6 +598,15 @@ imperatives. A compact sample:
 ## Normalization
 
 Suzume normalizes grammatical constructions to one consistent shape, even where dictionary output varies between equivalent forms.
+
+### Content Symbols and Punctuation
+
+Currency and unit signs, arrows, mathematical or technical marks, and emoji remain in the default output as `OTHER`. They carry text content and keep the token offsets covering that content. Punctuation-like characters are `SYMBOL` tokens and are omitted by default; enable `preserveSymbols` to keep them.
+
+| Options | `価格は€50🎉。` |
+|---------|------------------|
+| Default | `価格(NOUN) / は(PARTICLE) / €(OTHER) / 50(NOUN) / 🎉(OTHER)` |
+| `preserveSymbols: true` | `価格(NOUN) / は(PARTICLE) / €(OTHER) / 50(NOUN) / 🎉(OTHER) / 。(SYMBOL)` |
 
 ### Copula Negation
 
