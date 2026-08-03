@@ -1,10 +1,10 @@
 {
-  "version": "0.9.8",
-  "size": 550962,
-  "sizeKB": 538,
-  "gzipSize":   224554,
-  "gzipKB": 219,
-  "md5": "f91db50abcdd02ec067f1761fbbc90d8",
-  "buildDate": "2026-07-31T05:44:11Z",
-  "commitHash": "3d68ef2"
+  "version": "0.9.9",
+  "size": 567548,
+  "sizeKB": 554,
+  "gzipSize":   230816,
+  "gzipKB": 225,
+  "md5": "1f8f15976c446d9238d67ef47ce9c611",
+  "buildDate": "2026-08-03T06:58:22Z",
+  "commitHash": "9a24b6d"
 }
