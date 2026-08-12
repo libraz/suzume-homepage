@@ -28,8 +28,21 @@ const loading = ref(true)
 const error = ref('')
 const version = ref('')
 
+// Timings taken on the visitor's own machine. A published table can only ever
+// describe the machine it was measured on, so the page measures the device
+// that is actually reading it.
+const initMs = ref(0)
+const perCallMs = ref(0)
+const tokensPerSecond = ref(0)
+
 let suzume: Suzume | null = null
 let debounce: ReturnType<typeof setTimeout> | undefined
+
+// One analysis of a short sentence runs well under a millisecond, which is at
+// the resolution floor of a clamped performance.now(). Timing a batch and
+// dividing gets a figure that means something without freezing the input.
+const TIMING_BUDGET_MS = 20
+const TIMING_MAX_ITERATIONS = 200
 
 function posCategory(pos: string): string {
   const p = pos.toUpperCase()
@@ -58,9 +71,30 @@ function analyze() {
       maxTags: 8,
     })
     error.value = ''
+    measure(suzume, text, morphemes.value.length)
   } catch {
     error.value = isJa() ? '解析に失敗しました。' : 'Analysis failed.'
   }
+}
+
+/// Time repeated analyses of the text now in the box and report the per-call
+/// cost. The first call above already warmed the code path, so this measures
+/// steady state rather than first-run compilation.
+function measure(instance: Suzume, text: string, tokenCount: number) {
+  const started = performance.now()
+  let iterations = 0
+  let elapsed = 0
+
+  while (iterations < TIMING_MAX_ITERATIONS) {
+    instance.analyze(text)
+    iterations += 1
+    elapsed = performance.now() - started
+    if (elapsed >= TIMING_BUDGET_MS) break
+  }
+
+  if (iterations === 0 || elapsed <= 0) return
+  perCallMs.value = elapsed / iterations
+  tokensPerSecond.value = (tokenCount * iterations) / (elapsed / 1000)
 }
 
 watch(input, () => {
@@ -71,7 +105,9 @@ watch(input, () => {
 onMounted(async () => {
   try {
     const wasmPath = new URL('../wasm/suzume.wasm', import.meta.url).href
+    const startedAt = performance.now()
     suzume = await Suzume.create({ wasmPath })
+    initMs.value = performance.now() - startedAt
     version.value = suzume.version
     loading.value = false
     analyze()
@@ -96,7 +132,19 @@ const label = computed(() => ({
   tags: isJa() ? '抽出タグ' : 'Extracted tags',
   loading: isJa() ? 'WASM を読み込み中...' : 'Loading WASM...',
   version: isJa() ? '実行中' : 'Running',
+  init: isJa() ? '初期化' : 'Instantiate',
+  perCall: isJa() ? '1 回の解析' : 'Per analysis',
+  throughput: isJa() ? 'スループット' : 'Throughput',
+  measuredHere: isJa()
+    ? 'いま、この端末で計測した値です。掲載された表ではありません。'
+    : 'Measured on this device just now — not a number from a table.',
 }))
+
+const formattedThroughput = computed(() =>
+  `${Math.round(tokensPerSecond.value).toLocaleString(isJa() ? 'ja-JP' : 'en-US')} ${
+    isJa() ? 'トークン/秒' : 'tokens/sec'
+  }`,
+)
 </script>
 
 <template>
@@ -156,6 +204,24 @@ const label = computed(() => ({
         <div class="tags">
           <span v-for="tag in tags" :key="`${tag.tag}-${tag.pos}`">#{{ tag.tag }}</span>
         </div>
+      </div>
+
+      <div v-if="perCallMs > 0" class="measured">
+        <dl>
+          <div>
+            <dt>{{ label.init }}</dt>
+            <dd>{{ initMs.toFixed(1) }} ms</dd>
+          </div>
+          <div>
+            <dt>{{ label.perCall }}</dt>
+            <dd>{{ perCallMs.toFixed(3) }} ms</dd>
+          </div>
+          <div>
+            <dt>{{ label.throughput }}</dt>
+            <dd>{{ formattedThroughput }}</dd>
+          </div>
+        </dl>
+        <p>{{ label.measuredHere }}</p>
       </div>
     </template>
   </section>
@@ -387,9 +453,48 @@ const label = computed(() => ({
   font-size: 0.8rem;
 }
 
+.measured {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--vp-c-border);
+}
+
+.measured dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.75rem;
+  margin: 0;
+}
+
+.measured dt {
+  margin-bottom: 0.15rem;
+  color: var(--vp-c-text-3);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.measured dd {
+  margin: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-1);
+}
+
+.measured p {
+  margin: 0.7rem 0 0;
+  color: var(--vp-c-text-3);
+  font-size: 0.78rem;
+}
+
 @media (max-width: 640px) {
   .playground-header {
     display: block;
+  }
+
+  .measured dl {
+    gap: 1rem 1.5rem;
   }
 
   .version {
