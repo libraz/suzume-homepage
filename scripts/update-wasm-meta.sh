@@ -14,7 +14,11 @@ if [ -f "$WASM_FILE" ]; then
     MD5=$(md5sum "$WASM_FILE" | cut -d' ' -f1)
   fi
   SIZE_KB=$((SIZE / 1024))
-  GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
+  # Node's zlib rather than the system `gzip`: the platform gzip on macOS
+  # compresses this binary about 800 bytes tighter than the one on Linux, which
+  # would make the published size depend on which machine ran this script.
+  # libraz.net measures the same artifact the same way so both sites agree.
+  GZIP_SIZE=$(node -e 'const fs=require("node:fs"),zlib=require("node:zlib");process.stdout.write(String(zlib.gzipSync(fs.readFileSync(process.argv[1])).length))' "$WASM_FILE")
   GZIP_KB=$((GZIP_SIZE / 1024))
 
   # Get build date from WASM file mtime (ISO 8601)

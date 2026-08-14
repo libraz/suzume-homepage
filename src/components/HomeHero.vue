@@ -22,7 +22,7 @@ const runtimes = 'Browser · Node · Deno · Bun · Python · C/C++'
 
     <div class="spec-stats">
       <div class="stat">
-        <div class="stat-value">{{ WASM_GZIP_KB }}<span class="stat-unit">KB</span></div>
+        <div class="stat-value">{{ WASM_GZIP_KB }}<span class="stat-unit">KiB</span></div>
         <div class="stat-label">{{ t('homeHero.gzipLabel') }}</div>
         <div class="stat-note">{{ t('homeHero.rawNote', { n: String(WASM_SIZE_KB) }) }}</div>
       </div>

@@ -47,8 +47,8 @@ frame's budget. The comparison worth making is not against another tokenizer
 but against a network round trip, which starts in the tens of milliseconds
 and is subject to conditions you do not control.
 
-The module also has to arrive before it can run: 220 KB gzipped, once, cached
-thereafter.
+The module also has to arrive before it can run: <WasmSize /> gzipped, once,
+cached thereafter.
 
 ## Segmentation accuracy
 
