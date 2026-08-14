@@ -4,7 +4,7 @@
     "beta": "Beta",
     "openSource": "オープンソース",
     "gzipLabel": "gzip 後のバンドル",
-    "rawNote": "生 {n}KB",
+    "rawNote": "生 {n}KiB",
     "clientLabel": "クライアント完結",
     "clientNote": "サーバー・API 不要",
     "runtimesLabel": "ランタイム"
@@ -63,7 +63,10 @@
     "builtIn": "標準",
     "guideTitle": "比較表だけでは見えない、設計思想の違い",
     "guideDescription": "分割単位・辞書への依存・未知語処理を具体例で解説します。",
-    "guideLink": "MeCabとの違いを読む"
+    "guideLink": "MeCabとの違いを読む",
+    "perfTitle": "速度と精度は？",
+    "perfDescription": "1回あたりのレイテンシ、初期化コスト、そして精度の数値が何を測っていて何を測っていないか。",
+    "perfLink": "速度と精度を読む"
   },
   "useCase": {
     "eyebrow": "プレイグラウンド",

@@ -4,7 +4,7 @@
     "beta": "Beta",
     "openSource": "open source",
     "gzipLabel": "gzipped bundle",
-    "rawNote": "{n}KB raw",
+    "rawNote": "{n}KiB raw",
     "clientLabel": "client-side",
     "clientNote": "no server or API",
     "runtimesLabel": "runtimes"
@@ -63,7 +63,10 @@
     "builtIn": "Built-in",
     "guideTitle": "There is more to the difference than this table",
     "guideDescription": "See concrete examples of token boundaries, dictionary dependence, and unknown-word handling.",
-    "guideLink": "Read the MeCab comparison"
+    "guideLink": "Read the MeCab comparison",
+    "perfTitle": "How fast, and how accurate?",
+    "perfDescription": "Per-call latency, initialization cost, and what the accuracy figures do and do not cover.",
+    "perfLink": "Read speed and accuracy"
   },
   "useCase": {
     "eyebrow": "Playground",

@@ -9,6 +9,12 @@ const comparisonLink = computed(() =>
   isJa() ? '/ja/docs/mecab-comparison' : '/docs/mecab-comparison'
 )
 
+// The table deliberately carries no speed or accuracy row: both depend on the
+// input and belong with their measurement conditions rather than in a cell.
+const performanceLink = computed(() =>
+  isJa() ? '/ja/docs/performance' : '/docs/performance'
+)
+
 // Ordered by what the application has to ship: the platform built-in, then a
 // lightweight segmenter, then Suzume, then the dictionary-based analyzers.
 const tools: { name: string; tag?: string }[] = [
@@ -122,6 +128,17 @@ function getCellDisplay(value: string) {
       </span>
       <span class="guide-action">
         {{ t('comparison.guideLink') }}
+        <span class="guide-arrow" aria-hidden="true">→</span>
+      </span>
+    </a>
+
+    <a class="comparison-guide-link" :href="performanceLink">
+      <span>
+        <strong>{{ t('comparison.perfTitle') }}</strong>
+        <small>{{ t('comparison.perfDescription') }}</small>
+      </span>
+      <span class="guide-action">
+        {{ t('comparison.perfLink') }}
         <span class="guide-arrow" aria-hidden="true">→</span>
       </span>
     </a>
