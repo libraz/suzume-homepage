@@ -218,7 +218,7 @@ const auto tags =
 
 | `TagOptions` / C field | Default | Meaning |
 |------------------------|---------|---------|
-| `pos_filter` | `0` | `SUZUME_TAG_POS_*` bitmask; 0 includes every filterable POS |
+| `pos_filter` | `0` | `SUZUME_TAG_POS_*` bitmask; 0 includes every filterable POS (nouns including pronouns, verbs, adjectives, adverbs, particles, and auxiliaries) |
 | `exclude_basic` | `false` | Exclude hiragana-only base forms |
 | `use_lemma` | `true` | Generate from the base form instead of the surface |
 | `min_length` | `2` | Minimum characters |
@@ -229,7 +229,7 @@ const auto tags =
 | `exclude_low_info` | `true` | Exclude low-information words |
 | `remove_duplicates` | `true` | Remove duplicate tags |
 
-The filter bits are `SUZUME_TAG_POS_NOUN`, `SUZUME_TAG_POS_VERB`, `SUZUME_TAG_POS_ADJECTIVE`, `SUZUME_TAG_POS_ADVERB`, `SUZUME_TAG_POS_PARTICLE`, and `SUZUME_TAG_POS_AUXILIARY`. A filter bit does not override an `exclude_*` option, so set `exclude_particles` or `exclude_auxiliaries` to false when including those parts of speech.
+The filter bits are `SUZUME_TAG_POS_NOUN`, `SUZUME_TAG_POS_VERB`, `SUZUME_TAG_POS_ADJECTIVE`, `SUZUME_TAG_POS_ADVERB`, `SUZUME_TAG_POS_PARTICLE`, and `SUZUME_TAG_POS_AUXILIARY`; the noun bit also includes pronouns. Other POS categories are always excluded. Pronouns can still be removed by `exclude_low_info`. A filter bit does not override an `exclude_*` option, so set `exclude_particles` or `exclude_auxiliaries` to false when including those parts of speech.
 
 C callers must run `suzume_init_tag_options()` before overriding fields, then call `suzume_generate_tags_with_options()` or its `_n` variant.
 
@@ -260,13 +260,12 @@ Current TSV rows use `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]`:
 ```cpp
 const std::size_t loaded =
     tokenizer.loadUserDictionaryCount("東京スカイツリー\tNOUN\n");
-if (loaded == 0 &&
-    suzume::Tokenizer::lastErrorCode() != SUZUME_ERROR_SUCCESS) {
-  // Load failed.
+if (loaded == 0) {
+  // Load failed; inspect Tokenizer::lastErrorCode() immediately.
 }
 ```
 
-A count of zero is not enough to identify failure; check the error code. A failed binary load preserves the dictionaries already attached to the handle. `suzume_dictionary_warning()` returns a borrowed pointer that lasts until the next warning lookup on that thread or until the handle is destroyed, whichever comes first.
+A count of zero indicates failure; inspect the error code immediately after the call. A failed binary load preserves the dictionaries already attached to the handle. `suzume_dictionary_warning()` returns a borrowed pointer that lasts until the next warning lookup on that thread or until the handle is destroyed, whichever comes first.
 
 The linked library version is available as `suzume::Tokenizer::version()` in C++ and `suzume_version()` in C. Both return the library's semantic-version string.
 

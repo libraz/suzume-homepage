@@ -36,6 +36,8 @@ suzume-cli analyze "東京スカイツリーに行きました"
 echo "東京スカイツリーに行きました" | suzume-cli
 ```
 
+When positional arguments are supplied, the CLI joins them with single spaces. With no arguments, non-interactive standard input is read as one document. Before analysis it removes one leading UTF-8 BOM and one trailing LF (or the CRLF pair), while preserving interior line breaks.
+
 ### Output Formats
 
 The `-f, --format` flag selects the output shape:
@@ -70,6 +72,8 @@ suzume-cli -f tsv "食べている"
 # ChaSen-like format (Japanese POS, conjugation info)
 suzume-cli -f chasen "食べている"
 ```
+
+JSON output is an object with the top-level fields `input`, `normalized_text`, and `morphemes`. Each morpheme contains `surface`, `pos`, `lemma`, `start`, `end`, `extended_pos`, `is_user_dict`, `is_formal_noun`, `is_low_info`, `is_unknown`, `is_from_dictionary`, and `score`. `start` and `end` are Unicode code-point offsets into `normalized_text`.
 
 ### Analysis Modes
 
@@ -177,7 +181,7 @@ suzume-cli dict validate user.tsv
 # Show dictionary info
 suzume-cli dict info user.tsv
 
-# Look up a word in built-in L1 and source L2 dictionaries
+# Look up a word in built-in L1, core/user TSV sources, and optional paths
 suzume-cli dict lookup すぎる
 
 # Search entries by pattern
@@ -186,6 +190,8 @@ suzume-cli dict search user.tsv "パターン"
 # List entries (non-interactive)
 suzume-cli dict list user.tsv --pos=NOUN --pattern="東京*" --limit=20
 ```
+
+`dict lookup` searches the built-in L1 entries, every `*.tsv` under `core/` and `user/` beneath `SUZUME_DATA_DIR` (or the default `data` root), and any additional TSV or `.dic` paths supplied after the word.
 
 ### Interactive Mode
 

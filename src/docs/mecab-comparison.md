@@ -342,15 +342,15 @@ Common words normally written in hiragana are kept intact through pattern rules 
 
 ### Prolonged Sound Marks
 
-Prolonged sound marks (ー) are merged with the preceding token.
+Prolonged sound marks (ー) are merged with the preceding token. For recognized colloquial i-adjectives, Suzume keeps the marks in the surface while normalizing the lemma to the ordinary dictionary form.
 
 <TokenDiff input="そうー" mecab="そう(副詞) / ー(名詞)" suzume="そうー(ADV)" />
 
-<TokenDiff input="すごーーい" mecab="すご(形容詞) / ーー(名詞) / い(名詞)" suzume="すごーーい(ADJ, lemma: すごーーい)" />
+<TokenDiff input="すごーーい" mecab="すご(形容詞) / ーー(名詞) / い(名詞)" suzume="すごーーい(ADJ, lemma: すごい)" />
 
 <Why>
 
-Prolonged sounds are part of the word they modify. Consecutive marks remain in both the surface and lemma so the analyzer does not invent an unobserved spelling.
+Prolonged sounds are part of the word they modify. The surface retains the written marks, while the lemma removes the colloquial lengthening and uses the adjective's dictionary form.
 
 </Why>
 
@@ -389,7 +389,7 @@ These are atomic identifiers in technical text. Splitting them provides no benef
 
 ### URLs, Mentions, and Hashtags
 
-URLs, @mentions, and #hashtags are merged into single tokens. Hashtags containing Japanese text are kept whole as well.
+URLs, @mentions, and #hashtags are merged into single tokens. A hashtag scanner accepts Japanese text, including hiragana that would otherwise be particle-like, and stops at whitespace or punctuation.
 
 <TokenDiff
   input="https://example.com にアクセス"
@@ -406,7 +406,7 @@ URLs, @mentions, and #hashtags are merged into single tokens. Hashtags containin
 <TokenDiff
   input="#topicについて"
   mecab="# / topic / について"
-  suzume="#topic / について"
+  suzume="#topicについて(NOUN)"
 />
 
 <TokenDiff
@@ -417,7 +417,7 @@ URLs, @mentions, and #hashtags are merged into single tokens. Hashtags containin
 
 <Why>
 
-These are atomic identifiers in modern text. Splitting them provides no benefit.
+URLs, mentions, and hashtags are treated as atomic identifiers. For a hashtag, the scanner boundary is determined by its character set and the next whitespace or punctuation, so `#topicについて` stays one noun token.
 
 </Why>
 

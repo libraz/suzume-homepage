@@ -218,7 +218,7 @@ const auto tags =
 
 | `TagOptions` / C フィールド | 既定値 | 意味 |
 |-----------------------------|--------|------|
-| `pos_filter` | `0` | `SUZUME_TAG_POS_*` ビットマスク。0 はフィルター可能な全品詞 |
+| `pos_filter` | `0` | `SUZUME_TAG_POS_*` ビットマスク。0 はフィルター可能な全品詞（代名詞を含む名詞、動詞、形容詞、副詞、助詞、助動詞） |
 | `exclude_basic` | `false` | 原形がひらがなのみの基本語を除外 |
 | `use_lemma` | `true` | 表層形ではなく原形からタグを生成 |
 | `min_length` | `2` | 最小文字数 |
@@ -229,7 +229,7 @@ const auto tags =
 | `exclude_low_info` | `true` | 情報量の低い語を除外 |
 | `remove_duplicates` | `true` | 重複タグを除去 |
 
-フィルタービットは `SUZUME_TAG_POS_NOUN`、`SUZUME_TAG_POS_VERB`、`SUZUME_TAG_POS_ADJECTIVE`、`SUZUME_TAG_POS_ADVERB`、`SUZUME_TAG_POS_PARTICLE`、`SUZUME_TAG_POS_AUXILIARY` です。フィルタービットは `exclude_*` を上書きしません。助詞や助動詞を含める場合は `exclude_particles` または `exclude_auxiliaries` も false にしてください。
+フィルタービットは `SUZUME_TAG_POS_NOUN`、`SUZUME_TAG_POS_VERB`、`SUZUME_TAG_POS_ADJECTIVE`、`SUZUME_TAG_POS_ADVERB`、`SUZUME_TAG_POS_PARTICLE`、`SUZUME_TAG_POS_AUXILIARY` です。名詞ビットには代名詞も含まれます。その他の品詞は常に除外され、代名詞も `exclude_low_info` で除外される場合があります。フィルタービットは `exclude_*` を上書きしません。助詞や助動詞を含める場合は `exclude_particles` または `exclude_auxiliaries` も false にしてください。
 
 C では `suzume_init_tag_options()` を呼んでからフィールドを変更し、`suzume_generate_tags_with_options()` または対応する `_n` 関数へ渡します。
 
@@ -260,13 +260,12 @@ C ABI は安定した数値コードを使います。次の関数は静的ラ�
 ```cpp
 const std::size_t loaded =
     tokenizer.loadUserDictionaryCount("東京スカイツリー\tNOUN\n");
-if (loaded == 0 &&
-    suzume::Tokenizer::lastErrorCode() != SUZUME_ERROR_SUCCESS) {
-  // 読み込み失敗。
+if (loaded == 0) {
+  // 読み込み失敗。直後に Tokenizer::lastErrorCode() を確認する。
 }
 ```
 
-件数が0というだけでは失敗と判定できません。エラーコードも確認してください。バイナリ辞書の読み込みに失敗しても、そのハンドルに読み込み済みの辞書は保持されます。`suzume_dictionary_warning()` の返す借用ポインターは、同じスレッドで次の警告を取得するか、ハンドルを破棄するまで有効です。
+件数が0の場合は失敗です。呼び出し直後にエラーコードを確認してください。バイナリ辞書の読み込みに失敗しても、そのハンドルに読み込み済みの辞書は保持されます。`suzume_dictionary_warning()` の返す借用ポインターは、同じスレッドで次の警告を取得するか、ハンドルを破棄するまで有効です。
 
 リンク中のライブラリのバージョンは、C++ では `suzume::Tokenizer::version()`、C では `suzume_version()` から取得できます。どちらもライブラリの SemVer 文字列を返します。
 

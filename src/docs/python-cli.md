@@ -19,6 +19,8 @@ suzume "東京へ行く"
 printf 'りんごを食べる\n' | suzume
 ```
 
+When text is supplied as arguments, the CLI joins the arguments with single spaces. With no arguments, non-interactive standard input is read as one document. It removes one leading UTF-8 BOM and one trailing LF (or CRLF pair), while preserving interior line breaks.
+
 `analyze` is an optional alias. These commands are equivalent:
 
 ```bash
@@ -118,7 +120,7 @@ suzume --format tags \
 
 ## JSON and offsets
 
-Morpheme `start` and `end` values are character offsets into the normalized text, not necessarily the original input. JSON output includes that exact string as `normalized_text`:
+Morpheme `start` and `end` values are Unicode code-point offsets into the normalized text, not necessarily the original input. JSON output includes that exact string as `normalized_text`:
 
 ```bash
 suzume --lowercase --format json "ABCを検索"

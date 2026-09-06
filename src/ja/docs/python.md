@@ -89,7 +89,7 @@ with Suzume() as analyzer:
 
 ## 解析と正規化後テキスト
 
-`analyze()` は `list[Morpheme]` を返します。各形態素の `start` と `end` は正規化後テキスト上の文字オフセットで、入力テキスト上の位置とは異なる場合があります。
+`analyze()` は `list[Morpheme]` を返します。各形態素の `start` と `end` は正規化後テキスト上の Unicode コードポイントオフセットで、入力テキスト上の位置とは異なる場合があります。
 
 オフセットが参照する文字列も必要な場合は `analyze_with_normalized_text()` を使います。
 
@@ -115,8 +115,8 @@ with Suzume(preserve_case=False) as analyzer:
 | `conj_type` | `str \| None` | 活用型。活用しない語では `None` |
 | `conj_form` | `str \| None` | 活用形。活用しない語では `None` |
 | `extended_pos` | `str` | 安定した拡張品詞コード |
-| `start` | `int` | 正規化後テキストにおける開始文字オフセット |
-| `end` | `int` | 正規化後テキストにおける終了文字オフセット |
+| `start` | `int` | 正規化後テキストにおける開始 Unicode コードポイントオフセット |
+| `end` | `int` | 正規化後テキストにおける終了 Unicode コードポイントオフセット |
 | `is_user_dict` | `bool` | ユーザー辞書にマッチしたか |
 | `is_formal_noun` | `bool` | こと・ものなどの形式名詞か |
 | `is_low_info` | `bool` | 低情報量の語としてマークされているか |
@@ -150,7 +150,7 @@ with Suzume() as analyzer:
 | `particle` | `16` |
 | `auxiliary` | `32` |
 
-`0` または空のイテラブルはすべての品詞を選択します。ただし、助詞と助動詞は既定で除外されます。結果に含めるには、対応する除外オプションを `False` にしてください。
+`0` または空のイテラブルは、フィルター可能な品詞（代名詞を含む名詞、動詞、形容詞、副詞、助詞、助動詞）をすべて選択します。空のフィルターでも、接続詞、記号などその他の品詞は除外されます。代名詞も `exclude_low_info` で除外される場合があります。助詞と助動詞は既定で除外されます。結果に含めるには、対応する除外オプションを `False` にしてください。
 
 ```python
 with Suzume() as analyzer:

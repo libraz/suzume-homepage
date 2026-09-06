@@ -36,6 +36,8 @@ suzume-cli analyze "東京スカイツリーに行きました"
 echo "東京スカイツリーに行きました" | suzume-cli
 ```
 
+位置引数を渡すと、CLI はそれらを半角スペース 1 つで連結します。引数がなく非対話的な標準入力がある場合は、1 つの文書として読み込みます。解析前に先頭の UTF-8 BOM と末尾の LF 1 個（または CRLF）を取り除き、途中の改行は保持します。
+
 ### 出力フォーマット
 
 `-f, --format` フラグで出力の形を選びます。
@@ -70,6 +72,8 @@ suzume-cli -f tsv "食べている"
 # ChaSen 風フォーマット（日本語品詞、活用情報）
 suzume-cli -f chasen "食べている"
 ```
+
+JSON 出力は、トップレベルに `input`、`normalized_text`、`morphemes` を持つオブジェクトです。各形態素には `surface`、`pos`、`lemma`、`start`、`end`、`extended_pos`、`is_user_dict`、`is_formal_noun`、`is_low_info`、`is_unknown`、`is_from_dictionary`、`score` が含まれます。`start` と `end` は `normalized_text` 内の Unicode コードポイントオフセットです。
 
 ### 解析モード
 
@@ -177,7 +181,7 @@ suzume-cli dict validate user.tsv
 # 辞書情報を表示
 suzume-cli dict info user.tsv
 
-# 組み込み L1 とソース L2 辞書で単語を検索
+# 組み込み L1、core/user の TSV ソース、追加パスで単語を検索
 suzume-cli dict lookup すぎる
 
 # パターンでエントリを検索
@@ -186,6 +190,8 @@ suzume-cli dict search user.tsv "パターン"
 # エントリを一覧表示（非インタラクティブ）
 suzume-cli dict list user.tsv --pos=NOUN --pattern="東京*" --limit=20
 ```
+
+`dict lookup` は、組み込み L1 のエントリ、`SUZUME_DATA_DIR`（未設定時は既定の `data`）配下の `core/` と `user/` にあるすべての `*.tsv`、および単語の後に指定した追加の TSV／`.dic` パスを検索します。
 
 ### インタラクティブモード
 

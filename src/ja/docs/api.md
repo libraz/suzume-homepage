@@ -181,7 +181,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 
 | オプション | 型 | デフォルト | 説明 |
 |-----------|------|---------|-------------|
-| `posFilter` | `readonly TagPosFilterName[]` | `undefined`（全て） | 抽出する品詞カテゴリ。空配列もフィルタ可能な全カテゴリを含む |
+| `posFilter` | `readonly TagPosFilterName[]` | `undefined`（全て） | 抽出する品詞カテゴリ。空配列もフィルタ可能な全カテゴリを含み、代名詞は `noun` に含まれます |
 | `pos` | `readonly TagPosFilterName[]` | `undefined` | `posFilter` の非推奨エイリアス。両方を指定した場合は `posFilter` を優先 |
 | `excludeBasic` | `boolean` | `false` | ひらがなのみの原形を持つ基本動詞等を除外 |
 | `useLemma` | `boolean` | `true` | 表層形の代わりに原形（辞書形）を使用 |
@@ -193,7 +193,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | `excludeLowInfo` | `boolean` | `true` | 低情報語を除外 |
 | `removeDuplicates` | `boolean` | `true` | 重複タグを削除 |
 
-`TagPosFilterName` は `'noun' | 'verb' | 'adjective' | 'adverb' | 'particle' | 'auxiliary'` です。未知の名前を渡すと `Error` が発生します。助詞または助動詞を含めるには、対応する除外オプションも無効にします。
+`TagPosFilterName` は `'noun' | 'verb' | 'adjective' | 'adverb' | 'particle' | 'auxiliary'` です。タグジェネレーターが対象にするのは、名詞（代名詞を含む）、動詞、形容詞、副詞、助詞、助動詞です。フィルターが空でも、接続詞、記号などその他の品詞は除外されます。空でない `posFilter` は、対象品詞に対する追加のホワイトリストとして働きます。代名詞は `excludeLowInfo` で除外される場合があります。未知の名前を渡すと `Error` が発生します。助詞または助動詞を含めるには、対応する除外オプションも無効にします。
 
 **戻り値:** `Tag[]`
 
@@ -266,7 +266,7 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 4. **低情報語** — `excludeLowInfo` が `true` の場合に除外（デフォルト）
 5. **接続詞** — 常に除外
 6. **記号** — 常に除外
-7. **品詞フィルタ** — `posFilter` が空でない場合、一致するカテゴリのみ通過
+7. **品詞フィルタ** — `posFilter` が空でない場合は一致するカテゴリのみ通過。空または未指定でも、名詞（代名詞を含む）、動詞、形容詞、副詞、助詞、助動詞だけが対象
 8. **基本語** — `excludeBasic: true` の場合、ひらがなのみの原形を持つ語を除外
 9. **タグ文字列** — `useLemma` に従って原形または表層形を選択
 10. **最小文字数** — Unicode 文字数が `minLength` 未満のタグを除外
@@ -410,7 +410,7 @@ get version(): string
 
 **例:**
 ```typescript
-console.log(suzume.version) // "0.9.9"
+console.log(suzume.version) // SemVer 文字列
 ```
 
 このゲッターは解析ハンドルを必要とせず、`destroy()` 後も利用できます。
@@ -425,7 +425,7 @@ console.log(suzume.version) // "0.9.9"
 import { version } from '@libraz/suzume'
 
 const current = await version()
-console.log(current) // "0.9.9"
+console.log(current) // SemVer 文字列
 ```
 
 ```typescript
@@ -644,7 +644,7 @@ interface Morpheme {
 | `AUX_過度` | 過度 | すぎる |
 | `AUX_ガル` | ガル接続 | がる |
 | `AUX_よう` | 様態・比況 | よう |
-| `AUX_KURUWA_POLITE` | 丁寧な補助表現 | くるわ |
+| `AUX_KURUWA_POLITE` | 歴史的な廓言葉の丁寧表現 | なんし, なんした |
 
 **助詞:**
 
@@ -654,6 +654,7 @@ interface Morpheme {
 | `PART_係` | 係助詞 | は, も |
 | `PART_終` | 終助詞 | ね, よ, わ, な, か |
 | `PART_接続` | 接続助詞 | て, で, ば, ながら, たり, けど |
+| `PART_接続終止` | 終止形に接続する接続助詞 | が |
 | `PART_引用` | 引用助詞 | と（引用） |
 | `PART_副` | 副助詞 | ばかり, だけ, ほど, しか, など |
 | `PART_準体` | 準体助詞 | の |
@@ -664,6 +665,7 @@ interface Morpheme {
 | 値 | 説明 | 例 |
 |----|------|-----|
 | `NOUN` | 普通名詞 | 東京, 天気 |
+| `NOUN_非日本語` | ラテン文字または数字で書かれた名詞候補 | ABC, 123 |
 | `NOUN_形式` | 形式名詞 | こと, もの, ところ, わけ |
 | `NOUN_転成` | 連用形転成名詞 | 読み, 書き |
 | `NOUN_固有` | 固有名詞 | — |

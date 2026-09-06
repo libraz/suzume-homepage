@@ -27,6 +27,8 @@ This example contains a noun, a verb whose forms will be expanded, and a literal
 
 Use actual tab characters between fields. The delimiter is selected from the first data row, so do not mix TSV and CSV rows in one load. Blank lines and lines whose first non-whitespace character is `#` are ignored.
 
+At runtime, a `surface` may be at most 255 bytes after UTF-8 encoding. This is a byte limit, so the maximum number of characters depends on the text.
+
 ### Part-of-speech Values
 
 | Value | Description | Japanese alias |
@@ -178,6 +180,8 @@ Runtime source loading skips a record with fewer than two fields. If another row
 missing-pos
 東京公園	NOUN
 ```
+
+An entry can also be parsed successfully and then rejected during installation, for example when its surface exceeds the 255-byte limit. Such expanded entries are skipped with a warning when at least one other entry installs. If every expanded entry is rejected, the load fails. Invalid UTF-8 is a parse error and rejects the whole load instead.
 
 Warnings from runtime loads are appended to the analyzer's dictionary-warning list. Read them through `dictionaryWarnings` in Node, `dictionary_warnings` in Python, `DictionaryWarnings()` in Go, `Tokenizer::dictionaryWarnings()` in C++, or the `suzume_dictionary_warning_*` C functions. `clearUserDictionaries()` and its equivalents clear runtime-load warnings but retain construction-time warnings. The native CLI does not currently print warnings added while processing a `--dict` source file.
 

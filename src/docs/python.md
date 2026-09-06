@@ -89,7 +89,7 @@ See [Analysis Modes](/docs/api) for the segmentation behavior of each mode.
 
 ## Analysis and normalized text
 
-`analyze()` returns `list[Morpheme]`. Each morpheme’s `start` and `end` are character offsets into the normalized text, which may differ from the input.
+`analyze()` returns `list[Morpheme]`. Each morpheme’s `start` and `end` are Unicode code-point offsets into the normalized text, which may differ from the input.
 
 Use `analyze_with_normalized_text()` when you need the exact string used for those offsets:
 
@@ -115,8 +115,8 @@ The return value is a frozen `AnalysisResult` dataclass with `normalized_text: s
 | `conj_type` | `str \| None` | Conjugation type, or `None` for a non-conjugating word |
 | `conj_form` | `str \| None` | Conjugation form, or `None` for a non-conjugating word |
 | `extended_pos` | `str` | Stable extended POS code |
-| `start` | `int` | Start character offset in normalized text |
-| `end` | `int` | End character offset in normalized text |
+| `start` | `int` | Start Unicode code-point offset in normalized text |
+| `end` | `int` | End Unicode code-point offset in normalized text |
 | `is_user_dict` | `bool` | Whether the match came from a user dictionary |
 | `is_formal_noun` | `bool` | Whether the word is a formal noun such as こと or もの |
 | `is_low_info` | `bool` | Whether the word is marked as low information |
@@ -150,7 +150,7 @@ with Suzume() as analyzer:
 | `particle` | `16` |
 | `auxiliary` | `32` |
 
-`0` or an empty iterable selects all parts of speech. Particles and auxiliaries are still excluded by default; set the corresponding exclusion option to `False` to return them:
+`0` or an empty iterable selects all filterable parts of speech: nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries. Conjunctions, symbols, and other POS categories are excluded even with an empty filter. Pronouns can still be removed by `exclude_low_info`. Particles and auxiliaries are still excluded by default; set the corresponding exclusion option to `False` to return them:
 
 ```python
 with Suzume() as analyzer:

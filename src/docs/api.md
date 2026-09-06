@@ -181,7 +181,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `posFilter` | `readonly TagPosFilterName[]` | `undefined` (all) | POS categories to include; an empty array also includes every filterable category |
+| `posFilter` | `readonly TagPosFilterName[]` | `undefined` (all) | POS categories to include; an empty array also includes every filterable category, with pronouns included in `noun` |
 | `pos` | `readonly TagPosFilterName[]` | `undefined` | Deprecated alias for `posFilter`; `posFilter` wins when both are present |
 | `excludeBasic` | `boolean` | `false` | Exclude basic verbs/words with hiragana-only lemma |
 | `useLemma` | `boolean` | `true` | Use lemma (dictionary form) instead of surface form |
@@ -193,7 +193,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | `excludeLowInfo` | `boolean` | `true` | Exclude low-information words |
 | `removeDuplicates` | `boolean` | `true` | Remove duplicate tags |
 
-`TagPosFilterName` is `'noun' | 'verb' | 'adjective' | 'adverb' | 'particle' | 'auxiliary'`. Unknown names throw an `Error`. Particles and auxiliaries also require their exclusion option to be disabled.
+`TagPosFilterName` is `'noun' | 'verb' | 'adjective' | 'adverb' | 'particle' | 'auxiliary'`. The generator always considers nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries; conjunctions, symbols, and other POS categories are excluded even when the filter is empty. A non-empty `posFilter` adds a whitelist over those filterable categories. Pronouns can still be removed by `excludeLowInfo`. Unknown names throw an `Error`. Particles and auxiliaries also require their exclusion option to be disabled.
 
 **Returns:** `Tag[]`
 
@@ -266,7 +266,7 @@ The tag generator applies these filters in order:
 4. **Low-info words** — excluded when `excludeLowInfo` is `true` (default)
 5. **Conjunctions** — always excluded
 6. **Symbols** — always excluded
-7. **POS filter** — if `posFilter` is non-empty, only matching categories pass
+7. **POS filter** — if `posFilter` is non-empty, only matching categories pass; an empty or undefined filter still admits only nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries
 8. **Basic words** — if `excludeBasic: true`, words with hiragana-only lemma are excluded
 9. **Tag text** — the lemma or surface is selected according to `useLemma`
 10. **Min length** — tags shorter than `minLength` Unicode characters are excluded
@@ -410,7 +410,7 @@ get version(): string
 
 **Example:**
 ```typescript
-console.log(suzume.version) // "0.9.9"
+console.log(suzume.version) // semantic-version string
 ```
 
 This getter does not require a live analyzer handle and remains available after `destroy()`.
@@ -425,7 +425,7 @@ Returns the version without creating an analyzer handle.
 import { version } from '@libraz/suzume'
 
 const current = await version()
-console.log(current) // "0.9.9"
+console.log(current) // semantic-version string
 ```
 
 ```typescript
@@ -644,7 +644,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `AUX_過度` | 過度 | すぎる |
 | `AUX_ガル` | ガル接続 | がる |
 | `AUX_よう` | 様態・比況 | よう |
-| `AUX_KURUWA_POLITE` | 丁寧な補助表現 | くるわ |
+| `AUX_KURUWA_POLITE` | Polite ending in historical kuruwa speech | なんし, なんした |
 
 **Particles:**
 
@@ -654,6 +654,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `PART_係` | 係助詞 | は, も |
 | `PART_終` | 終助詞 | ね, よ, わ, な, か |
 | `PART_接続` | 接続助詞 | て, で, ば, ながら, たり, けど |
+| `PART_接続終止` | Conjunctive particle attached to a finite predicate | が |
 | `PART_引用` | 引用助詞 | と（引用） |
 | `PART_副` | 副助詞 | ばかり, だけ, ほど, しか, など |
 | `PART_準体` | 準体助詞 | の |
@@ -664,6 +665,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | Value | Description | Example |
 |-------|-------------|---------|
 | `NOUN` | 普通名詞 | 東京, 天気 |
+| `NOUN_非日本語` | Noun candidate written in Latin letters or digits | ABC, 123 |
 | `NOUN_形式` | 形式名詞 | こと, もの, ところ, わけ |
 | `NOUN_転成` | 連用形転成名詞 | 読み, 書き |
 | `NOUN_固有` | 固有名詞 | — |

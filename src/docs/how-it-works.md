@@ -127,7 +127,7 @@ When Suzume encounters an unknown word like "スカイツリー":
 
 ### Verb Conjugation
 
-Suzume recognizes hundreds of conjugation patterns without storing each form:
+Suzume derives regular inflected forms from shared conjugation rules instead of requiring each form as a hand-authored lexical entry. Selected dictionary entries can still be expanded into materialized forms when dictionaries are compiled or loaded; see the [user dictionary guide](/docs/user-dictionary) for the runtime case.
 
 ```
 Base: 食べる (to eat)
@@ -135,10 +135,10 @@ Base: 食べる (to eat)
 ├── 食べ + ます → polite
 ├── 食べ + た → past
 ├── 食べ + て → te-form
-└── 食べ + れば → conditional
+└── 食べれ + ば → conditional
 ```
 
-The rules are stored, not every conjugated form.
+The rules generate regular forms, while selected dictionary entries may materialize their expanded forms at compile or load time.
 
 ## Summary
 

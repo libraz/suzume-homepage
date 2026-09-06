@@ -142,11 +142,11 @@ Suzume applies context-aware POS classification for several ambiguous words:
 
 <TokenDiff input="かどうか" mecab="か(助詞) / どう(副詞) / か(助詞)" suzume="か(OTHER) / どう(ADV) / か(PARTICLE)" />
 
-**よう:** the volitional う after a 未然形 is `AUX`, while the formal noun よう in ように/ような is `NOUN`:
+**よう:** the volitional う after a 未然形 is `AUX`. A bare ような is analyzed as `AUX` / `PARTICLE`; in a contextual construction such as このような方法 or 夢のような話だ, よう is the formal noun `NOUN` and な is copular `AUX` with lemma だ:
 
 <TokenDiff input="見よう" mecab="見よ(動詞) / う(助動詞)" suzume="見よ(VERB, lemma: 見る) / う(AUX)" />
 
-<TokenDiff input="ような" mecab="よう(名詞・非自立) / な(助動詞)" suzume="よう(NOUN) / な(AUX, lemma: だ)" />
+<TokenDiff input="ような" mecab="よう(名詞・非自立) / な(助動詞)" suzume="よう(AUX) / な(PARTICLE)" />
 
 **なら:** the conditional stays a particle, but before a negative (ならない) and standalone it parses as the verb なる.
 
@@ -227,7 +227,7 @@ The following words are classified differently between MeCab and Suzume:
 | いずれ | 名詞・代名詞 | ADV (副詞) | Adverb usage |
 | おめでとう | 感動詞 | ADV (副詞) | Adverb usage |
 | じゃん | 接続詞 + 終助詞 | PARTICLE (助詞) | Colloquial sentence-final particle |
-| よう | 感動詞 | AUX / NOUN (文脈依存) | Volitional う after 未然形 (見よ + う); formal noun in ように / ような |
+| よう | 感動詞 | AUX / NOUN (文脈依存) | Volitional う after 未然形 (見よ + う); formal noun in contextual ように / ような constructions |
 | 時々 | 副詞 | NOUN (名詞) | Noun usage |
 | 遥か | 副詞 | ADJ (形容詞) | Na-adjective |
 | どう | 副詞 | ADJ / ADV (文脈依存) | `ADJ` before a copula; `ADV` otherwise |
