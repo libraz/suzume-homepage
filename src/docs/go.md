@@ -85,7 +85,53 @@ defer s.Close()
 
 The available modes are `ModeNormal` (default), `ModeSearch`, and `ModeSplit`. See [Analysis Modes](/docs/api) for what each mode does to segmentation.
 
+`ExtendedOptions` has these fields and defaults:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `PreserveVu` | `bool` | `true` | Preserve ヴ variants |
+| `PreserveCase` | `bool` | `true` | Preserve ASCII letter case |
+| `PreserveSymbols` | `bool` | `false` | Keep punctuation-like `SYMBOL` tokens |
+| `Mode` | `AnalysisMode` | `ModeNormal` | Select `ModeNormal`, `ModeSearch`, or `ModeSplit` |
+| `Lemmatize` | `bool` | `true` | Apply lemma correction |
+| `MergeCompounds` | `bool` | `false` | Merge consecutive noun compounds |
+| `SkipUserDictionary` | `bool` | `false` | Skip automatic loading of the bundled user dictionary |
+| `SkipCoreDictionary` | `bool` | `false` | Skip automatic loading of the bundled core dictionary |
+| `ReportScorerConfig` | `bool` | `false` | Add scorer configuration diagnostics to `DictionaryWarnings()` |
+| `SkipEnvConfig` | `bool` | `false` | Ignore scorer configuration environment variables |
+| `ScorerOptionsJSON` | `string` | empty | Apply JSON scorer overrides after environment configuration |
+| `DataDirectory` | `string` | empty | Load dictionaries only from this directory |
+
+`ScorerOptionsJSON` must contain valid JSON. An invalid value makes `NewWithExtendedOptions()` return a `*suzume.Error` with `ErrorCodeParse`. `SkipEnvConfig` disables environment configuration but does not disable `ScorerOptionsJSON`. A non-empty `DataDirectory` takes precedence over `SUZUME_DATA_DIR` and the package's embedded dictionary staging; the core and bundled user dictionaries are searched only in that directory. With an empty `DataDirectory`, the package stages its embedded dictionaries automatically unless `SUZUME_DATA_DIR` was already set.
+
+`Mode()` reports the current mode. `SetMode()` changes it without reloading dictionaries; a closed instance returns an ordinary Go error, while an invalid mode returns a `*suzume.Error` with `ErrorCodeInvalidInput`. After `Close()`, `Mode()` returns `ModeInvalid`.
+
+```go
+s, err := suzume.New()
+if err != nil {
+	log.Fatal(err)
+}
+defer s.Close()
+
+if err := s.SetMode(suzume.ModeSplit); err != nil {
+	log.Fatal(err)
+}
+fmt.Println(s.Mode())
+```
+
 For the common case of tweaking only normalization, `NewWithOptions(Options)` takes just the three toggles `PreserveVu`, `PreserveCase`, and `PreserveSymbols`, keeping the library defaults for mode and lemmatization. `PreserveSymbols` controls punctuation-like `SYMBOL` tokens; content-bearing symbols and emoji remain `OTHER` either way.
+
+## Normalized text and offsets
+
+`AnalyzeWithNormalizedText()` returns an `AnalysisResult` containing both `NormalizedText` and the `Morphemes` whose `Start` and `End` offsets index into it. The offsets count Unicode code points, so convert the normalized string to `[]rune` before slicing. The method has no error return; a closed instance or a native analysis failure produces the zero `AnalysisResult`, with the same ambiguity as `Analyze()`.
+
+```go
+result := s.AnalyzeWithNormalizedText("ＡＢＣを検索")
+runes := []rune(result.NormalizedText)
+for _, m := range result.Morphemes {
+	fmt.Println(string(runes[m.Start:m.End]))
+}
+```
 
 ## Morpheme fields
 
@@ -100,8 +146,8 @@ For the common case of tweaking only normalization, `NewWithOptions(Options)` ta
 | `ConjType` | `string` | Conjugation type; may be empty even when `IsConjugatable` is true |
 | `ConjForm` | `string` | Conjugation form; meaningful when `IsConjugatable` is true |
 | `ExtendedPOS` | `string` | Stable extended POS code (e.g. `VERB_連用`) |
-| `Start` | `int` | Start character offset in normalized text |
-| `End` | `int` | End character offset in normalized text |
+| `Start` | `int` | Start Unicode code-point offset in normalized text |
+| `End` | `int` | End Unicode code-point offset in normalized text |
 | `IsUserDict` | `bool` | True when matched from a user dictionary |
 | `IsFormalNoun` | `bool` | True for formal nouns such as こと and もの |
 | `IsLowInfo` | `bool` | True when marked as low information for tag generation |
@@ -126,12 +172,12 @@ for _, t := range s.GenerateTags("東京都の天気予報を確認する") {
 
 Each result is a `Tag` struct with two fields: `Tag` (the keyword text) and `POS` (its part of speech).
 
-`GenerateTagsWithOptions()` takes a `TagOptions` struct. Start from `DefaultTagOptions()` — the zero value of `TagOptions` disables every exclusion filter, which differs from the library defaults. The `POSFilter` field is a bitmask built from the `POSNoun`, `POSVerb`, `POSAdjective`, and `POSAdverb` constants (`0` means all):
+`GenerateTagsWithOptions()` takes a `TagOptions` struct. Start from `DefaultTagOptions()` — the zero value of `TagOptions` disables every exclusion filter, which differs from the library defaults. The `POSFilter` field is a bitmask built from the `POSNoun`, `POSVerb`, `POSAdjective`, `POSAdverb`, `POSParticle`, and `POSAuxiliary` constants. The noun bit includes pronouns, and `0` includes every filterable category; other POS categories are always excluded. Pronouns can still be removed by `ExcludeLowInfo`:
 
 ```go
 opts := suzume.DefaultTagOptions()
 opts.POSFilter = suzume.POSNoun | suzume.POSVerb // Nouns and verbs only
-opts.MaxTags = 10                                // Keep the top 10 tags
+opts.MaxTags = 10                                // Keep the first 10 tags in encounter order
 
 tags := s.GenerateTagsWithOptions("美味しいラーメンを食べた", opts)
 ```
@@ -140,7 +186,7 @@ The remaining `TagOptions` fields and their library defaults are:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `POSFilter` | `uint8` | `0` | POS bitmask to include (`0` = all) |
+| `POSFilter` | `uint8` | `0` | POS bitmask to include; `0` selects all filterable categories, and `POSNoun` includes pronouns |
 | `ExcludeBasic` | `bool` | `false` | Exclude words whose lemma is hiragana-only |
 | `UseLemma` | `bool` | `true` | Use the lemma (dictionary form) instead of the surface form |
 | `MinLength` | `int` | `2` | Minimum tag length in characters |
@@ -186,6 +232,51 @@ for _, w := range s.DictionaryWarnings() {
 }
 ```
 
+`LoadUserDictionaryCount()` returns the number of installed entries after conjugated forms are expanded. A zero count is returned with an error when the input is empty or contains no valid entries:
+
+```go
+installed, err := s.LoadUserDictionaryCount([]byte("点検する\tVERB\tSURU\n"))
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println("installed:", installed)
+```
+
+`ClearUserDictionaries()` removes dictionaries loaded by the caller and keeps the bundled user dictionary. It returns an error for a closed instance. `HasCoreDictionary()` reports whether the bundled core dictionary is loaded; it returns `false` after `Close()`, when `SkipCoreDictionary` is set, or when the dictionary was not found. Missing core data is reported through `DictionaryWarnings()` and does not prevent the analyzer from running.
+
+## Errors
+
+Constructors and error-returning methods that cross the native API capture native failures as `*suzume.Error`. Its `Code` is one of the stable `ErrorCode` values and `Message` contains the diagnostic. Closed-handle and empty-input checks return ordinary Go errors. Use `errors.As` to inspect a native error instead of parsing its message:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"log"
+
+	"github.com/libraz/go-suzume"
+)
+
+func main() {
+	s, err := suzume.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer s.Close()
+
+	var nativeErr *suzume.Error
+	if err := s.LoadBinaryDictionary([]byte("not a valid dictionary")); err != nil {
+		if errors.As(err, &nativeErr) {
+			fmt.Println(nativeErr.Code, nativeErr.Message)
+		} else {
+			log.Fatal(err)
+		}
+	}
+}
+```
+
 ## API summary
 
 Package-level functions:
@@ -206,10 +297,16 @@ Methods on `*Suzume`:
 | Method | Description |
 |--------|-------------|
 | `Analyze(text string) []Morpheme` | Analyze text (see [Morpheme fields](#morpheme-fields)) |
+| `AnalyzeWithNormalizedText(text string) AnalysisResult` | Analyze text and return normalized text with code-point offsets |
 | `GenerateTags(text string) []Tag` | Extract keyword `Tag`s with the default filters |
 | `GenerateTagsWithOptions(text string, opts TagOptions) []Tag` | Extract keyword `Tag`s with custom filters and limits |
+| `Mode() AnalysisMode` | Return the current mode; `ModeInvalid` after `Close()` |
+| `SetMode(mode AnalysisMode) error` | Change mode without reloading dictionaries |
 | `LoadUserDictionary(data []byte) error` | Load a TSV or legacy CSV user dictionary |
+| `LoadUserDictionaryCount(data []byte) (int, error)` | Load a source dictionary and return the expanded installed-entry count |
 | `LoadBinaryDictionary(data []byte) error` | Load a binary `.dic` dictionary |
+| `ClearUserDictionaries() error` | Remove caller-loaded dictionaries and keep the bundled user dictionary |
+| `HasCoreDictionary() bool` | Report whether the core dictionary is loaded |
 | `DictionaryWarnings() []string` | Warnings from creation-time and runtime dictionary loading |
 | `Close()` | Release the native handle (safe to call multiple times) |
 

@@ -85,7 +85,53 @@ defer s.Close()
 
 指定できるモードは `ModeNormal`（既定）、`ModeSearch`、`ModeSplit` です。各モードが分割に与える影響は [解析モード](/ja/docs/api) を参照してください。
 
+`ExtendedOptions` のフィールドと既定値は次のとおりです。
+
+| フィールド | 型 | 既定値 | 説明 |
+|-----------|-----|-------|------|
+| `PreserveVu` | `bool` | `true` | ヴの異体表記を保持 |
+| `PreserveCase` | `bool` | `true` | ASCII 英字の大文字・小文字を保持 |
+| `PreserveSymbols` | `bool` | `false` | 句読点系の `SYMBOL` トークンを保持 |
+| `Mode` | `AnalysisMode` | `ModeNormal` | `ModeNormal`、`ModeSearch`、`ModeSplit` のいずれかを選択 |
+| `Lemmatize` | `bool` | `true` | 原形補正を適用 |
+| `MergeCompounds` | `bool` | `false` | 連続する名詞複合語を結合 |
+| `SkipUserDictionary` | `bool` | `false` | 同梱ユーザー辞書の自動読み込みを省略 |
+| `SkipCoreDictionary` | `bool` | `false` | 同梱コア辞書の自動読み込みを省略 |
+| `ReportScorerConfig` | `bool` | `false` | スコアラー設定の診断を `DictionaryWarnings()` に追加 |
+| `SkipEnvConfig` | `bool` | `false` | スコアラー設定用の環境変数を無視 |
+| `ScorerOptionsJSON` | `string` | 空文字列 | 環境設定の後に適用する JSON スコアラー上書き |
+| `DataDirectory` | `string` | 空文字列 | このディレクトリだけから辞書を読み込み |
+
+`ScorerOptionsJSON` には有効な JSON を指定してください。無効な値を指定すると `NewWithExtendedOptions()` は `ErrorCodeParse` を持つ `*suzume.Error` を返します。`SkipEnvConfig` は環境設定を無効にしますが、`ScorerOptionsJSON` は無効にしません。空でない `DataDirectory` は `SUZUME_DATA_DIR` とパッケージ内蔵辞書の自動展開より優先され、コア辞書と同梱ユーザー辞書はそのディレクトリだけから探します。`DataDirectory` が空なら、`SUZUME_DATA_DIR` があらかじめ設定されていない場合に限り、パッケージが内蔵辞書を一時ディレクトリに展開します。
+
+`Mode()` は現在のモードを返します。`SetMode()` は辞書を読み直さずにモードを変更します。クローズ済みのインスタンスでは通常の Go エラー、無効なモードでは `ErrorCodeInvalidInput` を持つ `*suzume.Error` を返します。`Close()` の後の `Mode()` は `ModeInvalid` を返します。
+
+```go
+s, err := suzume.New()
+if err != nil {
+	log.Fatal(err)
+}
+defer s.Close()
+
+if err := s.SetMode(suzume.ModeSplit); err != nil {
+	log.Fatal(err)
+}
+fmt.Println(s.Mode())
+```
+
 正規化だけを調整したい場合は `NewWithOptions(Options)` が使えます。`PreserveVu`、`PreserveCase`、`PreserveSymbols` の 3 つのトグルだけを受け取り、モードと原形化はライブラリの既定値のままにします。`PreserveSymbols` が制御するのは句読点などの `SYMBOL` トークンで、内容を持つ記号と絵文字は設定にかかわらず `OTHER` として残ります。
+
+## 正規化後テキストとオフセット
+
+`AnalyzeWithNormalizedText()` は、`NormalizedText` と、そこを参照する `Start`／`End` オフセットを持つ `Morpheme` のスライスをまとめた `AnalysisResult` を返します。オフセットは Unicode コードポイント単位なので、正規化後文字列を `[]rune` に変換してから切り出してください。このメソッドにエラー戻り値はなく、クローズ済みインスタンスやネイティブ解析の失敗では `Analyze()` と同じ曖昧さを持つゼロ値の `AnalysisResult` が返ります。
+
+```go
+result := s.AnalyzeWithNormalizedText("ＡＢＣを検索")
+runes := []rune(result.NormalizedText)
+for _, m := range result.Morphemes {
+	fmt.Println(string(runes[m.Start:m.End]))
+}
+```
 
 ## Morpheme のフィールド
 
@@ -100,8 +146,8 @@ defer s.Close()
 | `ConjType` | `string` | 活用型。`IsConjugatable` が true でも空文字列の場合あり |
 | `ConjForm` | `string` | 活用形。`IsConjugatable` が true の場合に意味を持つ |
 | `ExtendedPOS` | `string` | 安定した拡張品詞コード（例: `VERB_連用`） |
-| `Start` | `int` | 正規化後テキストにおける開始文字オフセット |
-| `End` | `int` | 正規化後テキストにおける終了文字オフセット |
+| `Start` | `int` | 正規化後テキストにおける開始 Unicode コードポイントオフセット |
+| `End` | `int` | 正規化後テキストにおける終了 Unicode コードポイントオフセット |
 | `IsUserDict` | `bool` | ユーザー辞書にマッチした場合 true |
 | `IsFormalNoun` | `bool` | こと・もの などの形式名詞で true |
 | `IsLowInfo` | `bool` | タグ生成向けに低情報量と判定された場合 true |
@@ -126,12 +172,12 @@ for _, t := range s.GenerateTags("東京都の天気予報を確認する") {
 
 結果はそれぞれ `Tag` 構造体で、`Tag`（キーワードのテキスト）と `POS`（その品詞）の 2 フィールドを持ちます。
 
-`GenerateTagsWithOptions()` は `TagOptions` 構造体を受け取ります。`TagOptions` のゼロ値はすべての除外フィルターが無効になり、ライブラリの既定値と一致しないため、`DefaultTagOptions()` を起点にしてください。`POSFilter` フィールドは `POSNoun`、`POSVerb`、`POSAdjective`、`POSAdverb` 定数を組み合わせるビットマスクです（`0` = すべて）。
+`GenerateTagsWithOptions()` は `TagOptions` 構造体を受け取ります。`TagOptions` のゼロ値はすべての除外フィルターが無効になり、ライブラリの既定値と一致しないため、`DefaultTagOptions()` を起点にしてください。`POSFilter` フィールドは `POSNoun`、`POSVerb`、`POSAdjective`、`POSAdverb`、`POSParticle`、`POSAuxiliary` 定数を組み合わせるビットマスクです。名詞ビットには代名詞も含まれ、`0` はすべてのフィルター対象品詞を選びます。その他の品詞は常に除外され、代名詞も `ExcludeLowInfo` で除外される場合があります。
 
 ```go
 opts := suzume.DefaultTagOptions()
 opts.POSFilter = suzume.POSNoun | suzume.POSVerb // 名詞と動詞のみ
-opts.MaxTags = 10                                // 上位 10 件のタグのみ残す
+opts.MaxTags = 10                                // 出現順の先頭 10 件のタグのみ残す
 
 tags := s.GenerateTagsWithOptions("美味しいラーメンを食べた", opts)
 ```
@@ -140,7 +186,7 @@ tags := s.GenerateTagsWithOptions("美味しいラーメンを食べた", opts)
 
 | フィールド | 型 | 既定値 | 説明 |
 |-----------|-----|-------|------|
-| `POSFilter` | `uint8` | `0` | 対象とする品詞のビットマスク（`0` = すべて） |
+| `POSFilter` | `uint8` | `0` | 対象とする品詞のビットマスク。`0` はすべてのフィルター対象品詞を選び、`POSNoun` には代名詞も含む |
 | `ExcludeBasic` | `bool` | `false` | 原形がひらがなのみの語を除外 |
 | `UseLemma` | `bool` | `true` | 表層形ではなく原形（辞書形）を使う |
 | `MinLength` | `int` | `2` | タグの最小文字数 |
@@ -148,7 +194,7 @@ tags := s.GenerateTagsWithOptions("美味しいラーメンを食べた", opts)
 | `ExcludeParticles` | `bool` | `true` | 助詞を除外 |
 | `ExcludeAuxiliaries` | `bool` | `true` | 助動詞を除外 |
 | `ExcludeFormalNouns` | `bool` | `true` | こと・もの などの形式名詞を除外 |
-| `ExcludeLowInfo` | `bool` | `true` | 低情報量の語を除外 |
+| `ExcludeLowInfo` | `bool` | `true` | 低情報量の語を除外（代名詞も対象） |
 | `RemoveDuplicates` | `bool` | `true` | 重複するタグを除去 |
 
 ## ユーザー辞書
@@ -186,6 +232,51 @@ for _, w := range s.DictionaryWarnings() {
 }
 ```
 
+`LoadUserDictionaryCount()` は、活用形を展開した後に登録されたエントリ数を返します。入力が空、または有効なエントリを含まない場合は、件数 0 とエラーを返します。
+
+```go
+installed, err := s.LoadUserDictionaryCount([]byte("点検する\tVERB\tSURU\n"))
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println("登録数:", installed)
+```
+
+`ClearUserDictionaries()` は呼び出し側が読み込んだ辞書を削除し、同梱ユーザー辞書を残します。クローズ済みのインスタンスではエラーを返します。`HasCoreDictionary()` は同梱コア辞書が読み込まれているかを返します。`Close()` の後、`SkipCoreDictionary` を指定した場合、または辞書が見つからない場合は `false` です。コア辞書がない場合は `DictionaryWarnings()` で通知されますが、解析器は動作します。
+
+## エラー
+
+ネイティブ API を呼び出すコンストラクターとエラーを返すメソッドは、ネイティブ側の失敗を `*suzume.Error` として保持します。`Code` は安定した `ErrorCode` の値で、`Message` に診断内容が入ります。クローズ済みハンドルや空入力のチェックは通常の Go エラーを返します。メッセージを解析せず、`errors.As` でネイティブエラーを調べてください。返された型付きエラーにはネイティブ診断が保持されるため、OS スレッドに紐づく `LastError()` の注意点は適用されません。
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"log"
+
+	"github.com/libraz/go-suzume"
+)
+
+func main() {
+	s, err := suzume.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer s.Close()
+
+	var nativeErr *suzume.Error
+	if err := s.LoadBinaryDictionary([]byte("not a valid dictionary")); err != nil {
+		if errors.As(err, &nativeErr) {
+			fmt.Println(nativeErr.Code, nativeErr.Message)
+		} else {
+			log.Fatal(err)
+		}
+	}
+}
+```
+
 ## API 概要
 
 パッケージレベルの関数:
@@ -206,10 +297,16 @@ for _, w := range s.DictionaryWarnings() {
 | メソッド | 説明 |
 |---------|------|
 | `Analyze(text string) []Morpheme` | テキストを解析（[Morpheme のフィールド](#morpheme-のフィールド)を参照） |
+| `AnalyzeWithNormalizedText(text string) AnalysisResult` | 正規化後テキストとコードポイントオフセットを返しながら解析 |
 | `GenerateTags(text string) []Tag` | 既定フィルターでキーワード `Tag` を抽出 |
 | `GenerateTagsWithOptions(text string, opts TagOptions) []Tag` | フィルターや件数制限を指定して `Tag` を抽出 |
+| `Mode() AnalysisMode` | 現在のモードを返す。`Close()` 後は `ModeInvalid` |
+| `SetMode(mode AnalysisMode) error` | 辞書を読み直さずにモードを変更 |
 | `LoadUserDictionary(data []byte) error` | TSV または従来 CSV のユーザー辞書を読み込む |
+| `LoadUserDictionaryCount(data []byte) (int, error)` | ソース辞書を読み込み、展開後の登録エントリ数を返す |
 | `LoadBinaryDictionary(data []byte) error` | バイナリ `.dic` 辞書を読み込む |
+| `ClearUserDictionaries() error` | 呼び出し側の辞書を削除し、同梱ユーザー辞書を残す |
+| `HasCoreDictionary() bool` | コア辞書が読み込まれているかを返す |
 | `DictionaryWarnings() []string` | 作成時と実行時の辞書読み込み警告 |
 | `Close()` | ネイティブハンドルを解放（何度呼んでも安全） |
 
