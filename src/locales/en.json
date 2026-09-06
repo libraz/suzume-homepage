@@ -28,11 +28,11 @@
       },
       "unknown": {
         "title": "Robust to unknown words",
-        "desc": "Boundaries come from character patterns rather than a fixed dictionary, so brand names, slang, and technical terms stay intact."
+        "desc": "Combines compact dictionaries with character and grammar patterns to handle words without a dictionary entry."
       },
       "realtime": {
-        "title": "Synchronous and instant",
-        "desc": "Near-native WASM speed with a synchronous API. Tokenize on every keystroke without network latency."
+        "title": "Synchronous analysis",
+        "desc": "A synchronous API for local text processing, without a network round trip."
       },
       "typed": {
         "title": "Typed, multi-runtime",
@@ -52,7 +52,7 @@
     "unknownWords": "Unknown Words",
     "posInfo": "POS Tagging",
     "lemma": "Lemmatization",
-    "compound": "Compound Nouns",
+    "compound": "Dictionary-defined compound splitting",
     "customDict": "Custom Dictionary",
     "notRequired": "Not required",
     "bundled": "Bundled",

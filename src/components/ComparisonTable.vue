@@ -60,7 +60,7 @@ const features = computed(() => [
   },
   {
     name: t('comparison.compound'),
-    values: ['no', 'no', 'no', 'yes', 'yes']
+    values: ['no', 'no', 'partial', 'yes', 'yes']
   },
   {
     name: t('comparison.customDict'),
