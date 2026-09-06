@@ -1,93 +1,63 @@
 # Speed and Accuracy
 
-How fast Suzume runs in a browser, and how well it segments text. Each figure
-below states what it covers and what it does not, so you can tell which ones
-apply to your workload.
+This page reports a reproducible Node/WASM speed run and an in-sample boundary-agreement measurement. Each figure states what it covers so you can compare it with your own workload.
 
-Every figure comes from a script in the repository, with the command to run it
-alongside. Your own hardware and your own text are what should decide this.
+## WASM speed under Node
 
-## Speed in the browser
-
-Measured through the public JavaScript API, including result decoding, so the
-figure is what a caller actually waits for rather than the tokenizer's
-internal time.
+The script measures the public JavaScript API, including result decoding. It first creates shared-runtime handles, so the creation row is measured after the WASM module cache is warm; it does not measure a cold download or module startup.
 
 | | Median |
 |---|---|
-| Instantiate the WASM module | 2.93 ms |
-| First analysis after instantiation | 0.48 ms |
-| Steady-state analysis, per text | 0.34 ms |
-| Steady-state throughput | 11,878 tokens/sec |
+| Create an analyzer in a loaded/shared WASM runtime | 1.804 ms |
+| First analysis after creation | 0.320 ms |
+| Steady-state analysis, per text | 0.202110 ms |
+| Steady-state throughput | 19,791 tokens/sec |
 
 ```bash
+make build
 make wasm
+(cd bindings/wasm && yarn install --immutable && yarn build:js)
 node scripts/measure_wasm_metrics.mjs --instances=3 --iterations=500 --samples=5 --warmup=1
 ```
 
-Measured on an Apple M5 Max under Node. A slower phone will not produce these
-numbers, but the shape holds: instantiation costs a few milliseconds once,
-and each subsequent call costs a fraction of a millisecond.
+This run used an Apple M5 Max (arm64) with Node v24.20.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
 
-You do not have to take the table's word for it. The [playground](/) times
-itself on your device and prints what it measured underneath the results, and
-the CLI reports the same three figures for a native build:
+The [playground](/) runs its own browser measurement on your device and prints the result below the output. The native CLI has a separate benchmark command:
 
 ```bash
 suzume-cli test benchmark --iterations=500 --samples=5 --warmup=1
 ```
 
-Running both is how you find out what WebAssembly costs you on the hardware
-you actually care about, rather than scaling someone else's number.
+These checks use separate implementations and measurement conditions; compare results within the environment you are testing. The module must arrive before it can run: <WasmSize /> gzipped, loaded once and cached thereafter.
 
-That is the claim behind "tokenize on every keystroke". At roughly a third of
-a millisecond per call, analysis is not what a typing interface waits for —
-even at sixty frames a second, one call occupies about two percent of a
-frame's budget. The comparison worth making is not against another tokenizer
-but against a network round trip, which starts in the tens of milliseconds
-and is subject to conditions you do not control.
+## Boundary agreement on a fixture subset
 
-The module also has to arrive before it can run: <WasmSize /> gzipped, once,
-cached thereafter.
+The script scores cases under `tests/data/tokenization` whose expected surfaces reassemble to the raw single-line input. It invokes the native CLI with its default dictionary loading. The full `universal_tokenization_test` suite uses `skip_user_dictionary=true`, while this script skips cases whose input would be normalized or contains a newline. Treat the result as an in-sample regression measure for this script's subset, not as full-suite health.
 
-## Segmentation accuracy
-
-Scored against the expected segmentations committed in the repository. Suzume
-is not measured by its agreement with MeCab, since the two do not aim to
-produce interchangeable output — see [Differences from MeCab](/docs/mecab-comparison).
+Suzume is not measured by agreement with MeCab, since the two do not aim to produce interchangeable output — see [Differences from MeCab](/docs/mecab-comparison).
 
 | | Score |
 |---|---|
 | Boundary F1 | 0.9997 |
-| Boundary precision / recall | 0.9994 / 1.0000 |
-| Token F1 | 0.9995 |
-| Sentences segmented exactly | 0.9991 |
+| Boundary precision / recall | 0.9995 / 1.0000 |
+| Token F1 | 0.9996 |
+| Token precision / recall | 0.9994 / 0.9998 |
+| Sentences segmented exactly | 0.9992 (5,092 / 5,096) |
 
-Scored over 4,516 cases and 15,920 tokens.
+Scored over 5,096 cases and 18,360 tokens.
 
 ```bash
-make build
+make dict
 python3 scripts/measure_segmentation_accuracy.py --per-category
 ```
 
-::: warning This is an in-sample score
-These cases are Suzume's own test suite, and the tokenizer is fixed until it
-passes them. So 0.9997 tells you the covered behaviour is stable — it does not
-estimate how Suzume handles text it has never seen.
+::: warning Scope of this score
+These cases are Suzume's own test suite, and the tokenizer is fixed until it passes them. The score does not estimate how Suzume handles text it has never seen, and the script's case filtering and dictionary configuration differ from the full native fixture suite.
 
-Do not use it to compare Suzume against another tokenizer, and do not read it
-as an expected accuracy for your own corpus. For that, run your own text
-through the [live demo](/) or the CLI.
+Do not use it to compare Suzume against another tokenizer or as an expected accuracy for your own corpus. Run your own text through the [live demo](/) or the CLI instead.
 :::
 
-Boundary F1 comes first because it is the number that matters for search
-indexing: whether a query matches depends on where a token starts and ends,
-not on the label attached to it.
-
-The weakest categories are the real-world usage sets (`usecase_realworld`
-at 0.9845, `usecase_mixed` at 0.9957), which is the expected shape — running
-text mixes registers and proper nouns in ways that isolated grammar cases do
-not.
+Boundary scores count agreement on interior boundaries between adjacent tokens; document edges are excluded. Token scores require both edges for each token, and sentence exactness requires the complete segmentation to match. Use the `--per-category` output to inspect the current fixture breakdown.
 
 ## What is not measured here
 
@@ -95,6 +65,6 @@ not.
   another tokenizer's on a shared corpus. Doing that fairly needs an
   annotation standard both tools target, and Suzume deliberately does not
   target MeCab's. See [Differences from MeCab](/docs/mecab-comparison).
-- **Held-out accuracy.** As above: the accuracy score is in-sample.
+- **Held-out accuracy.** The reported cases are in-sample; a held-out estimate needs text that was never used to fix a bug here.
 - **Memory under adversarial input.** Allocation counts require an
   instrumented build; the released artifact does not report them.
