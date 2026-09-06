@@ -25,7 +25,8 @@ make native-test
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 cmake --build build --target build-dict   # Required: build dictionaries first
-ctest --test-dir build --output-on-failure
+build/bin/suzume_test
+ctest --test-dir build --output-on-failure -R native_cli_contract
 ```
 
 Run specific tests by name pattern:
@@ -81,6 +82,8 @@ suzume-cli test -f tests.tsv
 suzume-cli test -f tests.tsv -d user.dic
 
 ```
+
+The `test` command compares sets of generated tags, not the ordered token sequence from `analyze`. Default tag generation uses lemmas, excludes particles, auxiliaries, formal nouns, and low-information words, and ignores tag order and duplicates. The default minimum tag length is two characters; use `analyze` when you need token boundaries and POS output.
 
 ## Adding Tests
 
@@ -213,15 +216,21 @@ Metrics reported include initialization time, first-analysis latency, median ste
 ```bash
 # AddressSanitizer
 cmake -B build-asan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_ASAN=ON
-cmake --build build-asan && ctest --test-dir build-asan
+cmake --build build-asan --parallel
+cmake --build build-asan --target build-dict
+ctest --test-dir build-asan --output-on-failure
 
 # UndefinedBehaviorSanitizer
 cmake -B build-ubsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_UBSAN=ON
-cmake --build build-ubsan && ctest --test-dir build-ubsan
+cmake --build build-ubsan --parallel
+cmake --build build-ubsan --target build-dict
+ctest --test-dir build-ubsan --output-on-failure
 
 # ThreadSanitizer
 cmake -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_TSAN=ON
-cmake --build build-tsan && ctest --test-dir build-tsan
+cmake --build build-tsan --parallel
+cmake --build build-tsan --target build-dict
+ctest --test-dir build-tsan --output-on-failure
 ```
 
 `make asan` is the standard aggregate for AddressSanitizer, LeakSanitizer, and UndefinedBehaviorSanitizer.
@@ -230,8 +239,9 @@ cmake --build build-tsan && ctest --test-dir build-tsan
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
-cmake --build build
-ctest --test-dir build
+cmake --build build --parallel
+cmake --build build --target build-dict
+ctest --test-dir build --output-on-failure
 # Coverage files generated in build/
 ```
 

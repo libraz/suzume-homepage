@@ -12,6 +12,7 @@ Suzume は C++17 の静的ライブラリとネイティブ開発者向け CLI �
 
 - C++17 対応コンパイラ（GCC 8+、Clang 10+、MSVC 2019+）
 - CMake 3.15 以降
+- 辞書生成と埋め込み・WASM ビルドに Python 3
 
 ### 既定のビルド
 
@@ -78,13 +79,14 @@ cmake --install build-lib
 
 この構成では `suzume-cli`、`build-dict`、`validate-dict` を生成しません。CLI が生成する `core.dic` と `user.dic` もインストール対象外です。`SUZUME_EMBED_DICT=OFF` なら、コンパイル済み辞書を別にインストールするか、それを置いたディレクトリを実行時に指定してください。`Options::data_directory`、対応する C オプション、または `SUZUME_DATA_DIR` を使えます。
 
-辞書を含む1つの静的アーカイブを作る場合:
+辞書を含む1つの静的アーカイブを作る場合は、クリーンなチェックアウトで先に辞書をビルドします。
 
 ```bash
+make dict
 make embedded
 ```
 
-このターゲットは `SUZUME_EMBED_DICT=ON` で `suzume` をビルドし、CLI とテストはビルドしません。
+このターゲットは `SUZUME_EMBED_DICT=ON` で `suzume` をビルドし、CLI とテストはビルドしません。埋め込み構成には `make dict` が生成する `data/core.dic` と `data/user.dic` が必要です。
 
 ## 辞書のビルド
 

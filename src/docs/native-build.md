@@ -12,6 +12,7 @@ This page covers source-build configurations. For the installed C and C++ APIs, 
 
 - C++17-compatible compiler (GCC 8+, Clang 10+, MSVC 2019+)
 - CMake 3.15 or later
+- Python 3 for dictionary generation and embedded/WASM builds
 
 ### Default Build
 
@@ -78,13 +79,14 @@ cmake --install build-lib
 
 This configuration does not create `suzume-cli`, `build-dict`, or `validate-dict`. It also omits `core.dic` and `user.dic` from the install because those generated files require the CLI. With `SUZUME_EMBED_DICT=OFF`, install the compiled dictionaries separately or point the runtime at a directory containing them. Use `Options::data_directory`, the matching C option, or `SUZUME_DATA_DIR`.
 
-For one static archive with dictionaries included:
+For one static archive with dictionaries included, build the dictionaries first on a clean checkout:
 
 ```bash
+make dict
 make embedded
 ```
 
-The target builds `suzume` with `SUZUME_EMBED_DICT=ON` and does not build the CLI or tests.
+The target builds `suzume` with `SUZUME_EMBED_DICT=ON` and does not build the CLI or tests. The embedded configuration expects the generated `data/core.dic` and `data/user.dic` files from `make dict`.
 
 ## Building Dictionaries
 

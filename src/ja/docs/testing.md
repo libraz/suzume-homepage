@@ -25,7 +25,8 @@ make native-test
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 cmake --build build --target build-dict   # 必須: 先に辞書をビルド
-ctest --test-dir build --output-on-failure
+build/bin/suzume_test
+ctest --test-dir build --output-on-failure -R native_cli_contract
 ```
 
 名前パターンで特定のテストを実行:
@@ -81,6 +82,8 @@ suzume-cli test -f tests.tsv
 suzume-cli test -f tests.tsv -d user.dic
 
 ```
+
+`test` コマンドが比較するのは `analyze` が返す順序付きのトークン列ではなく、生成されたタグの集合です。既定のタグ生成は原形を使い、助詞・助動詞・形式名詞・低情報語を除外します。タグの順序と重複は比較せず、既定の最小タグ長は 2 文字です。トークン境界や品詞を確認する場合は `analyze` を使ってください。
 
 ## テストの追加
 
@@ -213,15 +216,21 @@ suzume-cli test benchmark -f corpus.txt
 ```bash
 # AddressSanitizer
 cmake -B build-asan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_ASAN=ON
-cmake --build build-asan && ctest --test-dir build-asan
+cmake --build build-asan --parallel
+cmake --build build-asan --target build-dict
+ctest --test-dir build-asan --output-on-failure
 
 # UndefinedBehaviorSanitizer
 cmake -B build-ubsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_UBSAN=ON
-cmake --build build-ubsan && ctest --test-dir build-ubsan
+cmake --build build-ubsan --parallel
+cmake --build build-ubsan --target build-dict
+ctest --test-dir build-ubsan --output-on-failure
 
 # ThreadSanitizer
 cmake -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ON -DENABLE_TSAN=ON
-cmake --build build-tsan && ctest --test-dir build-tsan
+cmake --build build-tsan --parallel
+cmake --build build-tsan --target build-dict
+ctest --test-dir build-tsan --output-on-failure
 ```
 
 `make asan` は AddressSanitizer、LeakSanitizer、UndefinedBehaviorSanitizer の標準一括ターゲットです。
@@ -230,8 +239,9 @@ cmake --build build-tsan && ctest --test-dir build-tsan
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
-cmake --build build
-ctest --test-dir build
+cmake --build build --parallel
+cmake --build build --target build-dict
+ctest --test-dir build --output-on-failure
 # カバレッジファイルが build/ に生成されます
 ```
 
