@@ -22,7 +22,7 @@ node scripts/measure_wasm_metrics.mjs --instances=3 --iterations=500 --samples=5
 
 この実行は Apple M5 Max（arm64）上の Node v24.20.0 で、スクリプト組み込みの短い3テキストをそのまま使いました。別の入力を測る場合は `--corpus=/path/to/corpus.txt` を渡します。ここに示すのは Node での計測値であり、ブラウザやスマートフォンの時間を予測するものではありません。
 
-[プレイグラウンド](/ja/) は端末上でブラウザの計測を行い、結果の下に表示します。ネイティブ CLI には別のベンチマークコマンドがあります。
+[はじめに](/ja/docs/getting-started) と [仕組み](/ja/docs/how-it-works) のプレイグラウンドは端末上でブラウザの計測を行い、結果の下に表示します。ネイティブ CLI には別のベンチマークコマンドがあります。
 
 ```bash
 suzume-cli test benchmark --iterations=500 --samples=5 --warmup=1

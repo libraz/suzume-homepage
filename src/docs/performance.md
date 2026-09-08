@@ -22,7 +22,7 @@ node scripts/measure_wasm_metrics.mjs --instances=3 --iterations=500 --samples=5
 
 This run used an Apple M5 Max (arm64) with Node v24.20.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
 
-The [playground](/) runs its own browser measurement on your device and prints the result below the output. The native CLI has a separate benchmark command:
+The playground on [Getting Started](/docs/getting-started) and [How It Works](/docs/how-it-works) runs its own browser measurement on your device and prints the result below the output. The native CLI has a separate benchmark command:
 
 ```bash
 suzume-cli test benchmark --iterations=500 --samples=5 --warmup=1
