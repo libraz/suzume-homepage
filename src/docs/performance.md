@@ -8,10 +8,10 @@ The script measures the public JavaScript API, including result decoding. It fir
 
 | | Median |
 |---|---|
-| Create an analyzer in a loaded/shared WASM runtime | 1.804 ms |
-| First analysis after creation | 0.320 ms |
-| Steady-state analysis, per text | 0.202110 ms |
-| Steady-state throughput | 19,791 tokens/sec |
+| Create an analyzer in a loaded/shared WASM runtime | 2.324 ms |
+| First analysis after creation | 0.483 ms |
+| Steady-state analysis, per text | 0.284286 ms |
+| Steady-state throughput | 14,070 tokens/sec |
 
 ```bash
 make build
@@ -20,7 +20,7 @@ make wasm
 node scripts/measure_wasm_metrics.mjs --instances=3 --iterations=500 --samples=5 --warmup=1
 ```
 
-This run used an Apple M5 Max (arm64) with Node v24.20.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
+This run was measured on October 5, 2026, using an Apple M5 Max (arm64) with Node v24.21.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
 
 The playground on [Getting Started](/docs/getting-started) and [How It Works](/docs/how-it-works) runs its own browser measurement on your device and prints the result below the output. The native CLI has a separate benchmark command:
 
@@ -42,9 +42,9 @@ Suzume is not measured by agreement with MeCab, since the two do not aim to prod
 | Boundary precision / recall | 0.9995 / 1.0000 |
 | Token F1 | 0.9996 |
 | Token precision / recall | 0.9994 / 0.9998 |
-| Sentences segmented exactly | 0.9992 (5,092 / 5,096) |
+| Sentences segmented exactly | 0.9991 (5,631 / 5,636) |
 
-Scored over 5,096 cases and 18,360 tokens.
+Scored on October 5, 2026, over 5,636 cases and 20,279 tokens.
 
 ```bash
 make dict
