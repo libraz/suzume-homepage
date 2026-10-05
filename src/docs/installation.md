@@ -42,7 +42,7 @@ For browser usage without a build step:
 
 - **Node.js**: 18.0 or later
 - **Browser**: Any modern browser with WASM support (Chrome, Firefox, Safari, Edge)
-- **Deno**: 1.0 or later
+- **Deno**: 1.31 or later (via `npm:@libraz/suzume`)
 - **Bun**: 1.0 or later
 
 ## Python

@@ -10,9 +10,9 @@ This page covers source-build configurations. For the installed C and C++ APIs, 
 
 ### Requirements
 
-- C++17-compatible compiler (GCC 8+, Clang 10+, MSVC 2019+)
+- C++17-compatible compiler (GCC 9+, Clang 10+, MSVC 2019+)
 - CMake 3.15 or later
-- Python 3 for dictionary generation and embedded/WASM builds
+- Python 3 for embedded-dictionary and WASM builds (`SUZUME_EMBED_DICT=ON` or `BUILD_WASM=ON`)
 
 ### Default Build
 

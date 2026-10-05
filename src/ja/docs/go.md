@@ -7,7 +7,7 @@
 ## 必要環境
 
 - Go 1.26 以上
-- CGO 有効、かつ C++17 コンパイラ（GCC 8+、Clang 10+、Apple Clang 12+）
+- CGO 有効、かつ C++17 コンパイラ（GCC 9+、Clang 10+、Apple Clang 12+）
 - CMake 3.15 以上（初回の静的ライブラリビルドに使用）
 
 Python ホイールと違いコンパイル済みバイナリは同梱されておらず、Suzume の静的ライブラリを一度だけ手元でソースからビルドします。
@@ -102,7 +102,7 @@ defer s.Close()
 | `ScorerOptionsJSON` | `string` | 空文字列 | 環境設定の後に適用する JSON スコアラー上書き |
 | `DataDirectory` | `string` | 空文字列 | このディレクトリだけから辞書を読み込み |
 
-`ScorerOptionsJSON` には有効な JSON を指定してください。無効な値を指定すると `NewWithExtendedOptions()` は `ErrorCodeParse` を持つ `*suzume.Error` を返します。`SkipEnvConfig` は環境設定を無効にしますが、`ScorerOptionsJSON` は無効にしません。空でない `DataDirectory` は `SUZUME_DATA_DIR` とパッケージ内蔵辞書の自動展開より優先され、コア辞書と同梱ユーザー辞書はそのディレクトリだけから探します。`DataDirectory` が空なら、`SUZUME_DATA_DIR` があらかじめ設定されていない場合に限り、パッケージが内蔵辞書を一時ディレクトリに展開します。
+`ScorerOptionsJSON` には有効な JSON を指定してください。無効な値を指定すると `NewWithExtendedOptions()` は `ErrorCodeParse` を持つ `*suzume.Error` を返します。`SkipEnvConfig` は環境設定を無効にしますが、`ScorerOptionsJSON` は無効にしません。空でない `DataDirectory` は `SUZUME_DATA_DIR` とパッケージ内蔵辞書の自動展開より優先され、コア辞書と同梱ユーザー辞書はそのディレクトリだけから探します。`DataDirectory` が空なら、`SUZUME_DATA_DIR` があらかじめ設定されていない場合に限り、パッケージが内蔵辞書をキャッシュディレクトリに展開します。
 
 `Mode()` は現在のモードを返します。`SetMode()` は辞書を読み直さずにモードを変更します。クローズ済みのインスタンスでは通常の Go エラー、無効なモードでは `ErrorCodeInvalidInput` を持つ `*suzume.Error` を返します。`Close()` の後の `Mode()` は `ModeInvalid` を返します。
 

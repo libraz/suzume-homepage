@@ -11,7 +11,7 @@ The C++ wrapper owns the C handle and copies results into `std::string` and `std
 
 ## Requirements
 
-- C++17 compiler (GCC 8+, Clang 10+, Apple Clang 12+, MSVC 2019+)
+- C++17 compiler (GCC 9+, Clang 10+, Apple Clang 12+, MSVC 2019+)
 - CMake 3.15 or later
 
 The core has no third-party runtime dependency such as ICU or Boost. Native programs still need a C++ runtime and a heap.

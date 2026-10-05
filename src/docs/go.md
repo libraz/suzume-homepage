@@ -7,7 +7,7 @@ The bindings are a thin cgo layer over the native C++ core. The core and user di
 ## Requirements
 
 - Go 1.26 or later
-- CGO enabled, with a C++17 compiler (GCC 8+, Clang 10+, Apple Clang 12+)
+- CGO enabled, with a C++17 compiler (GCC 9+, Clang 10+, Apple Clang 12+)
 - CMake 3.15 or later (for the one-time static-library build)
 
 Unlike the Python wheel, the module does not ship a precompiled binary: the Suzume static library is built once from source on your machine.

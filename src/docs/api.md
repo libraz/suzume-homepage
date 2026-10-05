@@ -550,9 +550,9 @@ interface Morpheme {
 | `isUserDict` | `boolean` | True when matched from a user dictionary | `false` |
 | `isFormalNoun` | `boolean` | True for formal nouns such as こと and もの | `false` |
 | `isLowInfo` | `boolean` | True when marked as low information for tag generation | `false` |
-| `isUnknown` | `boolean` | True when generated as an unknown-word candidate | `false` |
-| `isFromDictionary` | `boolean` | True when matched from any dictionary | `true` |
-| `score` | `number` | Candidate score/cost used by the analyzer | `12.5` |
+| `isUnknown` | `boolean` | True when generated as an unknown-word candidate | `true` |
+| `isFromDictionary` | `boolean` | True when matched from any dictionary | `false` |
+| `score` | `number` | Candidate score/cost used by the analyzer | `-0.17` |
 
 ### Part of Speech Values
 

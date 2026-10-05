@@ -243,7 +243,7 @@ except SuzumeError as error:
 | `dictionary_warnings` | 辞書とスコアラーの診断を返す |
 | `has_core_dictionary` | コア辞書が読み込まれているかを返す |
 | `close()` | ネイティブハンドルを解放 |
-| `version()` | ネイティブライブラリのバージョンを返す |
+| `suzume.version()` | モジュールレベル関数。ネイティブライブラリのバージョンを返す |
 
 ## 関連ページ
 

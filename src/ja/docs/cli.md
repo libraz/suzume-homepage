@@ -14,7 +14,7 @@ Python ホイールは、解析に絞った別の `suzume` コマンドをイン
 suzume-cli [command] [options] [arguments]
 
 コマンド:
-  analyze     形態素解析（デフォルト）
+  analyze     トークン化（デフォルト）
   dict        辞書管理
   test        検証・テスト
   version     バージョン情報の表示
@@ -106,8 +106,8 @@ suzume-cli -m split "API開発と高層ビル群"
 | `--no-user-dict` | ユーザー辞書を無効化 |
 | `--no-core-dict` | コア辞書を無効化 |
 | `--skip-env-config` | スコアラー設定用の環境変数を無視 |
-| `--compare` | ユーザー辞書あり/なしの比較 |
-| `--debug` | ラティス候補とスコアを表示 |
+| `--compare` | ユーザー辞書あり/なしの比較（診断は stderr に出力され、出力形式は変わらない） |
+| `--debug` | ラティス候補とスコアを表示（stderr に出力され、出力形式は変わらない） |
 | `-V, --verbose` | 詳細出力 |
 | `-VV, --very-verbose` | より詳細な出力（ラティスダンプを含む） |
 
@@ -171,6 +171,7 @@ suzume-cli dict new user.tsv
 # TSV をバイナリ（.dic）にコンパイル
 suzume-cli dict compile user.tsv           # → user.dic
 suzume-cli dict compile user.tsv out.dic   # 出力先を指定
+suzume-cli dict compile a.tsv b.tsv out.dic   # 複数の入力を 1 つのファイルにまとめる
 
 # バイナリを TSV に逆コンパイル（--force なしでは上書きしない）
 suzume-cli dict decompile user.dic         # → user.dump.tsv

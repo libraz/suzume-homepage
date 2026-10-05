@@ -188,7 +188,7 @@ Verb stems in 連用形 followed by subsidiary verbs are merged into compound ve
 
 <TokenDiff input="食べ続ける" mecab="食べ / 続ける" suzume="食べ続ける(VERB)" />
 
-Supported V2 elements include: 込む, 出す, 続く, 返す, 合う, 直す, 切る, 上がる, 抜く, こもる, 続ける, つける, 替える, 合わせる, 上げる, 下げる, 掛ける, 入れる, etc. (40+ patterns)
+Supported V2 elements include: 込む, 出す, 続く, 返す, 合う, 直す, 切る, 上がる, 抜く, こもる, 続ける, つける, 替える, 合わせる, 上げる, 下げる, 掛ける, 入れる, etc. (300+ kanji and kana forms)
 
 Grammaticalized subsidiaries such as 過ぎる and かねる are deliberately **not** merged — see [Subsidiary Auxiliary Splitting](#subsidiary-auxiliary-splitting).
 
@@ -290,7 +290,7 @@ Tari-conjugation adverb stems followed by と are merged into a single adverb.
 
 <TokenDiff input="堂々と" mecab="堂々 / と" suzume="堂々と(ADV)" />
 
-Applies to: 泰然, 堂々, 悠々, 淡々, 粛々, 颯爽, 毅然, 漫然, 茫然, 呆然, 唖然, 愕然, 断然, 俄然, 歴然, 整然, 雑然, 騒然, 憮然, 黙然, 昂然, 凛然, 厳然
+Applies to: 泰然, 堂々, 悠々, 淡々, 粛々, 颯爽, 毅然, 漫然, 茫然, 呆然, 唖然, 愕然, 断然, 歴然, 整然, 雑然, 騒然, 憮然, 黙然, 昂然, 厳然
 
 <Why>
 
@@ -423,7 +423,7 @@ Suzume splits お/ご honorific prefixes from nouns but keeps them merged when t
 
 <TokenDiff input="お茶" mecab="お茶(名詞)" suzume="お(PREFIX) / 茶(NOUN)" note="split — separable prefix" noteJa="分割 — 分離可能な接頭辞" />
 
-Inseparable exceptions (omitted from the diff examples because both MeCab and Suzume keep them as one token) include: お金, お前, おかず, おでん, おもちゃ, おすすめ, おいら, おっさん, お疲れ様, お出で/おいで, and family terms (お母さん, お父さん, お兄ちゃん, お姉さん, おじさん, おばさん, おじいさん, おばあさん, etc.)
+Inseparable exceptions (omitted from the diff examples because both MeCab and Suzume keep them as one token) include: お金, お前, おかず, おでん, おもちゃ, おすすめ, おいら, おっさん, お疲れ様, おいで, and family terms (お母さん, お父さん, お兄ちゃん, お姉さん, おじさん, おばさん, おじいさん, おばあさん, etc.)
 
 <Why>
 
@@ -435,7 +435,7 @@ In most contexts, お/ご are grammatical prefixes that should be separated. But
 
 Honorific suffixes are split from names.
 
-Applies to suffixes: さん, ちゃん, 様, 君, 殿, さま
+Applies to suffixes: さん, ちゃん, くん, 様, さま. The kanji forms 君 and 殿 stay merged with the name (`佐藤君`, `佐藤殿`).
 
 Exceptions: family terms like お兄ちゃん and お母さん, and the collective forms 皆様 / 皆さん, are kept as single tokens.
 

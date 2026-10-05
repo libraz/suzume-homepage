@@ -11,7 +11,7 @@ C++ ラッパーは C ハンドルを所有し、結果を `std::string` と `st
 
 ## 要件
 
-- C++17 コンパイラ（GCC 8+、Clang 10+、Apple Clang 12+、MSVC 2019+）
+- C++17 コンパイラ（GCC 9+、Clang 10+、Apple Clang 12+、MSVC 2019+）
 - CMake 3.15 以降
 
 コアは ICU や Boost などのサードパーティー製ランタイムに依存しません。ネイティブプログラムには C++ ランタイムとヒープが必要です。

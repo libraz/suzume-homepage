@@ -14,7 +14,7 @@ This page covers how to *use* the command. To build the binary from source, see 
 suzume-cli [command] [options] [arguments]
 
 Commands:
-  analyze     Morphological analysis (default)
+  analyze     Tokenize text (default)
   dict        Dictionary management
   test        Verification and testing
   version     Show version information
@@ -106,8 +106,8 @@ suzume-cli -m split "API開発と高層ビル群"
 | `--no-user-dict` | Disable user dictionary |
 | `--no-core-dict` | Disable core dictionary |
 | `--skip-env-config` | Ignore scorer configuration environment variables |
-| `--compare` | Compare with/without user dictionary |
-| `--debug` | Show lattice candidates and scores |
+| `--compare` | Compare with/without user dictionary (diagnostics go to stderr; output format is unchanged) |
+| `--debug` | Show lattice candidates and scores (written to stderr; output format is unchanged) |
 | `-V, --verbose` | Verbose output |
 | `-VV, --very-verbose` | Very verbose (includes lattice dump) |
 
@@ -171,6 +171,7 @@ suzume-cli dict new user.tsv
 # Compile TSV to binary (.dic)
 suzume-cli dict compile user.tsv           # → user.dic
 suzume-cli dict compile user.tsv out.dic   # custom output
+suzume-cli dict compile a.tsv b.tsv out.dic   # merge several inputs into one file
 
 # Decompile binary to TSV (refuses to overwrite without --force)
 suzume-cli dict decompile user.dic         # → user.dump.tsv

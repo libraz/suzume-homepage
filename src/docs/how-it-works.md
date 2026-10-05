@@ -52,7 +52,7 @@ Instead of storing every word, Suzume recognizes patterns:
 |---------|------|--------|
 | `[カタカナ]+` | Generate a noun candidate | noun candidate |
 | `[漢字]+` | Generate a compound-noun candidate | noun candidate |
-| `[漢字]+する` | Generate a verbal-noun construction | verb candidate |
+| `[漢字]+する` | Generate a verbal-noun construction | noun + する (verb) |
 | `[ひらがな]+い` | Ending in い = adjective candidate | adjective |
 
 ::: info Why This Works
@@ -87,12 +87,12 @@ In a dictionary-and-cost-table design, entries with similar grammatical roles ca
 
 For example, "じゃ" is analyzed as the auxiliary lemma "だ" in "本じゃない", "本じゃなかった", and "本じゃな". The negative "ない" and "なかっ" in the first two examples are adjectives; the final "な" in the last example is a particle. The causative-passive rules likewise aim to normalize equivalent constructions while still resolving them in context (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
 
-This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Limitations](/docs/mecab-comparison)).
+This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Constraints](/docs/mecab-comparison#constraints)).
 
 ## Different Optimization Targets
 
 ::: info Choose by purpose
-Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric. See [When to Use Which](/docs/mecab-comparison) for a full requirement-by-requirement comparison.
+Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric. See [When to Use Which](/docs/mecab-comparison#when-to-use-which) for a full requirement-by-requirement comparison.
 :::
 
 The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. `SuzumeOptions` controls normalization and segmentation, dictionary loading, scorer configuration, and whether a JavaScript instance uses an isolated WASM runtime. See the API reference for the complete option set.

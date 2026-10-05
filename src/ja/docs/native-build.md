@@ -10,9 +10,9 @@ Suzume は C++17 の静的ライブラリとネイティブ開発者向け CLI �
 
 ### 必要環境
 
-- C++17 対応コンパイラ（GCC 8+、Clang 10+、MSVC 2019+）
+- C++17 対応コンパイラ（GCC 9+、Clang 10+、MSVC 2019+）
 - CMake 3.15 以降
-- 辞書生成と埋め込み・WASM ビルドに Python 3
+- 埋め込み辞書と WASM ビルド（`SUZUME_EMBED_DICT=ON` または `BUILD_WASM=ON`）に Python 3
 
 ### 既定のビルド
 

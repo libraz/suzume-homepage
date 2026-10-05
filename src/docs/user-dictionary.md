@@ -70,6 +70,8 @@ Set `conj_type` to describe conjugation or a more specific grammatical class. Ma
 
 `conj_type` is case-sensitive. A verb or i-adjective with a matching marker expands into the forms installed in the runtime dictionary. This is why an expanded-entry count can be larger than the number of source rows.
 
+A third field that is neither a marker nor a number is read as the lemma. A misspelled or lowercase marker such as `suru` therefore loads without a warning, as a lemma, and no forms are expanded.
+
 ### Legacy CSV Compatibility
 
 The legacy three-column CSV form remains accepted:

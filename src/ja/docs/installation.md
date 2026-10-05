@@ -42,7 +42,7 @@ bun add @libraz/suzume
 
 - **Node.js**: 18.0以上
 - **ブラウザ**: WASM対応のモダンブラウザ（Chrome、Firefox、Safari、Edge）
-- **Deno**: 1.0以上
+- **Deno**: 1.31以上（`npm:@libraz/suzume` で読み込み）
 - **Bun**: 1.0以上
 
 ## Python

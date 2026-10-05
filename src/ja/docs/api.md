@@ -550,9 +550,9 @@ interface Morpheme {
 | `isUserDict` | `boolean` | ユーザー辞書に一致した場合 `true` | `false` |
 | `isFormalNoun` | `boolean` | こと、もの等の形式名詞なら `true` | `false` |
 | `isLowInfo` | `boolean` | タグ生成で低情報語として扱われる場合 `true` | `false` |
-| `isUnknown` | `boolean` | 未知語候補として生成された場合 `true` | `false` |
-| `isFromDictionary` | `boolean` | いずれかの辞書に一致した場合 `true` | `true` |
-| `score` | `number` | 解析器が使う候補スコア/コスト | `12.5` |
+| `isUnknown` | `boolean` | 未知語候補として生成された場合 `true` | `true` |
+| `isFromDictionary` | `boolean` | いずれかの辞書に一致した場合 `true` | `false` |
+| `score` | `number` | 解析器が使う候補スコア/コスト | `-0.17` |
 
 ### 品詞一覧（pos）
 

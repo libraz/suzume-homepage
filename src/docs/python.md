@@ -243,7 +243,7 @@ except SuzumeError as error:
 | `dictionary_warnings` | Return dictionary and scorer diagnostics |
 | `has_core_dictionary` | Report whether the core dictionary is loaded |
 | `close()` | Release the native handle |
-| `version()` | Return the native library version |
+| `suzume.version()` | Module-level function returning the native library version |
 
 ## See also
 
