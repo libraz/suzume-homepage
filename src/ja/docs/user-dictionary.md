@@ -155,7 +155,7 @@ suzume-cli analyze --dict user.tsv "東京公園を点検する"
 
 :::
 
-現在の Go バインディングの `LoadUserDictionary([]byte) error` API は成否を返しますが、展開後エントリ数は返しません。`ClearUserDictionaries` メソッドもありません。C ABI にある操作を Go バインディングでも使えると解釈しないでください。
+Go で展開後エントリ数が必要な場合は `LoadUserDictionaryCount([]byte) (int, error)` を使います。呼び出し元が読み込んだ辞書は `ClearUserDictionaries() error` で消去できます。使用例は [Go API ガイド](/ja/docs/go)を参照してください。
 
 ### 戻り値とエラー
 
@@ -163,7 +163,7 @@ suzume-cli analyze --dict user.tsv "東京公園を点検する"
 |------------------|------------------|--------------|
 | Node | `loadUserDictionary()` は `boolean`、`loadUserDictionaryCount()` は展開後エントリ数を返す | `lastError` / `lastErrorCode` を読むか、`loadUserDictionaryOrThrow()` を使う |
 | Python | `load_user_dict()` は展開後エントリ数を返す | `SuzumeError` を送出 |
-| Go | `LoadUserDictionary()` は `error` を返す | 取得できる場合はネイティブ側のメッセージを戻り値のエラーに含む |
+| Go | `LoadUserDictionary()` は `error`、`LoadUserDictionaryCount()` は `(int, error)` を返す | 取得できる場合はネイティブ側のメッセージを戻り値のエラーに含む |
 | C++ | `loadUserDictionary()` は `bool`、`loadUserDictionaryCount()` は展開後エントリ数を返す | `Tokenizer::lastError()` / `lastErrorCode()` を読む |
 | C ABI | `suzume_load_user_dict()` は `1` または `0`、`suzume_load_user_dict_count()` は展開後エントリ数を返す | `suzume_last_error()` / `suzume_last_error_code()` を読む |
 | ネイティブ CLI | 辞書を読み込めない場合は 0 以外で終了 | 標準エラーへ読み込みエラーを出力 |
@@ -195,7 +195,7 @@ missing-pos
 |------------------|----------|
 | Node | `suzume.clearUserDictionaries()` |
 | Python | `suzume.clear_user_dictionaries()` |
-| Go | 現在のバインディングでは公開されていない |
+| Go | `analyzer.ClearUserDictionaries()` は `error` を返す |
 | C++ | `tokenizer.clearUserDictionaries()` |
 | C ABI | `suzume_clear_user_dictionaries(handle)` |
 | ネイティブ CLI | 永続する解析器がないため消去操作もない。辞書は 1 回の実行中だけ有効 |

@@ -690,6 +690,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `DET_引用` | 引用を伴う連体詞 |
 | `SYMBOL` | 記号 |
 | `INTJ` | 感動詞 |
+| `INTJ_挨拶` | Greeting interjections: ありがとう, ごめん, すみません |
 | `OTHER` | その他 |
 | `UNKNOWN` | 不明 |
 

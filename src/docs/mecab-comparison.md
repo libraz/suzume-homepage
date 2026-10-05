@@ -120,6 +120,8 @@ Suzume also preserves search-unit boundaries around quantities.
 
 <TokenDiff input="三ヶ月間入院" mecab="三 / ヶ月 / 間 / 入院" suzume="三ヶ月間(NOUN) / 入院" />
 
+Quantity phrases such as `3種類`, `3人分`, and `3ページ目` stay whole as `NOUN` tokens. A counter does not cut through a following word, and quantity suffixes such as 分 and the ordinal 目 remain part of the quantity.
+
 Comma-grouped numerals stay whole. A following counter remains a separate `SUFFIX`, while a currency amount stays one search unit.
 
 <TokenDiff input="1,000人" mecab="1 / , / 000 / 人" suzume="1,000(NOUN) / 人(SUFFIX)" />
@@ -212,18 +214,6 @@ A compound particle is one grammatical word. Splitting it scatters meaningless o
 
 </Why>
 
-### Negative ずに
-
-The negative auxiliary ず and the following particle に are merged as one compound grammatical unit.
-
-<TokenDiff input="食べずに" mecab="食べ / ず / に" suzume="食べ / ずに(AUX, lemma: ず)" />
-
-<Why>
-
-ずに functions as a cohesive search unit meaning "without doing."
-
-</Why>
-
 ### Desiderative たがる
 
 The desiderative-observation auxiliary たがる, including its inflected forms, is kept as a single auxiliary token.
@@ -253,6 +243,8 @@ A verb continuative plus 会, and the destination suffix 行き, form single eve
 <TokenDiff input="飲み会" mecab="飲み / 会" suzume="飲み会(NOUN)" />
 
 <TokenDiff input="東京行き" mecab="東京 / 行き" suzume="東京行き(NOUN)" />
+
+A compound verb's continuative used as a noun can remain separate from a following noun: `取り扱い方法` becomes `取り扱い(NOUN) / 方法(NOUN)`.
 
 <Why>
 
@@ -328,7 +320,7 @@ When the formal noun 方 follows a short verb stem, Suzume merges the expression
 
 <TokenDiff input="走り方" mecab="走り / 方" suzume="走り方(NOUN)" />
 
-Only short stems merge: the continuative must be at most two characters (走り方, やり方). Longer continuatives keep the boundary — 打ち合わせ方 stays 打ち合わせ / 方.
+Only short stems merge: the continuative must be at most two characters (走り方, やり方). Longer continuatives keep the boundary — 打ち合わせ方 stays 打ち合わせ / 方. The same boundary applies to the deverbal noun in `取り扱い方`, which becomes `取り扱い(NOUN) / 方(SUFFIX)`.
 
 <Why>
 
@@ -457,11 +449,23 @@ Separating an honorific is more useful for ordinary names, while a short hiragan
 
 </Why>
 
+### Negative ずに
+
+The negative auxiliary ず and the following particle に remain separate, preserving the grammatical boundary.
+
+<TokenDiff input="食べずに" mecab="食べ / ず / に" suzume="食べ(VERB) / ず(AUX, lemma: ぬ) / に(PARTICLE)" />
+
+<Why>
+
+Keeping ず and に separate preserves their distinct auxiliary and particle roles.
+
+</Why>
+
 ### Subsidiary Auxiliary Splitting
 
-Grammaticalized subsidiary verbs — 過ぎる (excess), かねる (inability), そびれる (missed chance), 尽くす (exhaustive) — split off from the main verb and are tagged `AUX`, unlike the lexical [compound verbs](#compound-verbs) that merge. MeCab's own treatment varies with the dictionary: some combinations come out merged (飲み過ぎ), others split with the 非自立 subcategory.
+Grammaticalized subsidiary verbs — 過ぎる (excess), かねる (inability), そびれる (missed chance), 尽くす (exhaustive) — split off from the main verb. Suzume records their auxiliary role in the extended POS; the public POS remains `VERB` for the `過ぎる` forms and is `AUX` for the other subsidiary forms below. MeCab's own treatment varies with the dictionary: some combinations come out merged (飲み過ぎ), others split with the 非自立 subcategory.
 
-<TokenDiff input="飲み過ぎた" mecab="飲み(動詞) / 過ぎ(動詞・非自立) / た(助動詞)" suzume="飲み(VERB) / 過ぎ(AUX, lemma: 過ぎる) / た(AUX)" />
+<TokenDiff input="飲み過ぎた" mecab="飲み(動詞) / 過ぎ(動詞・非自立) / た(助動詞)" suzume="飲み(VERB) / 過ぎ(VERB, lemma: 過ぎる) / た(AUX)" />
 
 <TokenDiff input="わかりかねる" mecab="わかり(動詞) / かねる(動詞・非自立)" suzume="わかり(VERB, lemma: わかる) / かねる(AUX)" />
 
@@ -496,6 +500,8 @@ constructions instead of treating the whole spelling as a fixed function word.
 
 The same rule gives を / もっ / て for をもって. Closed expressions with no
 productive verb boundary remain whole, as in [や否や](#closed-compound-particles).
+
+The quotative って also remains a separate particle after a clause-final particle: `行くかって` becomes `行く(VERB) / か(PARTICLE) / って(PARTICLE)`.
 
 ### Adverbial Noun + Particle
 
@@ -611,10 +617,10 @@ Currency and unit signs, arrows, mathematical or technical marks, and emoji rema
 ### Copula Negation
 
 After a nominal predicate, Suzume treats じゃ as the copula and ない as the
-negative auxiliary. An isolated `じゃない` is ambiguous and may instead be one
-adjective token, so the nominal host is part of the comparison.
+adjective. The nominal host is part of the comparison so the copular context is
+explicit.
 
-<TokenDiff input="本じゃない" mecab="本(名詞) / じゃ(助詞) / ない(助動詞)" suzume="本(NOUN) / じゃ(AUX, lemma: だ) / ない(AUX)" />
+<TokenDiff input="本じゃない" mecab="本(名詞) / じゃ(助詞) / ない(助動詞)" suzume="本(NOUN) / じゃ(AUX, lemma: だ) / ない(ADJ)" />
 
 <Why>
 
@@ -639,7 +645,7 @@ The selected IPADIC analysis splits some causative-passive forms (読ま + さ +
 
 Fixed conversational phrases lexicalized as fillers are decomposed into their grammatical parts.
 
-<TokenDiff input="そうですね" mecab="そうですね(フィラー)" suzume="そう(ADJ) / です(AUX) / ね(PARTICLE)" />
+<TokenDiff input="そうですね" mecab="そうですね(フィラー)" suzume="そう(ADV) / です(AUX) / ね(PARTICLE)" />
 
 <Why>
 

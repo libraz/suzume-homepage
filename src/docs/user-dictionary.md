@@ -155,7 +155,7 @@ suzume-cli analyze --dict user.tsv "東京公園を点検する"
 
 :::
 
-The Go binding's current `LoadUserDictionary([]byte) error` API reports success or failure but does not return the expanded-entry count. It also has no `ClearUserDictionaries` method. Do not infer those operations from the C ABI.
+In Go, use `LoadUserDictionaryCount([]byte) (int, error)` when you need the expanded-entry count, and `ClearUserDictionaries() error` to remove caller-loaded dictionaries. See the [Go API guide](/docs/go) for examples.
 
 ### Return Values and Errors
 
@@ -163,7 +163,7 @@ The Go binding's current `LoadUserDictionary([]byte) error` API reports success 
 |---------|--------------------------|-----------------|
 | Node | `loadUserDictionary()` returns `boolean`; `loadUserDictionaryCount()` returns the expanded-entry count | Read `lastError` / `lastErrorCode`, or use `loadUserDictionaryOrThrow()` |
 | Python | `load_user_dict()` returns the expanded-entry count | Raises `SuzumeError` |
-| Go | `LoadUserDictionary()` returns `error` | The returned error includes the native message when available |
+| Go | `LoadUserDictionary()` returns `error`; `LoadUserDictionaryCount()` returns `(int, error)` | The returned error includes the native message when available |
 | C++ | `loadUserDictionary()` returns `bool`; `loadUserDictionaryCount()` returns the expanded-entry count | Read `Tokenizer::lastError()` / `lastErrorCode()` |
 | C ABI | `suzume_load_user_dict()` returns `1` or `0`; `suzume_load_user_dict_count()` returns the expanded-entry count | Read `suzume_last_error()` / `suzume_last_error_code()` |
 | Native CLI | Exits nonzero when a dictionary cannot be loaded | Prints the load error to standard error |
@@ -195,7 +195,7 @@ Clearing removes every source and binary user dictionary explicitly loaded on th
 |---------|-----------------|
 | Node | `suzume.clearUserDictionaries()` |
 | Python | `suzume.clear_user_dictionaries()` |
-| Go | Not exposed by the current binding |
+| Go | `analyzer.ClearUserDictionaries()` returns `error` |
 | C++ | `tokenizer.clearUserDictionaries()` |
 | C ABI | `suzume_clear_user_dictionaries(handle)` |
 | Native CLI | No persistent analyzer to clear; dictionaries last for one invocation |

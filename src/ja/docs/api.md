@@ -690,6 +690,7 @@ interface Morpheme {
 | `DET_引用` | 引用を伴う連体詞 |
 | `SYMBOL` | 記号 |
 | `INTJ` | 感動詞 |
+| `INTJ_挨拶` | 挨拶の感動詞: ありがとう、ごめん、すみません |
 | `OTHER` | その他 |
 | `UNKNOWN` | 不明 |
 

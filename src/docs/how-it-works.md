@@ -85,7 +85,7 @@ Suzume decides parts of speech and boundaries from both dictionary entries and s
 
 In a dictionary-and-cost-table design, entries with similar grammatical roles can still carry different labels or costs. Shared construction rules reduce that source of variation, while dictionary candidates and surrounding context continue to affect the selected path.
 
-For example, after a nominal predicate, "じゃ" is analyzed as the auxiliary lemma "だ" in "本じゃない", "本じゃなかった", and "本じゃな". The following "な" in the last example is a particle, and an isolated "じゃない" can instead be analyzed as one adjective. The causative-passive rules likewise aim to normalize equivalent constructions while still resolving them in context (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
+For example, "じゃ" is analyzed as the auxiliary lemma "だ" in "本じゃない", "本じゃなかった", and "本じゃな". The negative "ない" and "なかっ" in the first two examples are adjectives; the final "な" in the last example is a particle. The causative-passive rules likewise aim to normalize equivalent constructions while still resolving them in context (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
 
 This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Limitations](/docs/mecab-comparison)).
 

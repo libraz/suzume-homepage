@@ -126,7 +126,7 @@ describe('documented JavaScript samples', () => {
       ['けど', 'けど'],
       ['まだ', 'まだ'],
       ['飲ん', '飲む'],
-      ['でる', 'いる'],
+      ['でる', 'でる'],
     ])
     expect(suzume.analyze(analysisSampleTexts[2]).map(({ surface, pos }) => [surface, pos])).toEqual([
       ['そんな', 'DET'],
@@ -192,6 +192,36 @@ describe('documented JavaScript samples', () => {
       { surface: '食べ', pos: 'VERB', baseForm: '食べる', start: 0, end: 2 },
       { surface: 'て', pos: 'PARTICLE', baseForm: 'て', start: 2, end: 3 },
       { surface: 'いる', pos: 'AUX', baseForm: 'いる', start: 3, end: 5 },
+    ])
+  })
+
+  it('preserves documented quantity and nominal boundaries', () => {
+    for (const input of ['3種類', '3人分', '3ページ目', '眠み', '無理み']) {
+      expect(suzume.analyze(input).map(({ surface, pos }) => [surface, pos]), input).toEqual([
+        [input, 'NOUN'],
+      ])
+    }
+    expect(suzume.analyze('取り扱い方法').map(({ surface, pos }) => [surface, pos])).toEqual([
+      ['取り扱い', 'NOUN'], ['方法', 'NOUN'],
+    ])
+    expect(suzume.analyze('取り扱い方').map(({ surface, pos }) => [surface, pos])).toEqual([
+      ['取り扱い', 'NOUN'], ['方', 'SUFFIX'],
+    ])
+    expect(suzume.analyze('行くかって').map(({ surface, pos }) => [surface, pos])).toEqual([
+      ['行く', 'VERB'], ['か', 'PARTICLE'], ['って', 'PARTICLE'],
+    ])
+  })
+
+  it('distinguishes greeting interjections from ordinary exclamations', () => {
+    for (const input of ['ありがとう', 'ごめん', 'すみません', 'おつかれさま']) {
+      expect(suzume.analyze(input).map(({ surface, pos, extendedPos }) => ({ surface, pos, extendedPos })), input)
+        .toEqual([{ surface: input, pos: 'INTJ', extendedPos: 'INTJ_挨拶' }])
+    }
+    for (const input of ['ああ', 'おい']) {
+      expect(suzume.analyze(input)[0].extendedPos, input).toBe('INTJ')
+    }
+    expect(suzume.analyze('心からありがとう').map(({ surface, pos }) => [surface, pos])).toEqual([
+      ['心', 'NOUN'], ['から', 'PARTICLE'], ['ありがとう', 'INTJ'],
     ])
   })
 
