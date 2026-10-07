@@ -184,7 +184,16 @@ const docsNav = [
     items: [
       { slug: 'how-it-works', en: 'How It Works', ja: '仕組み' },
       { slug: 'performance', en: 'Speed and Accuracy', ja: '速度と精度' },
+    ],
+  },
+  {
+    en: 'MeCab Comparison',
+    ja: 'MeCab との比較',
+    items: [
       { slug: 'mecab-comparison', en: 'Differences from MeCab', ja: 'MeCab との違い' },
+      { slug: 'mecab-compounds', en: 'Compounds, Quantities, and Names', ja: '複合語・数量・名前' },
+      { slug: 'mecab-grammar', en: 'Verbs and Grammar', ja: '動詞・文法表現' },
+      { slug: 'mecab-text', en: 'Text and Notation', ja: '表記・技術テキスト' },
       { slug: 'pos-differences', en: 'POS Classification', ja: 'POS 分類の違い' },
     ],
   },

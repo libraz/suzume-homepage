@@ -287,6 +287,10 @@ html[lang='ja'] .VPDoc .vp-doc :is(h1, h2, h3, h4) {
   overflow-wrap: anywhere;
 }
 
+.VPDoc .vp-doc :is(td, th):first-child {
+  min-width: 7em;
+}
+
 html[lang='ja'] .VPDoc .vp-doc :is(td, th) {
   font-feature-settings: 'palt' 1;
   line-height: 1.7;

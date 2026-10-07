@@ -1,4 +1,6 @@
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { readdirSync, readFileSync } from 'node:fs'
+import { gzipSync } from 'node:zlib'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   allLiveDemoSampleTexts,
@@ -12,6 +14,7 @@ import wasmMeta from '../src/wasm/meta.json'
 
 interface TokenDiffClaim {
   input: string
+  mecab: string
   suzume: string
 }
 
@@ -20,11 +23,17 @@ function tokenDiffClaims(markdown: string): TokenDiffClaim[] {
     const attributes = Object.fromEntries(
       [...match[1].matchAll(/([A-Za-z]+)="([^"]*)"/g)].map((attribute) => [attribute[1], attribute[2]]),
     )
-    if (!attributes.input || !attributes.suzume) {
+    if (!attributes.input || !attributes.mecab || !attributes.suzume) {
       throw new Error(`Incomplete TokenDiff claim: ${match[0]}`)
     }
-    return { input: attributes.input, suzume: attributes.suzume }
+    return { input: attributes.input, mecab: attributes.mecab, suzume: attributes.suzume }
   })
+}
+
+function comparisonPageNames() {
+  return readdirSync(new URL('../src/docs/', import.meta.url))
+    .filter((name) => /^(?:mecab-.*|pos-differences)\.md$/.test(name))
+    .sort()
 }
 
 function expectedToken(specification: string) {
@@ -54,6 +63,35 @@ describe('documented JavaScript samples', () => {
     suzumeWithSymbols.destroy()
   })
 
+  it('matches the shipped WASM size and hash to its display metadata', () => {
+    const bytes = readFileSync(new URL('../src/wasm/suzume.wasm', import.meta.url))
+    expect(bytes.length).toBe(wasmMeta.size)
+    expect(gzipSync(bytes).length).toBe(wasmMeta.gzipSize)
+    expect(createHash('md5').update(bytes).digest('hex')).toBe(wasmMeta.md5)
+  })
+
+  it('documents the new extended POS labels returned by the runtime in both languages', () => {
+    const samples = [
+      ['本らしさ', 'らし', 'AUX_推定語幹'],
+      ['行くらむ', 'らむ', 'AUX_現在推量'],
+      ['なぜだ', 'なぜ', 'ADV_疑問'],
+      ['来やがった', 'やがっ', 'AUX_卑罵'],
+      ['飾りっけ', 'っけ', 'SUFFIX_気配'],
+      ['雨か雪', 'か', 'PART_選択'],
+    ]
+    const pages = ['../src/docs/api.md', '../src/ja/docs/api.md'].map((path) =>
+      readFileSync(new URL(path, import.meta.url), 'utf8'),
+    )
+    for (const [input, surface, extendedPos] of samples) {
+      expect(suzume.analyze(input), input).toEqual(expect.arrayContaining([
+        expect.objectContaining({ surface, extendedPos }),
+      ]))
+      for (const page of pages) {
+        expect(page).toContain('| `' + extendedPos + '` |')
+      }
+    }
+  })
+
   it('returns morphemes as a direct array with stable extended POS codes', () => {
     expect(suzume.version).toBe(wasmMeta.version)
 
@@ -69,16 +107,23 @@ describe('documented JavaScript samples', () => {
   })
 
   it('keeps every English and Japanese TokenDiff claim identical and executable', () => {
-    const pages = ['mecab-comparison', 'pos-differences']
-    const english: TokenDiffClaim[] = []
+    const pages = comparisonPageNames()
+    const japanesePages = readdirSync(new URL('../src/ja/docs/', import.meta.url))
+      .filter((name) => /^(?:mecab-.*|pos-differences)\.md$/.test(name))
+      .sort()
+    expect(japanesePages).toEqual(pages)
+
+    const claimsByPage = new Map<string, TokenDiffClaim[]>()
     for (const page of pages) {
-      const en = tokenDiffClaims(readFileSync(new URL(`../src/docs/${page}.md`, import.meta.url), 'utf8'))
-      const ja = tokenDiffClaims(readFileSync(new URL(`../src/ja/docs/${page}.md`, import.meta.url), 'utf8'))
+      const en = tokenDiffClaims(readFileSync(new URL(`../src/docs/${page}`, import.meta.url), 'utf8'))
+      const ja = tokenDiffClaims(readFileSync(new URL(`../src/ja/docs/${page}`, import.meta.url), 'utf8'))
+      expect(en, page).not.toHaveLength(0)
       expect(ja, page).toEqual(en)
-      english.push(...en)
+      claimsByPage.set(page, en)
     }
 
-    expect(english).toHaveLength(115)
+    const english = pages.flatMap((page) => claimsByPage.get(page) ?? [])
+    expect(english).toHaveLength(122)
 
     for (const claim of english) {
       const actual = suzume.analyze(claim.input)
@@ -210,6 +255,8 @@ describe('documented JavaScript samples', () => {
     expect(suzume.analyze('行くかって').map(({ surface, pos }) => [surface, pos])).toEqual([
       ['行く', 'VERB'], ['か', 'PARTICLE'], ['って', 'PARTICLE'],
     ])
+    expect(suzume.analyze('佐藤殿').map(({ surface }) => surface)).toEqual(['佐藤', '殿'])
+    expect(suzume.analyze('先生殿').map(({ surface }) => surface)).toEqual(['先生', '殿'])
   })
 
   it('distinguishes greeting interjections from ordinary exclamations', () => {
