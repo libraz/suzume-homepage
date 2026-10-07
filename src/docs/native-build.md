@@ -12,7 +12,7 @@ This page covers source-build configurations. For the installed C and C++ APIs, 
 
 - C++17-compatible compiler (GCC 9+, Clang 10+, MSVC 2019+)
 - CMake 3.15 or later
-- Python 3 for embedded-dictionary and WASM builds (`SUZUME_EMBED_DICT=ON` or `BUILD_WASM=ON`)
+- Python 3 for native tests (`BUILD_TESTING=ON`, the default), embedded dictionaries (`SUZUME_EMBED_DICT=ON`), or WASM builds (`BUILD_WASM=ON`)
 
 ### Default Build
 

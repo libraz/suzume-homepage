@@ -133,7 +133,7 @@ for _, m := range result.Morphemes {
 }
 ```
 
-## Morpheme のフィールド
+## Morpheme のフィールド {#morpheme-fields}
 
 `Analyze()` は `Morpheme` 構造体のスライスを返します。
 
@@ -296,7 +296,7 @@ func main() {
 
 | メソッド | 説明 |
 |---------|------|
-| `Analyze(text string) []Morpheme` | テキストを解析（[Morpheme のフィールド](#morpheme-のフィールド)を参照） |
+| `Analyze(text string) []Morpheme` | テキストを解析（[Morpheme のフィールド](#morpheme-fields)を参照） |
 | `AnalyzeWithNormalizedText(text string) AnalysisResult` | 正規化後テキストとコードポイントオフセットを返しながら解析 |
 | `GenerateTags(text string) []Tag` | 既定フィルターでキーワード `Tag` を抽出 |
 | `GenerateTagsWithOptions(text string, opts TagOptions) []Tag` | フィルターや件数制限を指定して `Tag` を抽出 |
