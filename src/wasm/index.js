@@ -1,5 +1,5 @@
 /**
- * Suzume - Lightweight Japanese morphological analyzer
+ * Suzume - Lightweight Japanese tokenizer
  *
  * @example
  * ```typescript
@@ -122,7 +122,7 @@ const registry = new FinalizationRegistry((ref) => {
     }
 });
 /**
- * Suzume instance for Japanese morphological analysis.
+ * Suzume instance for Japanese tokenization.
  *
  * Error contract note: under the WebAssembly build, a memory-allocation failure
  * aborts the module rather than returning NULL, so the C++ allocation-failure

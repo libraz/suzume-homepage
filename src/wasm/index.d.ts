@@ -1,5 +1,5 @@
 /**
- * Suzume - Lightweight Japanese morphological analyzer
+ * Suzume - Lightweight Japanese tokenizer
  *
  * @example
  * ```typescript
@@ -55,7 +55,7 @@ export interface SuzumeOptions {
 }
 type AnalysisMode = NonNullable<SuzumeOptions['mode']>;
 /**
- * Morpheme - A single unit of morphological analysis
+ * Morpheme - A single token produced by analysis
  */
 export interface Morpheme {
     /** Surface form (as it appears in the text) */
@@ -143,7 +143,7 @@ export interface TagOptions {
     removeDuplicates?: boolean;
 }
 /**
- * Suzume instance for Japanese morphological analysis.
+ * Suzume instance for Japanese tokenization.
  *
  * Error contract note: under the WebAssembly build, a memory-allocation failure
  * aborts the module rather than returning NULL, so the C++ allocation-failure

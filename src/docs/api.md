@@ -628,6 +628,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `AUX_使役` | 使役 | せる, させる |
 | `AUX_可能` | 可能 | れる, られる |
 | `AUX_継続` | 継続 | いる, い, おる |
+| `AUX_卑罵` | Pejorative auxiliary | やがる (`来やがった`) |
 | `AUX_完了` | 完了 | しまう, ちゃう |
 | `AUX_準備` | 準備 | おく, とく |
 | `AUX_試行` | 試行 | みる |
@@ -636,6 +637,8 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `AUX_開始` | 開始 | はじめる |
 | `AUX_様態` | 様態 | そう |
 | `AUX_推定` | 推定 | らしい |
+| `AUX_推定語幹` | Stem of the conjectural auxiliary | らし (`本らしさ`) |
+| `AUX_現在推量` | Classical present conjecture | らむ (`行くらむ`) |
 | `AUX_みたい` | 推定 | みたい |
 | `AUX_断定` | 断定 | だ, で, な, なら |
 | `AUX_丁寧断定` | 丁寧断定 | です, でし |
@@ -655,6 +658,7 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `PART_終` | 終助詞 | ね, よ, わ, な, か |
 | `PART_接続` | 接続助詞 | て, で, ば, ながら, たり, けど |
 | `PART_接続終止` | Conjunctive particle attached to a finite predicate | が |
+| `PART_選択` | Choice/listing particle | か (`雨か雪`) |
 | `PART_引用` | 引用助詞 | と（引用） |
 | `PART_副` | 副助詞 | ばかり, だけ, ほど, しか, など |
 | `PART_準体` | 準体助詞 | の |
@@ -681,12 +685,14 @@ The `extendedPos` property provides fine-grained subcategories beyond the basic 
 | `PRON_疑問` | 疑問詞 (何, 誰, どこ) |
 | `ADV` | 副詞 |
 | `ADV_引用` | 引用副詞 (そう, こう) |
+| `ADV_疑問` | Interrogative adverbs: なぜ, なんで, どうして |
 | `CONJ` | 接続詞 |
 | `DET` | 連体詞 |
 | `PREFIX` | 接頭辞 |
 | `SUFFIX` | 接尾辞 |
 | `SUFFIX_直後` | 直後を表す接尾辞 |
 | `SUFFIX_傾向` | 傾向を表す接尾辞 |
+| `SUFFIX_気配` | Trace/indication suffix: っけ (`飾りっけ`) |
 | `DET_引用` | 引用を伴う連体詞 |
 | `SYMBOL` | 記号 |
 | `INTJ` | 感動詞 |
