@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: ブラウザで動く軽量日本語トークナイザー
-  tagline: WebAssembly にコンパイルした軽量トークナイザー。gzip __WASM_GZIP_SIZE__ 以下で、サーバーも巨大な辞書もなしにクライアント側だけで動作します。
+  tagline: WebAssembly にコンパイルした軽量トークナイザー。WASM バイナリは gzip 後 __WASM_GZIP_SIZE__ 以下で、サーバーも巨大な辞書もなしにクライアント側だけで動作します。
   actions:
     - theme: brand
       text: ライブデモを試す
@@ -71,7 +71,7 @@ Python 製のサービスやデータパイプラインでは [Python バイン�
 
 ## 使い方
 
-各バインディングは、言語ごとの命名に合わせて同じ解析モデルを公開します。
+ライブラリのバインディングは、言語ごとの命名に合わせて同じ解析モデルを公開します。
 
 ::: code-group
 

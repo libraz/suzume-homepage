@@ -2,7 +2,7 @@
 
 ## Why So Small?
 
-The biggest question: how can Suzume tokenize Japanese text in about <WasmSize /> gzipped when traditional analyzers often need tens of megabytes of dictionaries?
+Suzume's WebAssembly binary, including its built-in dictionaries, is about <WasmSize /> gzipped. Traditional analyzers often need tens of megabytes of dictionaries. How does Suzume keep its binary small?
 
 ### The Short Answer
 

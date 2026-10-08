@@ -44,7 +44,7 @@ const features = computed(() => [
   },
   {
     name: t('comparison.bundleSize'),
-    values: ['0KB', '~10KB', WASM_GZIP_SIZE, '~20MB', t('comparison.na')]
+    values: ['0KB', '~10KB', isJa() ? `${WASM_GZIP_SIZE}（WASM）` : `${WASM_GZIP_SIZE} WASM`, '~20MB', t('comparison.na')]
   },
   {
     name: t('comparison.serverFree'),

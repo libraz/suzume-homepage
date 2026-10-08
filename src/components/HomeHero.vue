@@ -5,7 +5,7 @@ import { SUZUME_VERSION, WASM_COMMIT_HASH, WASM_GZIP_KB, WASM_SIZE_KB } from '@/
 const { t } = useI18n()
 
 const buildLink = `https://github.com/libraz/suzume/commit/${WASM_COMMIT_HASH}`
-const runtimes = 'Browser · Node · Deno · Bun · Python · C/C++'
+const runtimes = ['Browser', 'Node', 'Deno', 'Bun', 'Python', 'Go', 'C/C++']
 </script>
 
 <template>
@@ -34,9 +34,9 @@ const runtimes = 'Browser · Node · Deno · Bun · Python · C/C++'
       </div>
       <div class="stat-divider" aria-hidden="true"></div>
       <div class="stat">
-        <div class="stat-value">6</div>
+        <div class="stat-value">{{ runtimes.length }}</div>
         <div class="stat-label">{{ t('homeHero.runtimesLabel') }}</div>
-        <div class="stat-note runtimes">{{ runtimes }}</div>
+        <div class="stat-note runtimes">{{ runtimes.join(' · ') }}</div>
       </div>
     </div>
   </section>

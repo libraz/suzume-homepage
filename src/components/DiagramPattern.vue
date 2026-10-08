@@ -9,9 +9,9 @@ const m = computed(() =>
     ? {
         title: '未知語をパターンから候補化する',
         d1: ['辞書に', 'ある?'],
-        no: 'No',
+        no: 'いいえ',
         d2: ['カタカナ', '列?'],
-        yes: 'Yes',
+        yes: 'はい',
         result: '名詞候補を生成',
         exLabel: 'ほかの例:',
         ex: ['漢字列 → 名詞候補', '漢字 + する → サ変名詞 / 動詞候補', 'ひらがな + い → 形容詞候補'],
@@ -25,7 +25,7 @@ const m = computed(() =>
         yes: 'Yes',
         result: 'Generate noun candidate',
         exLabel: 'Other examples:',
-        ex: ['漢字列 → noun candidate', '漢字 + する → verbal noun / verb candidate', 'ひらがな + い → adjective candidate'],
+        ex: ['Kanji sequence → noun candidate', 'Kanji + する → verbal noun / verb candidate', 'Hiragana + い → adjective candidate'],
         caption: 'For example, a katakana sequence that is not in the dictionary can still become a noun candidate.',
       }
 )

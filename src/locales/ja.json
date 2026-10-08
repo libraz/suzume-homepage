@@ -3,8 +3,8 @@
     "ariaLabel": "リリース状況と主要スペック",
     "beta": "Beta",
     "openSource": "オープンソース",
-    "gzipLabel": "gzip 後のバンドル",
-    "rawNote": "生 {n}KiB",
+    "gzipLabel": "gzip 後の WASM バイナリ",
+    "rawNote": "未圧縮の WASM バイナリ {n}KiB",
     "clientLabel": "クライアント完結",
     "clientNote": "サーバー・API 不要",
     "runtimesLabel": "ランタイム"
@@ -16,7 +16,7 @@
     "items": {
       "size": {
         "title": "小さなフットプリント",
-        "desc": "WASM モジュールと内蔵辞書を合わせて gzip {size} 以下。数十 MB の辞書を取得・配信する必要がありません。"
+        "desc": "WASM バイナリは内蔵辞書を含めて gzip 後 {size} 以下です。数十 MB の辞書を取得・配信する必要がありません。"
       },
       "client": {
         "title": "クライアント完結の設計",
@@ -36,7 +36,7 @@
       },
       "typed": {
         "title": "型付き・マルチランタイム",
-        "desc": "TypeScript の型を完備した C++ コア。Python・ネイティブ C/C++ で、バックエンド・バッチ・組み込みにも使えます。"
+        "desc": "TypeScript の型を完備した C++ コア。Python・Go・ネイティブ C/C++ で、バックエンド・バッチ・組み込みにも使えます。"
       }
     }
   },

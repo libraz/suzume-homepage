@@ -44,7 +44,7 @@ MeCab analyzes morphemes using the vocabulary, taxonomy, and connection costs of
 | | MeCab | Suzume |
 |--|-------|--------|
 | **Approach** | Dictionary-driven | Feature-driven |
-| **Dictionary** | External dictionary required; size and output depend on the selected dictionary | Compact dictionaries included (~<WasmSize /> gzipped with the WASM package) |
+| **Dictionary** | External dictionary required; size and output depend on the selected dictionary | Compact dictionaries embedded in the WASM binary (~<WasmSize /> gzipped) |
 | **Unknown words** | Falls back to character types | Pattern-based candidate generation |
 | **Compound handling** | Boundaries follow the selected dictionary | Dictionary and structural rules; unknown runs may merge |
 | **Target** | Detailed dictionary-based analysis | Compact search/display tokenization across browser, edge, and native runtimes |

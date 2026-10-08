@@ -24,8 +24,8 @@ const softwareApplicationJsonLd = (lang: Locale) => ({
     priceCurrency: 'USD'
   },
   description: lang === 'ja'
-    ? `ブラウザで動く軽量な日本語トークナイザ。サーバーも外部辞書のセットアップも不要で、gzip後 ${sizeLabelText} 未満。辞書にない語もパターンから候補を生成します。`
-    : `Lightweight Japanese tokenizer that runs in the browser. Unlike MeCab, no server or external dictionary setup is required. Under ${sizeLabelText} gzipped, with pattern-based unknown-word candidates.`,
+    ? `ブラウザで動く軽量な日本語トークナイザ。サーバーも外部辞書のセットアップも不要で、WASM バイナリは gzip 後 ${sizeLabelText} 未満。辞書にない語もパターンから候補を生成します。`
+    : `Lightweight Japanese tokenizer that runs in the browser. Unlike MeCab, no server or external dictionary setup is required. Its WebAssembly binary is under ${sizeLabelText} gzipped, with pattern-based unknown-word candidates.`,
   url: lang === 'ja' ? `${siteUrl}/ja/` : siteUrl,
   downloadUrl: githubUrl,
   softwareVersion: SUZUME_VERSION,
@@ -39,113 +39,15 @@ const softwareApplicationJsonLd = (lang: Locale) => ({
     : 'Japanese tokenizer, morphological analyzer, WASM, WebAssembly, NLP, browser tokenizer, client-side NLP'
 })
 
-const FAQ: Record<Locale, { q: string; a: string }[]> = {
-  en: [
-    {
-      q: 'What is Suzume?',
-      a: 'Suzume is a lightweight, feature-driven Japanese tokenizer available through WebAssembly, Python, Go, and native C/C++. It combines compact dictionaries with grammatical rules and can analyze words that are not in its dictionaries. The WebAssembly package runs in browsers, Node.js, Deno, and Bun.'
-    },
-    {
-      q: 'How does Suzume handle unknown words?',
-      a: 'Suzume generates candidates from character patterns (kanji sequences, katakana sequences, and alphanumeric compounds) and evaluates them alongside dictionary entries with Viterbi scoring. Words that are absent from its dictionaries can therefore still receive token and part-of-speech candidates.'
-    },
-    {
-      q: 'Can I use Suzume in the browser?',
-      a: `Yes, Suzume runs entirely in the browser via WebAssembly. No server required. You can load it from npm or directly from a CDN like esm.sh. The entire package is under ${sizeLabelText} gzipped.`
-    },
-    {
-      q: 'How do I add custom words to Suzume?',
-      a: 'Use loadUserDictionary() to add custom words at runtime. The current text format is tab-separated, for example "東京公園\\tNOUN". You can also load a dictionary compiled by the native command-line tool.'
-    },
-    {
-      q: 'What is the difference between Suzume and MeCab?',
-      a: 'MeCab is an analysis engine used with an external dictionary, and its boundaries and labels depend on the selected dictionary. Suzume ships compact dictionaries and grammatical rules with its WebAssembly package, so it can run entirely in a browser. The documentation compares Suzume with MeCab 0.996 and mecab-ipadic 2.7.0-20070801.'
-    },
-    {
-      q: 'How is Suzume different from other browser tokenizers?',
-      a: `Browser tokenizers differ in their dictionaries and output conventions. Suzume packages compact dictionaries and rules with its WebAssembly module, which is under ${sizeLabelText} gzipped; compare boundary, part-of-speech, and dictionary requirements before choosing either tokenizer.`
-    },
-    {
-      q: 'Can I use Suzume for SEO keyword extraction?',
-      a: 'Suzume can generate filtered keyword tags from analyzed Japanese text. Applications can select parts of speech, minimum length, lemma or surface output, duplicate handling, and result limits; the WebAssembly package can perform this locally without an analysis server.'
-    },
-    {
-      q: 'Is Suzume suitable for production use?',
-      a: 'Suzume provides a typed JavaScript API for browsers and server runtimes with WebAssembly support, plus Python, Go, and native C/C++ bindings. Validate its segmentation, supported platforms, memory behavior, and dictionary coverage against your production requirements.'
-    },
-    {
-      q: 'Does Suzume work offline?',
-      a: 'Yes, once loaded, Suzume works completely offline. All processing happens locally in the browser or runtime. No API calls or internet connection required after initial load.'
-    },
-    {
-      q: 'How do I install Suzume?',
-      a: 'Install via npm: npm install @libraz/suzume. Then import and use: const { Suzume } = await import("@libraz/suzume"); const suzume = await Suzume.create(); const result = suzume.analyze("日本語テキスト");'
-    }
-  ],
-  ja: [
-    {
-      q: 'Suzume とは何ですか？',
-      a: 'Suzume は、WebAssembly・Python・Go・ネイティブ C/C++ から使える軽量な日本語トークナイザです。コンパクトな辞書と文法規則を組み合わせており、辞書に載っていない語も解析できます。WebAssembly パッケージはブラウザ、Node.js、Deno、Bun で動作します。'
-    },
-    {
-      q: '未知語はどう扱われますか？',
-      a: '文字パターン（漢字の連続、カタカナの連続、英数字の複合語）から候補を生成し、辞書項目と並べて Viterbi でスコアリングします。そのため辞書にない語にも、トークンと品詞の候補が付きます。'
-    },
-    {
-      q: 'ブラウザで使えますか？',
-      a: `はい。WebAssembly でブラウザ内だけで動作し、サーバーは不要です。npm から読み込むことも、esm.sh のような CDN から直接読み込むこともできます。パッケージ全体で gzip 後 ${sizeLabelText} 未満です。`
-    },
-    {
-      q: 'ユーザー辞書はどう追加しますか？',
-      a: '`loadUserDictionary()` で実行時に追加できます。現在のテキスト形式はタブ区切りで、たとえば "東京公園\\tNOUN" のように書きます。ネイティブのコマンドラインツールでコンパイルした辞書を読み込むこともできます。'
-    },
-    {
-      q: 'MeCab との違いは何ですか？',
-      a: 'MeCab は外部辞書と組み合わせて使う解析エンジンで、区切りやラベルは選んだ辞書に依存します。Suzume はコンパクトな辞書と文法規則を WebAssembly パッケージに同梱しているため、ブラウザ内だけで完結します。ドキュメントでは MeCab 0.996 と mecab-ipadic 2.7.0-20070801 との比較を公開しています。'
-    },
-    {
-      q: '他のブラウザ向けトークナイザとの違いは？',
-      a: `ブラウザで動くトークナイザは、辞書と出力の規約がそれぞれ異なります。Suzume はコンパクトな辞書と規則を WebAssembly モジュールに同梱しており、gzip 後 ${sizeLabelText} 未満です。区切り・品詞・必要な辞書の要件を比較したうえで選んでください。`
-    },
-    {
-      q: 'SEO のキーワード抽出に使えますか？',
-      a: '解析した日本語テキストから、絞り込み済みのキーワードタグを生成できます。品詞、最小文字数、原形か表層形か、重複の扱い、件数上限をアプリケーション側で指定でき、WebAssembly パッケージなら解析サーバーなしでローカルに実行できます。'
-    },
-    {
-      q: '本番環境で使えますか？',
-      a: 'WebAssembly をサポートするブラウザとサーバーランタイム向けの型付き JavaScript API に加え、Python・Go・ネイティブ C/C++ のバインディングを提供しています。区切り精度、対応プラットフォーム、メモリの挙動、辞書のカバレッジを、自分の本番要件に照らして検証してください。'
-    },
-    {
-      q: 'オフラインで動きますか？',
-      a: 'はい。一度読み込めば完全にオフラインで動作します。処理はすべてブラウザまたはランタイム内でローカルに行われ、初回読み込み後は API 呼び出しもインターネット接続も不要です。'
-    },
-    {
-      q: 'インストール方法は？',
-      a: 'npm でインストールします: npm install @libraz/suzume。読み込んで使う例: const { Suzume } = await import("@libraz/suzume"); const suzume = await Suzume.create(); const result = suzume.analyze("日本語テキスト");'
-    }
-  ]
-}
-
-const faqJsonLd = (lang: Locale) => ({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  inLanguage: lang,
-  mainEntity: FAQ[lang].map(({ q, a }) => ({
-    '@type': 'Question',
-    name: q,
-    acceptedAnswer: { '@type': 'Answer', text: a }
-  }))
-})
-
 const SEO: Record<Locale, { title: string; description: string; keywords: string }> = {
   en: {
     title: 'Suzume - Japanese Tokenizer That Works in the Browser',
-    description: `Suzume brings Japanese tokenization to browsers and server runtimes. Its WebAssembly package is under ${sizeLabelText} gzipped and requires no analysis server.`,
+    description: `Suzume brings Japanese tokenization to browsers and server runtimes. Its WebAssembly binary is under ${sizeLabelText} gzipped and requires no analysis server.`,
     keywords: 'Japanese tokenizer, morphological analyzer, WASM, WebAssembly, NLP, natural language processing, browser NLP, client-side tokenizer, lightweight tokenizer'
   },
   ja: {
     title: 'Suzume - ブラウザで動く日本語トークナイザ',
-    description: `Suzume はブラウザとサーバーランタイムに日本語の形態素解析を持ち込みます。WebAssembly パッケージは gzip 後 ${sizeLabelText} 未満で、解析サーバーは要りません。`,
+    description: `Suzume はブラウザとサーバーランタイムに日本語の形態素解析を持ち込みます。WASM バイナリは gzip 後 ${sizeLabelText} 未満で、解析サーバーは要りません。`,
     keywords: '形態素解析, 日本語, トークナイザー, WASM, WebAssembly, 自然言語処理, 形態素解析 ブラウザ, 日本語 トークナイザー, 軽量 形態素解析, サーバーレス 形態素解析, フロントエンド 日本語処理'
   }
 }
@@ -233,9 +135,9 @@ const LLMS_LOCALES: LlmsLocale[] = [
     key: 'root',
     prefix: '',
     title: 'Suzume',
-    summary: `Japanese tokenizer that runs in the browser, under ${sizeLabelText} gzipped as WebAssembly, with its dictionaries bundled in — no server, no external dictionary download, no install step for the reader.`,
+    summary: `Japanese tokenizer that runs in the browser. Its WebAssembly binary is under ${sizeLabelText} gzipped, with its dictionaries bundled in — no server, no external dictionary download, no install step for the reader.`,
     intro:
-      'Suzume segments Japanese text into words with part-of-speech tags and readings. The\nsame core ships as WebAssembly for browsers and JavaScript runtimes, and natively for\nPython, Go, C/C++, and a CLI. Unknown words are handled with pattern-based candidate\ngeneration rather than a large dictionary. The links below point to the canonical HTML\ndocumentation.',
+      'Suzume segments Japanese text into words with part-of-speech tags and base forms. The\nsame core ships as WebAssembly for browsers and JavaScript runtimes, and natively for\nPython, Go, C/C++, and a CLI. Unknown words are handled with pattern-based candidate\ngeneration rather than a large dictionary. The links below point to the canonical HTML\ndocumentation.',
     overviewHeading: 'Key pages',
     homeText: 'Suzume home',
     alternate: {
@@ -253,9 +155,9 @@ const LLMS_LOCALES: LlmsLocale[] = [
     key: 'ja',
     prefix: '/ja',
     title: 'Suzume',
-    summary: `ブラウザで動く日本語トークナイザー。WebAssembly 版は gzip 後 ${sizeLabelText} 以下で辞書を同梱し、サーバーも外部辞書のダウンロードも不要。`,
+    summary: `ブラウザで動く日本語トークナイザー。WASM バイナリは内蔵辞書を含めて gzip 後 ${sizeLabelText} 以下で、サーバーも外部辞書のダウンロードも不要。`,
     intro:
-      'Suzume は日本語テキストを品詞と読み付きの単語に分割する。同じコアを WebAssembly として\nブラウザおよび JavaScript ランタイムへ、ネイティブ版を Python・Go・C/C++・CLI へ提供する。\n未知語は大規模辞書ではなくパターンベースの候補生成で扱う。以下は日本語ドキュメントへの\nリンク一覧。',
+      'Suzume は日本語テキストを単語に分割し、品詞と原形を付ける。同じコアを WebAssembly として\nブラウザおよび JavaScript ランタイムへ、ネイティブ版を Python・Go・C/C++・CLI へ提供する。\n未知語は大規模辞書ではなくパターンベースの候補生成で扱う。以下は日本語ドキュメントへの\nリンク一覧。',
     overviewHeading: '主要ページ',
     homeText: 'Suzume トップ',
     alternate: {
@@ -275,7 +177,7 @@ export default defineConfig({
   srcDir: 'src',
 
   title: 'Suzume - Japanese Tokenizer for the Browser',
-  description: `Lightweight Japanese tokenizer for browsers and server runtimes. The WebAssembly package is under ${sizeLabelText} gzipped and includes compact dictionaries plus pattern-based unknown-word candidates.`,
+  description: `Lightweight Japanese tokenizer for browsers and server runtimes. The WebAssembly binary is under ${sizeLabelText} gzipped and includes compact dictionaries plus pattern-based unknown-word candidates.`,
 
   // Sitemap
   sitemap: {
@@ -335,7 +237,6 @@ export default defineConfig({
       ['link', { rel: 'alternate', hreflang: altLang, href: altUrl }],
       ['link', { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl}${routeOf(pageData.relativePath.replace(/^ja\//, ''))}` }],
       ['script', { type: 'application/ld+json' }, JSON.stringify(softwareApplicationJsonLd(lang))],
-      ['script', { type: 'application/ld+json' }, JSON.stringify(faqJsonLd(lang))],
     ]
   },
 
@@ -348,7 +249,7 @@ export default defineConfig({
       label: '日本語',
       lang: 'ja',
       title: 'Suzume - ブラウザで動く日本語トークナイザー',
-      description: `ブラウザで動く軽量日本語トークナイザー。MeCabや外部辞書のセットアップ、サーバーは不要。${sizeLabelText}以下でフロントエンド完結。`,
+      description: `ブラウザで動く軽量日本語トークナイザー。MeCabや外部辞書のセットアップ、サーバーは不要。WASM バイナリは gzip 後 ${sizeLabelText} 以下でフロントエンド完結。`,
       themeConfig: {
         siteTitle: 'Suzume',
         nav: [

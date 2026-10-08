@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Suzume
   text: Japanese tokenization, right in the browser
-  tagline: A lightweight tokenizer compiled to WebAssembly. Under __WASM_GZIP_SIZE__ gzipped, it runs entirely client-side — no server, no multi-megabyte dictionary.
+  tagline: A lightweight tokenizer compiled to WebAssembly. Its WebAssembly binary is under __WASM_GZIP_SIZE__ gzipped, and the tokenizer runs entirely client-side — no server, no multi-megabyte dictionary.
   actions:
     - theme: brand
       text: Try the live demo
@@ -71,7 +71,7 @@ For Python services and data pipelines, see the [Python bindings guide](/docs/py
 
 ## Usage
 
-The bindings expose the same analysis model with names adapted to each language:
+The library bindings expose the same analysis model with names adapted to each language:
 
 ::: code-group
 
