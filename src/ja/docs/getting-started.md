@@ -16,7 +16,7 @@ Suzume は、JavaScript/WASM、Python、Go、ネイティブ C/C++、コマン�
 
 ## JavaScript/WASM チュートリアル
 
-## インストール
+### インストール
 
 ```bash
 npm install @libraz/suzume
@@ -24,7 +24,7 @@ npm install @libraz/suzume
 
 各パッケージマネージャー・CDN・他のバインディングは [インストール](/ja/docs/installation) を参照してください。
 
-## 基本的な使い方
+### 基本的な使い方
 
 ```typescript
 import { Suzume } from '@libraz/suzume'
@@ -55,9 +55,11 @@ const suzume = await Suzume.create({ mode: 'search', mergeCompounds: true })
 
 `destroy()` のほか、テキスト・バイナリ辞書の読み込み、展開後エントリ数、呼び出し側辞書の消去、辞書状態、安定したエラーコード、警告を取得できます。詳細は [API リファレンス](/ja/docs/api) を参照してください。
 
-## よく使う実例
+### よく使う実例
 
-### 検索キーワードを抽出する
+以下の例は、解放前の `suzume` インスタンスを使います。基本例の `destroy()` まで実行した場合は、先に `await Suzume.create()` で作り直し、最後の処理が終わったら解放してください。
+
+#### 検索キーワードを抽出する
 
 ```typescript
 const tags = suzume.generateTags('東京スカイツリーで夜景を撮影しました', {
@@ -74,7 +76,7 @@ console.log(tags)
 // ]
 ```
 
-### 活用形を原形に戻す
+#### 活用形を原形に戻す
 
 ```typescript
 const morphemes = suzume.analyze('食べさせられなかった')
@@ -86,7 +88,7 @@ for (const m of morphemes) {
 }
 ```
 
-## 出力形式
+### 出力形式
 
 `analyze()` は `Morpheme` オブジェクトの配列を返します：
 
@@ -123,7 +125,7 @@ for (const m of morphemes) {
 }
 ```
 
-## ブラウザでの使用
+### ブラウザでの使用
 
 CDNから直接読み込むこともできます：
 

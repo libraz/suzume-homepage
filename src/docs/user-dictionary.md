@@ -155,6 +155,26 @@ int main() {
 suzume-cli analyze --dict user.tsv "東京公園を点検する"
 ```
 
+```c [C]
+#include "suzume/suzume_c.h"
+#include <string.h>
+
+int main(void) {
+  suzume_t tokenizer = suzume_create();
+  if (!tokenizer) return 1;
+  const char* source = "東京公園\tNOUN\n点検する\tVERB\tSURU\n";
+  const size_t expanded_count =
+      suzume_load_user_dict_count(tokenizer, source, strlen(source));
+  suzume_destroy(tokenizer);
+  return expanded_count == 0 ? 1 : 0;
+}
+```
+
+```bash [Python CLI]
+# user.tsv contains the same tab-separated rows.
+suzume --dict user.tsv "東京公園を点検する"
+```
+
 :::
 
 In Go, use `LoadUserDictionaryCount([]byte) (int, error)` when you need the expanded-entry count, and `ClearUserDictionaries() error` to remove caller-loaded dictionaries. See the [Go API guide](/docs/go) for examples.
@@ -187,7 +207,7 @@ An entry can also be parsed successfully and then rejected during installation, 
 
 Warnings from runtime loads are appended to the analyzer's dictionary-warning list. Read them through `dictionaryWarnings` in Node, `dictionary_warnings` in Python, `DictionaryWarnings()` in Go, `Tokenizer::dictionaryWarnings()` in C++, or the `suzume_dictionary_warning_*` C functions. `clearUserDictionaries()` and its equivalents clear runtime-load warnings but retain construction-time warnings. The native CLI does not currently print warnings added while processing a `--dict` source file.
 
-If every data row is skipped, the load fails because there are no loadable entries. Unknown POS values, empty required fields, invalid UTF-8, malformed legacy CSV quoting, and unexpected non-empty columns also fail the whole load.
+If every data row is skipped, the load fails because there are no loadable entries. Unknown POS values, empty required fields, invalid UTF-8, and malformed legacy CSV quoting also fail the whole load. Unexpected non-empty TSV columns reject the whole load; legacy CSV ignores columns after the fourth field.
 
 ## Clearing Caller-loaded Dictionaries
 

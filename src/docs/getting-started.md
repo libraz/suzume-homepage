@@ -16,7 +16,7 @@ Suzume is a lightweight Japanese tokenizer available through JavaScript/WASM, Py
 
 ## JavaScript/WASM Walkthrough
 
-## Installation
+### Installation
 
 ```bash
 npm install @libraz/suzume
@@ -24,7 +24,7 @@ npm install @libraz/suzume
 
 See [Installation](/docs/installation) for all package managers, CDN, and other bindings.
 
-## Basic Usage
+### Basic Usage
 
 ```typescript
 import { Suzume } from '@libraz/suzume'
@@ -55,9 +55,11 @@ The `mode` property can be changed after creation without reloading dictionaries
 
 Beyond `destroy()`, the instance exposes text and binary dictionary loading, installed-entry counts, caller-dictionary clearing, dictionary status, stable error codes, and warnings. See the [API Reference](/docs/api).
 
-## Common Tasks
+### Common Tasks
 
-### Extract Search Keywords
+The following examples assume a live `suzume` instance. If you ran the basic example through `destroy()`, create a new instance with `await Suzume.create()` first, and destroy it after your last task.
+
+#### Extract Search Keywords
 
 ```typescript
 const tags = suzume.generateTags('東京スカイツリーで夜景を撮影しました', {
@@ -74,7 +76,7 @@ console.log(tags)
 // ]
 ```
 
-### Normalize Conjugated Words
+#### Normalize Conjugated Words
 
 ```typescript
 const morphemes = suzume.analyze('食べさせられなかった')
@@ -86,7 +88,7 @@ for (const m of morphemes) {
 }
 ```
 
-## Output Format
+### Output Format
 
 `analyze()` returns an array of `Morpheme` objects:
 
@@ -123,7 +125,7 @@ for (const m of morphemes) {
 }
 ```
 
-## Browser Usage
+### Browser Usage
 
 You can also load directly from a CDN:
 

@@ -602,7 +602,7 @@ interface Morpheme {
 | `ADJ_語幹` | 語幹（ガル接続） | 美し-, 高- |
 | `ADJ_かっ` | かっ形 | 美しかっ-, 高かっ- |
 | `ADJ_け形` | け形（仮定） | 美しけれ- |
-| `ADJ_未然` | 未然形 | 美しくな- |
+| `ADJ_未然` | 未然形 | 美しかろ- |
 | `ADJ_NA` | ナ形容詞語幹 | 静か, 綺麗 |
 
 **助動詞:**
@@ -740,7 +740,7 @@ try {
 }
 ```
 
-`Suzume.create()`、`analyze()`、`analyzeWithNormalizedText()`、`generateTags()`、辞書読み込みの `OrThrow` メソッド、モード変更、`clearUserDictionaries()` は、ネイティブ側で失敗すると例外を投げます。例外を投げない辞書メソッドは `false` または `0` を返します。詳細は `lastError` と `lastErrorCode` で確認できます。
+`Suzume.create()`、`analyze()`、`analyzeWithNormalizedText()`、`generateTags()`、辞書読み込みの `OrThrow` メソッド、モード変更、`clearUserDictionaries()` は、ネイティブ側で失敗すると例外を投げます。`OrThrow` のない辞書メソッドは、ネイティブ側の辞書読み込みに失敗すると `false` または `0` を返します。詳細は `lastError` と `lastErrorCode` で確認できます。ただし、辞書テキストに単独の UTF-16 下位サロゲートがある場合など、JavaScript 側の検証で例外を投げることがあります。有効なハンドルを必要とするメソッドも、`destroy()` の後は例外を投げます。
 
 ::: danger WebAssembly のメモリ不足
 メモリ確保に失敗すると、通常の `OutOfMemory` を返さず WASM ランタイムが停止します。回復可能な `SuzumeError` の経路には入らず、停止したランタイムは再利用できません。デフォルトでは複数のインスタンスがランタイムを共有するため、同じランタイム上のほかのハンドルも使えなくなります。長い文書は分割して処理してください。障害をランタイム単位で分離する必要がある場合は `freshWasmModule: true` を使います。

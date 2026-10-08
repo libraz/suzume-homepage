@@ -98,7 +98,7 @@ suzume-cli -m split "API開発と高層ビル群"
 | `-f, --format FMT` | 出力フォーマット: `morpheme`, `tags`, `json`, `tsv`, `chasen` |
 | `-m, --mode MODE` | 解析モード: `normal`, `search`, `split` |
 | `-d, --dict PATH` | ユーザー辞書を読み込み（複数指定可） |
-| `--no-lemmatize` | 原形化を無効化（デフォルトは有効） |
+| `--no-lemmatize` | 解析後の原形補正を無効化。辞書由来の原形と活用・品詞情報は保持 |
 | `--merge-compounds` | 連続する名詞複合語を結合（デフォルトは無効） |
 | `--normalize-vu` | ヴ をビ等に正規化（デフォルト: 保持） |
 | `--lowercase` | ASCII を小文字に変換（デフォルト: 保持） |
@@ -169,7 +169,8 @@ suzume-cli --normalize-vu "ヴァイオリン"
 suzume-cli dict new user.tsv
 
 # TSV をバイナリ（.dic）にコンパイル
-suzume-cli dict compile user.tsv           # → user.dic
+suzume-cli dict compile user.tsv           # → user.dic（既存ファイルは上書きしない）
+suzume-cli dict compile user.tsv user.dic  # user.dic を明示して置き換える
 suzume-cli dict compile user.tsv out.dic   # 出力先を指定
 suzume-cli dict compile a.tsv b.tsv out.dic   # 複数の入力を 1 つのファイルにまとめる
 

@@ -32,6 +32,15 @@ go get github.com/libraz/go-suzume
 
 The build writes into the checkout, so keep it in a directory you can write to. The Go module cache is read-only and cannot host the build.
 
+`make lib` reuses an existing `csuzume` source tree; it does not update the core automatically. To build against a particular Suzume release, check out that release in a separate Suzume repository, then synchronize it into the Go checkout:
+
+```bash
+./sync-upstream.sh --local /path/to/suzume
+make lib
+```
+
+Synchronization replaces the cached core and dictionaries, so the next build uses the selected source. `make sync` instead fetches the upstream default branch.
+
 ## Quick start
 
 The package name is `suzume`. Create an analyzer with `New()`, defer `Close()` so the native handle is released, and iterate over the analyzed morphemes:

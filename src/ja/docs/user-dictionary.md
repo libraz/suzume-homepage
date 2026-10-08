@@ -155,6 +155,26 @@ int main() {
 suzume-cli analyze --dict user.tsv "東京公園を点検する"
 ```
 
+```c [C]
+#include "suzume/suzume_c.h"
+#include <string.h>
+
+int main(void) {
+  suzume_t tokenizer = suzume_create();
+  if (!tokenizer) return 1;
+  const char* source = "東京公園\tNOUN\n点検する\tVERB\tSURU\n";
+  const size_t expanded_count =
+      suzume_load_user_dict_count(tokenizer, source, strlen(source));
+  suzume_destroy(tokenizer);
+  return expanded_count == 0 ? 1 : 0;
+}
+```
+
+```bash [Python CLI]
+# user.tsv には上と同じタブ区切りの行が入っている。
+suzume --dict user.tsv "東京公園を点検する"
+```
+
 :::
 
 Go で展開後エントリ数が必要な場合は `LoadUserDictionaryCount([]byte) (int, error)` を使います。呼び出し元が読み込んだ辞書は `ClearUserDictionaries() error` で消去できます。使用例は [Go API ガイド](/ja/docs/go)を参照してください。
@@ -187,7 +207,7 @@ missing-pos
 
 実行時読み込みの警告は解析器の辞書警告一覧へ追加されます。Node では `dictionaryWarnings`、Python では `dictionary_warnings`、Go では `DictionaryWarnings()`、C++ では `Tokenizer::dictionaryWarnings()`、C では `suzume_dictionary_warning_*` 関数で取得できます。`clearUserDictionaries()` と各言語の対応 API は実行時読み込みの警告を消去しますが、構築時の警告は残します。ネイティブ CLI は現在、`--dict` のソースファイルを処理するときに追加された警告を表示しません。
 
-すべてのデータ行がスキップされた場合は、読み込めるエントリがないため失敗します。未知の品詞、必須フィールドの空欄、不正な UTF-8、従来 CSV の不正なクォート、想定外の空でない列がある場合も、読み込み全体が失敗します。
+すべてのデータ行がスキップされた場合は、読み込めるエントリがないため失敗します。未知の品詞、必須フィールドの空欄、不正な UTF-8、従来 CSV の不正なクォートがある場合も、読み込み全体が失敗します。TSV に想定外の空でない列がある場合も全体を拒否しますが、従来 CSV では 5 列目以降を無視します。
 
 ## 呼び出し元が読み込んだ辞書の消去
 

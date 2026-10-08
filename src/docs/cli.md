@@ -98,7 +98,7 @@ suzume-cli -m split "API開発と高層ビル群"
 | `-f, --format FMT` | Output format: `morpheme`, `tags`, `json`, `tsv`, `chasen` |
 | `-m, --mode MODE` | Analysis mode: `normal`, `search`, `split` |
 | `-d, --dict PATH` | Load user dictionary (can specify multiple) |
-| `--no-lemmatize` | Disable lemmatization (lemmatization is on by default) |
+| `--no-lemmatize` | Disable post-analysis lemma correction; source dictionary lemmas and conjugation/POS annotations remain |
 | `--merge-compounds` | Merge consecutive noun compounds (off by default) |
 | `--normalize-vu` | Normalize ヴ to ビ etc. (default: preserve) |
 | `--lowercase` | Convert ASCII to lowercase (default: preserve) |
@@ -169,7 +169,8 @@ Dictionary management: create, edit, compile, and validate dictionaries.
 suzume-cli dict new user.tsv
 
 # Compile TSV to binary (.dic)
-suzume-cli dict compile user.tsv           # → user.dic
+suzume-cli dict compile user.tsv           # → user.dic; refuses to overwrite
+suzume-cli dict compile user.tsv user.dic  # explicitly replace user.dic
 suzume-cli dict compile user.tsv out.dic   # custom output
 suzume-cli dict compile a.tsv b.tsv out.dic   # merge several inputs into one file
 
