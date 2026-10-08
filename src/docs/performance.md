@@ -8,10 +8,10 @@ The script measures the public JavaScript API, including result decoding. It fir
 
 | | Median |
 |---|---|
-| Create an analyzer in a loaded/shared WASM runtime | 2.179 ms |
-| First analysis after creation | 0.410 ms |
-| Steady-state analysis, per text | 0.272666 ms |
-| Steady-state throughput | 14,669 tokens/sec |
+| Create an analyzer in a loaded/shared WASM runtime | 2.386 ms |
+| First analysis after creation | 0.426 ms |
+| Steady-state analysis, per text | 0.300291 ms |
+| Steady-state throughput | 13,320 tokens/sec |
 
 ```bash
 make build
@@ -20,7 +20,7 @@ make wasm
 node scripts/measure_wasm_metrics.mjs --instances=3 --iterations=500 --samples=5 --warmup=1
 ```
 
-This run was measured on October 7, 2026, using Suzume 0.9.13 (commit `f9d040ca`) on an Apple M5 Max (arm64) with Node v24.21.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
+This run was measured on October 9, 2026, using Suzume 0.9.14 (commit `b0eaf611`) on an Apple M5 Max (arm64) with Node v24.21.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
 
 The playground on [Getting Started](/docs/getting-started) and [How It Works](/docs/how-it-works) runs its own browser measurement on your device and prints the result below the output. The native CLI has a separate benchmark command:
 
@@ -28,7 +28,7 @@ The playground on [Getting Started](/docs/getting-started) and [How It Works](/d
 suzume-cli test benchmark --iterations=500 --samples=5 --warmup=1
 ```
 
-These checks use separate implementations and measurement conditions; compare results within the environment you are testing. The module must arrive before it can run: <WasmSize /> gzipped, loaded once and cached thereafter.
+These checks use separate implementations and measurement conditions; compare results within the environment you are testing. The WASM binary is <WasmSize /> gzipped, loaded once and cached thereafter. This size includes the embedded dictionaries but excludes the JavaScript loader and API files.
 
 ## Boundary agreement on a fixture subset
 
@@ -41,10 +41,10 @@ Suzume is not measured by agreement with MeCab, since the two do not aim to prod
 | Boundary F1 | 0.9998 |
 | Boundary precision / recall | 0.9995 / 1.0000 |
 | Token F1 | 0.9996 |
-| Token precision / recall | 0.9994 / 0.9998 |
-| Sentences segmented exactly | 0.9992 (6,304 / 6,309) |
+| Token precision / recall | 0.9995 / 0.9998 |
+| Sentences segmented exactly | 0.9992 (6,628 / 6,633) |
 
-Scored on October 7, 2026, using Suzume 0.9.13 (commit `f9d040ca`), over 6,309 cases and 22,837 tokens.
+Scored on October 9, 2026, using Suzume 0.9.14 (commit `b0eaf611`), over 6,633 cases and 24,144 tokens.
 
 ```bash
 make dict
