@@ -56,6 +56,10 @@ Prolonged sounds are part of the word they modify. The surface retains the writt
 
 </Why>
 
+Kanji adjective stems also retain expressive spelling: `高ーい` and clipped `高っ` are each one `ADJ` with lemma `高い`. An emphatic internal っ can remain in the lemma: `すっごい` is one `ADJ` with lemma `すっごい`.
+
+A small vowel extending a particle stays with that particle: `のにぃ` is one `PARTICLE` with lemma `のに`. A clipped greeting such as `ありがとっ` is one `INTJ` with lemma `ありがとう`.
+
 ### Emphatic Colloquial Particles
 
 Colloquial emphatic particles are split as single units instead of being fragmented.

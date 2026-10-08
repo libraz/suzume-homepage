@@ -154,30 +154,10 @@ export declare class Suzume {
     private module;
     private handle;
     private cleanupRef;
-    private _analyzeN;
-    private _setMode;
-    private _mode;
-    private _resultFree;
-    private _generateTagsN;
-    private _generateTagsWithOptionsN;
-    private _tagsFree;
-    private _loadUserDictCount;
-    private _loadBinaryDict;
-    private _clearUserDictionaries;
-    private _hasCoreDictionary;
-    private _version;
-    private _lastError;
-    private _lastErrorCode;
-    private _conjugationTypeLabel;
-    private _extendedPosLabel;
-    private _conjugationFormLabel;
-    private _posLabel;
     private readonly _posLabels;
     private readonly _conjugationTypeLabels;
     private readonly _conjugationFormLabels;
     private readonly _extendedPosLabels;
-    private _dictionaryWarningCount;
-    private _dictionaryWarning;
     private layouts;
     private unregisterToken;
     private constructor();
@@ -271,12 +251,14 @@ export declare class Suzume {
     private ensureAlive;
     private withUtf8String;
     private consumeTags;
-    private conjugationTypeLabel;
     private parseResult;
     private parseTags;
     private posLabel;
+    private conjugationTypeLabel;
     private conjugationFormLabel;
     private extendedPosLabel;
+    private cachedLabel;
+    private nativeError;
 }
 export default Suzume;
 /** Return the package version without creating an analyzer handle. */

@@ -99,6 +99,17 @@ Classical adjective continuatives such as 美しかり keep their inflection tog
 
 <TokenDiff input="美しかりけり" mecab="美し(形容詞, lemma: 美しい) / かり(動詞, lemma: かりる) / けり(助動詞)" suzume="美しかり(ADJ, lemma: 美しい) / けり(AUX)" />
 
+### Colloquial Auxiliary Forms
+
+Past conjectural, fused desiderative, and volitional forms retain their auxiliary boundaries:
+
+| Input | Suzume |
+|-------|--------|
+| 食べたろう | `食べ(VERB) / たろ(AUX, lemma: た) / う(AUX)` |
+| 食べてえ | `食べ(VERB) / てえ(AUX, lemma: たい)` |
+| いこう | `いこ(VERB, lemma: いく) / う(AUX)` |
+| ゆこう | `ゆこ(VERB, lemma: ゆく) / う(AUX)` |
+
 ## Function words and grammatical boundaries
 
 ### Closed Compound Particles
@@ -155,7 +166,7 @@ Keeping the noun separate makes it usable as a search term and applies the same 
 
 ### Leading Fixed Units
 
-The determiner わが is split from the following noun. Similar fixed units such as 以下 and 程度 also keep their own token next to adjacent nouns.
+The determiner わが is split from the following noun.
 
 <TokenDiff input="わが国" mecab="わが国(名詞)" suzume="わが(DET) / 国(NOUN)" />
 
@@ -165,7 +176,7 @@ Suzume splits お/ご honorific prefixes from nouns but keeps them merged when t
 
 <TokenDiff input="お茶" mecab="お茶(名詞)" suzume="お(PREFIX) / 茶(NOUN)" note="split — separable prefix" noteJa="分割 — 分離可能な接頭辞" />
 
-Inseparable exceptions (omitted from the diff examples because both MeCab and Suzume keep them as one token) include: お金, お前, おかず, おでん, おもちゃ, おすすめ, おいら, おっさん, お疲れ様, おいで, and family terms (お母さん, お父さん, お兄ちゃん, お姉さん, おじさん, おばさん, おじいさん, おばあさん, etc.)
+Suzume keeps these lexical exceptions whole: お金, お前, おかず, おでん, おもちゃ, おすすめ, おいら, おっさん, お疲れ様, おいで, and family terms (お母さん, お父さん, お兄ちゃん, お姉さん, おじさん, おばさん, おじいさん, おばあさん, etc.). The selected MeCab baseline keeps many of them whole but splits お兄ちゃん and お姉さん after お.
 
 <Why>
 

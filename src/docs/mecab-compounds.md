@@ -247,6 +247,8 @@ Even though Suzume merges kanji compounds aggressively, productive quantity/stat
 
 <TokenDiff input="会議中に" mecab="会議(名詞) / 中(名詞) / に(助詞)" suzume="会議(NOUN) / 中(SUFFIX) / に(PARTICLE)" />
 
+`例年並み` splits as `例年(NOUN) / 並み(SUFFIX)`, and `汗まじり` as `汗(NOUN) / まじり(SUFFIX)`. 中 depends on its host: after an attributive adjective, `忙しい中` gives `忙しい(ADJ) / 中(NOUN)`, with 中 as a formal noun rather than a suffix.
+
 Pure relabeling suffixes with no boundary change, such as the nominalizer さ, are covered in [POS Classification](/docs/pos-differences).
 
 <Why>
