@@ -29,7 +29,9 @@
   --docs-note: #a8b4c7;
 }
 
-html[lang='ja'] {
+/* One sidebar width for both locales (sized for the longer Japanese labels),
+   so the nav search box does not move when the language changes. */
+:root {
   --vp-sidebar-width: 300px;
 }
 
