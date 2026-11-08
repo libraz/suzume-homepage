@@ -1,8 +1,13 @@
 import { MORPHEME_FLAG, posJapanese } from './abi_labels.js';
 import { C_LAYOUTS } from './abi_layout.js';
+const utf8Decoder = new TextDecoder('utf-8');
+/** Byte view over the module heap, derived from HEAPU32 (HEAPU8 may not be exported). */
+export function heapBytes(module) {
+    return new Uint8Array(module.HEAPU32.buffer);
+}
 export function decodeAnalysisResult(module, resultPtr, conjugationTypeLabel, conjugationFormLabel, extendedPosLabel, posLabel) {
     const heapU32 = module.HEAPU32;
-    const heapU8 = new Uint8Array(heapU32.buffer);
+    const heapU8 = heapBytes(module);
     const heapF32 = new Float32Array(heapU32.buffer);
     const resultLayout = C_LAYOUTS.result;
     const morphemeLayout = C_LAYOUTS.morpheme;
@@ -10,8 +15,7 @@ export function decodeAnalysisResult(module, resultPtr, conjugationTypeLabel, co
     const count = heapU32[(resultPtr + resultLayout.count) >> 2];
     const normalizedTextPtr = heapU32[(resultPtr + resultLayout.normalizedText) >> 2];
     const normalizedTextSize = heapU32[(resultPtr + resultLayout.normalizedTextSize) >> 2];
-    const decoder = new TextDecoder();
-    const normalizedText = decoder.decode(new Uint8Array(heapU32.buffer, normalizedTextPtr, normalizedTextSize));
+    const normalizedText = utf8Decoder.decode(new Uint8Array(heapU32.buffer, normalizedTextPtr, normalizedTextSize));
     const utf16Offsets = [0];
     let utf16Offset = 0;
     for (const codePoint of normalizedText) {
@@ -31,9 +35,9 @@ export function decodeAnalysisResult(module, resultPtr, conjugationTypeLabel, co
         const surfaceSize = heapU32[(morphPtr + morphemeLayout.surfaceSize) >> 2];
         const baseFormSize = heapU32[(morphPtr + morphemeLayout.baseFormSize) >> 2];
         morphemes.push({
-            surface: decoder.decode(new Uint8Array(heapU32.buffer, surfacePtr, surfaceSize)),
+            surface: utf8Decoder.decode(new Uint8Array(heapU32.buffer, surfacePtr, surfaceSize)),
             pos: posLabel(posCode),
-            baseForm: decoder.decode(new Uint8Array(heapU32.buffer, baseFormPtr, baseFormSize)),
+            baseForm: utf8Decoder.decode(new Uint8Array(heapU32.buffer, baseFormPtr, baseFormSize)),
             posJa: posJapanese(posCode),
             conjType: conjugates
                 ? conjugationTypeLabel(heapU8[morphPtr + morphemeLayout.conjugationType])
@@ -61,7 +65,7 @@ export function decodeAnalysisResult(module, resultPtr, conjugationTypeLabel, co
 }
 export function decodeTags(module, tagsPtr, posLabel) {
     const heapU32 = module.HEAPU32;
-    const heapU8 = new Uint8Array(heapU32.buffer);
+    const heapU8 = heapBytes(module);
     const layout = C_LAYOUTS.tags;
     const tagsArrayPtr = heapU32[(tagsPtr + layout.tags) >> 2];
     const posArrayPtr = heapU32[(tagsPtr + layout.pos) >> 2];

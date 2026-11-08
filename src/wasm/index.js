@@ -11,7 +11,7 @@
  * ```
  */
 import { C_LAYOUTS } from './abi_layout.js';
-import { decodeAnalysisResult, decodeTags } from './decode.js';
+import { decodeAnalysisResult, decodeTags, heapBytes } from './decode.js';
 export var ErrorCode;
 (function (ErrorCode) {
     ErrorCode[ErrorCode["Success"] = 0] = "Success";
@@ -140,6 +140,38 @@ const registry = new FinalizationRegistry((ref) => {
         ref.handle = 0;
     }
 });
+/** Throws InvalidUtf8 for an unpaired surrogate, which has no UTF-8 encoding. */
+function assertWellFormedUtf16(value) {
+    for (let idx = 0; idx < value.length; idx++) {
+        const codeUnit = value.charCodeAt(idx);
+        if (codeUnit < 0xd800 || codeUnit > 0xdfff) {
+            continue;
+        }
+        if (codeUnit <= 0xdbff) {
+            // charCodeAt past the end is NaN, which no range test admits.
+            const next = value.charCodeAt(idx + 1);
+            if (next >= 0xdc00 && next <= 0xdfff) {
+                idx++;
+                continue;
+            }
+        }
+        throw new SuzumeError('Input contains an unpaired UTF-16 surrogate', ErrorCode.InvalidUtf8);
+    }
+}
+/** Copy a string into freshly malloc'd NUL-terminated UTF-8; the caller frees `pointer`. */
+function allocUtf8(module, value) {
+    assertWellFormedUtf16(value);
+    const byteLength = module.lengthBytesUTF8(value) + 1;
+    const pointer = module._malloc(byteLength);
+    try {
+        module.stringToUTF8(value, pointer, byteLength);
+    }
+    catch (error) {
+        module._free(pointer);
+        throw error;
+    }
+    return { pointer, byteLength };
+}
 /**
  * Suzume instance for Japanese tokenization.
  *
@@ -154,7 +186,6 @@ export class Suzume {
         this._conjugationTypeLabels = new Map();
         this._conjugationFormLabels = new Map();
         this._extendedPosLabels = new Map();
-        this.layouts = C_LAYOUTS;
         this.unregisterToken = {};
         this.module = module;
         this.handle = handle;
@@ -185,7 +216,7 @@ export class Suzume {
                 // defaults before overriding fields. Every field below is written today,
                 // but a field added to the C struct would otherwise be read as garbage.
                 module._suzume_init_extended_options(optionsPtr);
-                const heap = new Uint8Array(module.HEAPU32.buffer);
+                const heap = heapBytes(module);
                 const selectedMode = options.mode ?? EXTENDED_OPTION_DEFAULTS.mode;
                 const modeValue = ANALYSIS_MODE_CODES[selectedMode];
                 if (modeValue === undefined) {
@@ -199,10 +230,15 @@ export class Suzume {
                 if (options.scorerOptions !== undefined) {
                     const scorerJson = typeof options.scorerOptions === 'string'
                         ? options.scorerOptions
-                        : JSON.stringify(options.scorerOptions);
-                    const scorerBytes = module.lengthBytesUTF8(scorerJson) + 1;
-                    scorerOptionsPtr = module._malloc(scorerBytes);
-                    module.stringToUTF8(scorerJson, scorerOptionsPtr, scorerBytes);
+                        : // JSON.stringify escapes a lone surrogate as ASCII, so check each key and string first.
+                            JSON.stringify(options.scorerOptions, (key, value) => {
+                                assertWellFormedUtf16(key);
+                                if (typeof value === 'string') {
+                                    assertWellFormedUtf16(value);
+                                }
+                                return value;
+                            });
+                    scorerOptionsPtr = allocUtf8(module, scorerJson).pointer;
                     module.HEAPU32[(optionsPtr + layout.scorerOptionsJson) >> 2] = scorerOptionsPtr;
                 }
                 handle = module._suzume_create_with_extended_options(optionsPtr);
@@ -260,8 +296,8 @@ export class Suzume {
      */
     analyzeWithNormalizedText(text) {
         this.ensureAlive();
-        return this.withUtf8String(text, (textPtr, textBytes) => {
-            const resultPtr = this.module._suzume_analyze_n(this.handle, textPtr, textBytes - 1);
+        return this.withUtf8String(text, (textPtr, textByteLength) => {
+            const resultPtr = this.module._suzume_analyze_n(this.handle, textPtr, textByteLength);
             if (resultPtr === 0) {
                 throw this.nativeError('analyze failed');
             }
@@ -282,17 +318,17 @@ export class Suzume {
      */
     generateTags(text, options) {
         this.ensureAlive();
-        return this.withUtf8String(text, (textPtr, textBytes) => {
+        return this.withUtf8String(text, (textPtr, textByteLength) => {
             if (options) {
                 const posFilter = resolveTagPosFilter(options);
-                const optionsPtr = this.module._malloc(this.layouts.tagOptions.size);
+                const optionsPtr = this.module._malloc(C_LAYOUTS.tagOptions.size);
                 try {
                     // Same reason as create(): seed the C defaults into freshly malloc'd
                     // memory, including the struct padding the field writes never touch.
                     this.module._suzume_init_tag_options(optionsPtr);
                     const heapU32 = this.module.HEAPU32;
-                    const heapU8 = new Uint8Array(heapU32.buffer);
-                    const layout = this.layouts.tagOptions;
+                    const heapU8 = heapBytes(this.module);
+                    const layout = C_LAYOUTS.tagOptions;
                     heapU8[optionsPtr + layout.posFilter] = posFilter & 0xff;
                     heapU32[(optionsPtr + layout.minLength) >> 2] =
                         options.minLength ?? TAG_OPTION_DEFAULTS.minLength;
@@ -302,13 +338,13 @@ export class Suzume {
                         heapU8[optionsPtr + layout[field]] =
                             (options[field] ?? TAG_OPTION_DEFAULTS[field]) ? 1 : 0;
                     }
-                    return this.consumeTags(this.module._suzume_generate_tags_with_options_n(this.handle, textPtr, textBytes - 1, optionsPtr));
+                    return this.consumeTags(this.module._suzume_generate_tags_with_options_n(this.handle, textPtr, textByteLength, optionsPtr));
                 }
                 finally {
                     this.module._free(optionsPtr);
                 }
             }
-            return this.consumeTags(this.module._suzume_generate_tags_n(this.handle, textPtr, textBytes - 1));
+            return this.consumeTags(this.module._suzume_generate_tags_n(this.handle, textPtr, textByteLength));
         });
     }
     /**
@@ -325,7 +361,7 @@ export class Suzume {
      */
     loadUserDictionaryCount(data) {
         this.ensureAlive();
-        return this.withUtf8String(data, (dataPtr, dataBytes) => this.module._suzume_load_user_dict_count(this.handle, dataPtr, dataBytes - 1));
+        return this.withUtf8String(data, (dataPtr, dataByteLength) => this.module._suzume_load_user_dict_count(this.handle, dataPtr, dataByteLength));
     }
     /**
      * Load user dictionary from string data, throwing with C API details on failure.
@@ -347,10 +383,7 @@ export class Suzume {
         this.ensureAlive();
         const dataPtr = this.module._malloc(data.byteLength);
         try {
-            // Derive Uint8Array view from HEAPU32's underlying buffer (HEAPU8 may not be exported)
-            const heapU32 = this.module.HEAPU32;
-            const heapU8 = new Uint8Array(heapU32.buffer);
-            heapU8.set(data, dataPtr);
+            heapBytes(this.module).set(data, dataPtr);
             return this.module._suzume_load_binary_dict(this.handle, dataPtr, data.byteLength) === 1;
         }
         finally {
@@ -434,24 +467,9 @@ export class Suzume {
         }
     }
     withUtf8String(value, operation) {
-        for (let idx = 0; idx < value.length; idx++) {
-            const codeUnit = value.charCodeAt(idx);
-            if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
-                const next = value.charCodeAt(idx + 1);
-                if (next < 0xdc00 || next > 0xdfff) {
-                    throw new SuzumeError('Input contains an unpaired UTF-16 surrogate', ErrorCode.InvalidUtf8);
-                }
-                idx++;
-            }
-            else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
-                throw new SuzumeError('Input contains an unpaired UTF-16 surrogate', ErrorCode.InvalidUtf8);
-            }
-        }
-        const byteLength = this.module.lengthBytesUTF8(value) + 1;
-        const pointer = this.module._malloc(byteLength);
+        const { pointer, byteLength } = allocUtf8(this.module, value);
         try {
-            this.module.stringToUTF8(value, pointer, byteLength);
-            return operation(pointer, byteLength);
+            return operation(pointer, byteLength - 1);
         }
         finally {
             this.module._free(pointer);

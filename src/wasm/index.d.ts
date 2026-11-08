@@ -158,7 +158,6 @@ export declare class Suzume {
     private readonly _conjugationTypeLabels;
     private readonly _conjugationFormLabels;
     private readonly _extendedPosLabels;
-    private layouts;
     private unregisterToken;
     private constructor();
     /**

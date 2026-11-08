@@ -110,6 +110,12 @@ Past conjectural, fused desiderative, and volitional forms retain their auxiliar
 | いこう | `いこ(VERB, lemma: いく) / う(AUX)` |
 | ゆこう | `ゆこ(VERB, lemma: ゆく) / う(AUX)` |
 
+### Ra-Nuki Potentials
+
+MeCab lists a few ra-nuki potentials such as 見れる as verbs of their own and splits the rest into the verb and the suffix れる. Suzume returns every ra-nuki potential as one `VERB` whose lemma is the potential form.
+
+<TokenDiff input="食べれる" mecab="食べ(動詞) / れる(動詞・接尾)" suzume="食べれる(VERB)" />
+
 ## Function words and grammatical boundaries
 
 ### Closed Compound Particles
@@ -169,6 +175,10 @@ Keeping the noun separate makes it usable as a search term and applies the same 
 The determiner わが is split from the following noun.
 
 <TokenDiff input="わが国" mecab="わが国(名詞)" suzume="わが(DET) / 国(NOUN)" />
+
+The adverb たった is likewise split from the noun 今 that it modifies.
+
+<TokenDiff input="たった今" mecab="たった今(副詞)" suzume="たった(ADV) / 今(NOUN)" />
 
 ### お/ご Prefixes
 

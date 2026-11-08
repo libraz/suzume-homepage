@@ -101,6 +101,10 @@ Mimetics ending in っと are also kept whole as adverbs:
 
 Hiragana repetitions also stay whole as `ADV`, including voiced repetitions such as `はるばる` and `ほのぼの`. Kanji-led repetitions such as `恐る恐る` and `泣き泣き` receive the same tag. A following adverbial と remains separate: `しっとりと` gives `しっとり(ADV) / と(PARTICLE)`.
 
+Before the copula だ or です, a reduplicated kana mimetic is the predicate and is tagged `ADJ`. MeCab tags some of these as adverbs and others as adjectival nouns, depending on the word. Before する or a verb, the same word stays `ADV`, as in `ふわふわした`.
+
+<TokenDiff input="ふわふわだ" mecab="ふわふわ(副詞) / だ(助動詞)" suzume="ふわふわ(ADJ) / だ(AUX)" />
+
 ## Predicates and auxiliaries
 
 ### て-Form Auxiliaries
@@ -290,6 +294,7 @@ The following words are classified differently between MeCab and Suzume:
 | まして | 副詞 | CONJ (接続詞) | Conjunction |
 | いわば | 副詞 | CONJ (接続詞) | Conjunction (言わば) |
 | その後 | 名詞・副詞可能 | ADV (副詞) | Adverb usage |
+| 結局 | 名詞・副詞可能 | ADV / NOUN (文脈依存) | Sentence adverb; `NOUN` before の, as in 結局のところ |
 | しどろもどろ | 名詞・形容動詞語幹 | ADV (副詞) | Adverb usage |
 
 `寒し` is not a broad-POS difference: both analyzers label it as an adjective, and Suzume returns the lemma 寒い.

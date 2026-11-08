@@ -123,7 +123,7 @@ describe('documented JavaScript samples', () => {
     }
 
     const english = pages.flatMap((page) => claimsByPage.get(page) ?? [])
-    expect(english).toHaveLength(122)
+    expect(english).toHaveLength(127)
 
     for (const claim of english) {
       const actual = suzume.analyze(claim.input)

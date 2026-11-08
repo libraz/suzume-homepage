@@ -114,6 +114,10 @@ Cardinal numbers followed by counters or units are normally merged into one quan
 
 <TokenDiff input="3.14" mecab="3 / . / 14" suzume="3.14(NOUN)" />
 
+Digits written with the place units 千, 百 and 十 continue as one numeral.
+
+<TokenDiff input="3千5百人" mecab="3 / 千 / 5 / 百 / 人" suzume="3千5百人(NOUN)" />
+
 Suzume also preserves search-unit boundaries around quantities.
 
 <TokenDiff input="徒歩五分" mecab="徒歩 / 五 / 分" suzume="徒歩 / 五分(NOUN)" />
@@ -122,11 +126,13 @@ Suzume also preserves search-unit boundaries around quantities.
 
 Quantity phrases such as `3種類`, `3人分`, and `3ページ目` stay whole as `NOUN` tokens. A counter does not cut through a following word, and quantity suffixes such as 分 and the ordinal 目 remain part of the quantity.
 
-Comma-grouped numerals stay whole. A following counter remains a separate `SUFFIX`, while a currency amount stays one search unit.
+Comma-grouped numerals stay whole. A following counter remains a separate `SUFFIX`, while a currency amount, a percentage or a storage size stays one search unit, as it does without the commas.
 
 <TokenDiff input="1,000人" mecab="1 / , / 000 / 人" suzume="1,000(NOUN) / 人(SUFFIX)" />
 
 <TokenDiff input="1,000円" mecab="1 / , / 000 / 円" suzume="1,000円(NOUN)" />
+
+<TokenDiff input="1,024MB" mecab="1 / , / 024 / MB" suzume="1,024MB(NOUN)" />
 
 The same merging applies beyond Arabic numerals.
 

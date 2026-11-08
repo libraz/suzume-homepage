@@ -157,7 +157,7 @@ URLs, mentions, and hashtags are treated as atomic identifiers. For a hashtag, t
 
 ### Content Symbols and Punctuation
 
-Currency and unit signs, arrows, mathematical or technical marks, and emoji remain in the default output as `OTHER`. They carry text content and keep the token offsets covering that content. Punctuation-like characters are `SYMBOL` tokens and are omitted by default; enable `preserveSymbols` to keep them.
+Currency and unit signs, arrows, mathematical or technical marks, and emoji remain in the default output as `OTHER`. They carry text content and keep the token offsets covering that content. Punctuation-like characters are `SYMBOL` tokens and are omitted by default; enable `preserveSymbols` to keep them. A bracketed emoticon such as `(^_^)` is one `SYMBOL` token as well, where MeCab returns it as a noun.
 
 | Options | `価格は€50🎉。` |
 |---------|------------------|
