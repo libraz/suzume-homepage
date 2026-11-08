@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress'
+import { defineConfig, type HeadConfig } from 'vitepress'
 import { fileURLToPath, URL } from 'node:url'
 import { generateLlmsTxt, llmsDevPlugin, type LlmsLocale } from './llms'
 import { WASM_GZIP_SIZE, SUZUME_VERSION } from '../src/wasm/metadata'
@@ -10,6 +10,18 @@ const sizeLabelText = WASM_GZIP_SIZE
 
 /** Per-locale structured data and social-card copy. */
 type Locale = 'en' | 'ja'
+
+/** Landing-page title and site-default description; docs pages set their own in frontmatter. */
+const SEO: Record<Locale, { title: string; description: string }> = {
+  en: {
+    title: 'Suzume: Japanese Tokenizer in WebAssembly for the Browser',
+    description: `Split Japanese text into words with part-of-speech tags and lemmas in the browser. The WebAssembly tokenizer is under ${sizeLabelText} gzipped and needs no server.`
+  },
+  ja: {
+    title: 'Suzume - ブラウザで動く日本語トークナイザー',
+    description: `ブラウザで日本語を単語に分割し、品詞と原形を付けるトークナイザーです。形態素解析サーバーも大きな辞書のダウンロードも要らず、WASM バイナリは gzip 後 ${sizeLabelText} 以下。Python・Go・C++ にも対応します。`
+  }
+}
 
 const softwareApplicationJsonLd = (lang: Locale) => ({
   '@context': 'https://schema.org',
@@ -23,34 +35,18 @@ const softwareApplicationJsonLd = (lang: Locale) => ({
     price: '0',
     priceCurrency: 'USD'
   },
-  description: lang === 'ja'
-    ? `ブラウザで動く軽量な日本語トークナイザ。サーバーも外部辞書のセットアップも不要で、WASM バイナリは gzip 後 ${sizeLabelText} 未満。辞書にない語もパターンから候補を生成します。`
-    : `Lightweight Japanese tokenizer that runs in the browser. Unlike MeCab, no server or external dictionary setup is required. Its WebAssembly binary is under ${sizeLabelText} gzipped, with pattern-based unknown-word candidates.`,
-  url: lang === 'ja' ? `${siteUrl}/ja/` : siteUrl,
+  description: SEO[lang].description,
+  url: lang === 'ja' ? `${siteUrl}/ja/` : `${siteUrl}/`,
   downloadUrl: githubUrl,
   softwareVersion: SUZUME_VERSION,
   author: {
     '@type': 'Person',
     name: 'libraz'
   },
-  license: 'https://opensource.org/licenses/Apache-2.0',
-  keywords: lang === 'ja'
-    ? '日本語トークナイザー, 形態素解析, WASM, WebAssembly, 自然言語処理, ブラウザ 形態素解析, クライアントサイド NLP'
-    : 'Japanese tokenizer, morphological analyzer, WASM, WebAssembly, NLP, browser tokenizer, client-side NLP'
+  license: 'https://opensource.org/licenses/Apache-2.0'
 })
 
-const SEO: Record<Locale, { title: string; description: string; keywords: string }> = {
-  en: {
-    title: 'Suzume - Japanese Tokenizer That Works in the Browser',
-    description: `Suzume brings Japanese tokenization to browsers and server runtimes. Its WebAssembly binary is under ${sizeLabelText} gzipped and requires no analysis server.`,
-    keywords: 'Japanese tokenizer, morphological analyzer, WASM, WebAssembly, NLP, natural language processing, browser NLP, client-side tokenizer, lightweight tokenizer'
-  },
-  ja: {
-    title: 'Suzume - ブラウザで動く日本語トークナイザ',
-    description: `Suzume はブラウザとサーバーランタイムに日本語の形態素解析を持ち込みます。WASM バイナリは gzip 後 ${sizeLabelText} 未満で、解析サーバーは要りません。`,
-    keywords: '形態素解析, 日本語, トークナイザー, WASM, WebAssembly, 自然言語処理, 形態素解析 ブラウザ, 日本語 トークナイザー, 軽量 形態素解析, サーバーレス 形態素解析, フロントエンド 日本語処理'
-  }
-}
+const OG_LOCALE: Record<Locale, string> = { en: 'en_US', ja: 'ja_JP' }
 
 /** `ja/docs/foo.md` -> `/ja/docs/foo`, `index.md` -> `/` */
 function routeOf(relativePath: string): string {
@@ -85,18 +81,9 @@ const docsNav = [
     ja: 'コンセプト',
     items: [
       { slug: 'how-it-works', en: 'How It Works', ja: '仕組み' },
+      { slug: 'analysis-modes', en: 'Modes, Offsets, and Normalization', ja: '解析モード・オフセット・正規化' },
+      { slug: 'glossary', en: 'Glossary', ja: '用語集' },
       { slug: 'performance', en: 'Speed and Accuracy', ja: '速度と精度' },
-    ],
-  },
-  {
-    en: 'MeCab Comparison',
-    ja: 'MeCab との比較',
-    items: [
-      { slug: 'mecab-comparison', en: 'Differences from MeCab', ja: 'MeCab との違い' },
-      { slug: 'mecab-compounds', en: 'Compounds, Quantities, and Names', ja: '複合語・数量・名前' },
-      { slug: 'mecab-grammar', en: 'Verbs and Grammar', ja: '動詞・文法表現' },
-      { slug: 'mecab-text', en: 'Text and Notation', ja: '表記・技術テキスト' },
-      { slug: 'pos-differences', en: 'POS Classification', ja: 'POS 分類の違い' },
     ],
   },
   {
@@ -112,8 +99,19 @@ const docsNav = [
     ],
   },
   {
-    en: 'Advanced',
-    ja: '発展',
+    en: 'MeCab Comparison',
+    ja: 'MeCab との比較',
+    items: [
+      { slug: 'mecab-comparison', en: 'Differences from MeCab', ja: 'MeCab との違い' },
+      { slug: 'mecab-compounds', en: 'Compounds, Quantities, and Names', ja: '複合語・数量・名前' },
+      { slug: 'mecab-grammar', en: 'Verbs and Grammar', ja: '動詞・文法表現' },
+      { slug: 'mecab-text', en: 'Text and Notation', ja: '表記・技術テキスト' },
+      { slug: 'pos-differences', en: 'POS Classification', ja: '品詞分類の違い' },
+    ],
+  },
+  {
+    en: 'Build & Contribute',
+    ja: 'ビルドと開発',
     items: [
       { slug: 'native-build', en: 'Native Build', ja: 'ネイティブビルド' },
       { slug: 'testing', en: 'Testing Guide', ja: 'テストガイド' },
@@ -176,10 +174,15 @@ const LLMS_LOCALES: LlmsLocale[] = [
 export default defineConfig({
   srcDir: 'src',
 
-  title: 'Suzume - Japanese Tokenizer for the Browser',
-  description: `Lightweight Japanese tokenizer for browsers and server runtimes. The WebAssembly binary is under ${sizeLabelText} gzipped and includes compact dictionaries plus pattern-based unknown-word candidates.`,
+  title: SEO.en.title,
+  description: SEO.en.description,
+  // Docs pages read `<page title> | Suzume`; the landing page opts out in transformPageData.
+  titleTemplate: 'Suzume',
 
-  // Sitemap
+  // Extension-less URLs, so sitemap entries match the canonical links (Cloudflare
+  // Pages redirects `.html` to the bare path).
+  cleanUrls: true,
+
   sitemap: {
     hostname: siteUrl
   },
@@ -196,7 +199,7 @@ export default defineConfig({
   },
 
   // Locale-independent only. Everything that differs per page or per language
-  // (canonical, OGP, keywords, JSON-LD) is emitted from transformHead below.
+  // (canonical, OGP, hreflang, JSON-LD) is emitted from transformHead below.
   head: [
     ['meta', { name: 'theme-color', content: '#3B82F6' }],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
@@ -214,29 +217,31 @@ export default defineConfig({
     ['meta', { name: 'twitter:image', content: `${siteUrl}/og-image.png` }],
   ],
 
-  transformHead({ pageData, description }) {
+  transformHead({ pageData, title, description }) {
+    // The 404 page has no canonical URL or language alternate.
+    if (pageData.isNotFound || pageData.relativePath === '404.md') return []
+
     const lang = localeOf(pageData.relativePath)
-    const seo = SEO[lang]
     const url = `${siteUrl}${routeOf(pageData.relativePath)}`
     const altLang: Locale = lang === 'ja' ? 'en' : 'ja'
     const altUrl = `${siteUrl}${alternateRoute(pageData.relativePath)}`
-    const title = pageData.frontmatter.title || seo.title
-    const desc = description || seo.description
+    const isHome = pageData.frontmatter.layout === 'home'
 
     return [
       ['link', { rel: 'canonical', href: url }],
-      ['meta', { name: 'keywords', content: seo.keywords }],
       ['meta', { property: 'og:title', content: title }],
-      ['meta', { property: 'og:description', content: desc }],
+      ['meta', { property: 'og:description', content: description }],
       ['meta', { property: 'og:url', content: url }],
-      ['meta', { property: 'og:locale', content: lang }],
-      ['meta', { property: 'og:locale:alternate', content: altLang }],
+      ['meta', { property: 'og:locale', content: OG_LOCALE[lang] }],
+      ['meta', { property: 'og:locale:alternate', content: OG_LOCALE[altLang] }],
       ['meta', { name: 'twitter:title', content: title }],
-      ['meta', { name: 'twitter:description', content: desc }],
+      ['meta', { name: 'twitter:description', content: description }],
       ['link', { rel: 'alternate', hreflang: lang, href: url }],
       ['link', { rel: 'alternate', hreflang: altLang, href: altUrl }],
       ['link', { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl}${routeOf(pageData.relativePath.replace(/^ja\//, ''))}` }],
-      ['script', { type: 'application/ld+json' }, JSON.stringify(softwareApplicationJsonLd(lang))],
+      ...(isHome
+        ? [['script', { type: 'application/ld+json' }, JSON.stringify(softwareApplicationJsonLd(lang))] as HeadConfig]
+        : []),
     ]
   },
 
@@ -248,8 +253,8 @@ export default defineConfig({
     ja: {
       label: '日本語',
       lang: 'ja',
-      title: 'Suzume - ブラウザで動く日本語トークナイザー',
-      description: `ブラウザで動く軽量日本語トークナイザー。MeCabや外部辞書のセットアップ、サーバーは不要。WASM バイナリは gzip 後 ${sizeLabelText} 以下でフロントエンド完結。`,
+      title: SEO.ja.title,
+      description: SEO.ja.description,
       themeConfig: {
         siteTitle: 'Suzume',
         nav: [
@@ -278,6 +283,64 @@ export default defineConfig({
       { icon: 'github', link: githubUrl }
     ],
 
+    // Local search; per-locale strings live under options.locales. The default
+    // tokenizer splits on whitespace, which leaves Japanese text unsearchable,
+    // so CJK runs are indexed and queried as overlapping character bigrams.
+    // Both functions must stay self-contained: VitePress serializes them into
+    // the client bundle for query-time use.
+    search: {
+      provider: 'local',
+      options: {
+        miniSearch: {
+          options: {
+            tokenize: (text: string) => {
+              const tokens: string[] = []
+              const pattern = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々〆]+|[\p{Script=Latin}\p{N}_]+/gu
+              for (const match of text.toLowerCase().matchAll(pattern)) {
+                const chars = Array.from(match[0])
+                if (/^[\p{Script=Latin}\p{N}_]/u.test(match[0]) || chars.length < 2) {
+                  tokens.push(match[0])
+                  continue
+                }
+                for (let index = 0; index < chars.length - 1; index++) {
+                  tokens.push(chars[index] + chars[index + 1])
+                }
+              }
+              return tokens
+            }
+          },
+          searchOptions: {
+            combineWith: 'AND',
+            fuzzy: (term: string) => (/^[\x20-\x7e]+$/.test(term) ? 0.2 : false),
+            // A one-character CJK query can only match bigrams by prefix.
+            prefix: (term: string) => /^[\x20-\x7e]+$/.test(term) || Array.from(term).length === 1
+          }
+        },
+        locales: {
+          root: {
+            translations: {
+              button: { buttonText: 'Search', buttonAriaLabel: 'Search docs' },
+              modal: {
+                noResultsText: 'No results for',
+                resetButtonTitle: 'Reset search',
+                footer: { selectText: 'to select', navigateText: 'to navigate', closeText: 'to close' }
+              }
+            }
+          },
+          ja: {
+            translations: {
+              button: { buttonText: '検索', buttonAriaLabel: 'ドキュメント内検索' },
+              modal: {
+                noResultsText: '一致する結果がありません',
+                resetButtonTitle: '検索をリセット',
+                footer: { selectText: '選択', navigateText: '移動', closeText: '閉じる' }
+              }
+            }
+          }
+        }
+      }
+    },
+
     footer: {
       message: 'a personal project by <a href="https://libraz.net" target="_blank" rel="noopener">libraz</a>'
     }
@@ -302,6 +365,9 @@ export default defineConfig({
     }
 
     injectWasmSize(pageData.frontmatter)
+
+    // The landing page's title is the locale's full site title, without the docs suffix.
+    if (pageData.frontmatter.layout === 'home') pageData.titleTemplate = false
   },
 
   markdown: {
