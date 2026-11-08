@@ -9,17 +9,17 @@ description: "専門用語を 1 トークンのまま扱う、品詞や原形を
 
 ## クイックスタート
 
-辞書がない状態では、`量子もつれ` は 2 つのトークンに分かれます。TSV を 1 行登録すると 1 トークンになります。
+辞書がない状態では、`生成AI` は 2 つのトークンに分かれます。TSV を 1 行登録すると 1 トークンになります。
 
 ```typescript
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
-const show = () => suzume.analyze('量子もつれを観測した').map((m) => m.surface).join(' | ')
+const show = () => suzume.analyze('生成AIで要約した').map((m) => m.surface).join(' | ')
 
-console.log(show()) // 量子 | もつれ | を | 観測 | し | た
-suzume.loadUserDictionary('量子もつれ\tNOUN\n')
-console.log(show()) // 量子もつれ | を | 観測 | し | た
+console.log(show()) // 生成 | AI | で | 要約 | し | た
+suzume.loadUserDictionary('生成AI\tNOUN\n')
+console.log(show()) // 生成AI | で | 要約 | し | た
 suzume.destroy()
 ```
 
@@ -45,7 +45,7 @@ surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
 次の例は、名詞、活用形を展開する動詞、原形を明示した名詞を 1 行ずつ登録します。
 
 ```tsv
-量子もつれ	NOUN
+生成AI	NOUN
 もふる	VERB	GODAN_RA
 スマホ	NOUN		スマートフォン
 ```
@@ -54,7 +54,7 @@ surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
 
 | 行 | 文 | 行なし | 行あり |
 |----|----|--------|--------|
-| `量子もつれ` `NOUN` | 量子もつれを観測した | 量子 / もつれ / を / 観測 / し / た | 量子もつれ / を / 観測 / し / た |
+| `生成AI` `NOUN` | 生成AIで要約した | 生成 / AI / で / 要約 / し / た | 生成AI / で / 要約 / し / た |
 | `もふる` `VERB` `GODAN_RA` | 猫をもふった | 猫 / を / も / ふっ / た | 猫 / を / もふっ / た（`もふっ` の原形は `もふる`） |
 | `スマホ` `NOUN`（原形 `スマートフォン`） | スマホを買った | `スマホ` の原形は `スマホ` | `スマホ` の原形は `スマートフォン` |
 
@@ -132,7 +132,7 @@ surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
 従来の 3 列 CSV 形式も引き続き受け付けます。
 
 ```csv
-量子もつれ,NOUN,5000
+生成AI,NOUN,5000
 ```
 
 3 列目は互換性のために残されたコスト列です。Suzume はこの値を無視するため、照合の優先度は変わりません。新しい辞書は TSV で作り、活用形を展開する場合は `conj_type` を指定してください。
@@ -147,7 +147,7 @@ surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
-const source = '量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n'
+const source = '生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n'
 
 try {
   const expandedCount = suzume.loadUserDictionaryCount(source)
@@ -162,7 +162,7 @@ try {
 ```python [Python]
 from suzume import Suzume
 
-source = "量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n"
+source = "生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n"
 
 with Suzume() as suzume:
     expanded_count = suzume.load_user_dict(source)
@@ -184,7 +184,7 @@ func main() {
 	}
 	defer analyzer.Close()
 
-	source := []byte("量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n")
+	source := []byte("生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n")
 	if _, err := analyzer.LoadUserDictionaryCount(source); err != nil {
 		log.Fatal(err)
 	}
@@ -199,7 +199,7 @@ func main() {
 int main() {
   suzume::Tokenizer tokenizer;
   const std::size_t expanded_count =
-      tokenizer.loadUserDictionaryCount("量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n");
+      tokenizer.loadUserDictionaryCount("生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n");
   return expanded_count == 0 ? 1 : 0;
 }
 ```
@@ -211,7 +211,7 @@ int main() {
 int main(void) {
   suzume_t tokenizer = suzume_create();
   if (!tokenizer) return 1;
-  const char* source = "量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n";
+  const char* source = "生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n";
   const size_t expanded_count =
       suzume_load_user_dict_count(tokenizer, source, strlen(source));
   suzume_destroy(tokenizer);
@@ -222,8 +222,8 @@ int main(void) {
 ```bash [CLI]
 # user.tsv には上と同じタブ区切りの行が入っている。
 # --dict は繰り返し指定でき、コンパイル済みの .dic も受け付ける。
-suzume --dict user.tsv "量子もつれを観測した"                 # Python ホイール
-suzume-cli analyze --dict user.tsv "量子もつれを観測した"     # ネイティブ CLI
+suzume --dict user.tsv "生成AIで要約した"                 # Python ホイール
+suzume-cli analyze --dict user.tsv "生成AIで要約した"     # ネイティブ CLI
 ```
 
 :::
@@ -249,7 +249,7 @@ suzume-cli analyze --dict user.tsv "量子もつれを観測した"     # ネイ
 
 ```text
 missing-pos
-量子もつれ	NOUN
+生成AI	NOUN
 ```
 
 レコードは解析できても、登録時に拒否される場合があります。たとえば表層形が 255 バイトを超える場合です。別の展開エントリを 1 件以上登録できれば、該当エントリを警告付きでスキップして読み込みを続けます。展開エントリがすべて拒否されると読み込みは失敗します。不正な UTF-8 は解析エラーなので、読み込み全体が失敗します。

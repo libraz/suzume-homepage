@@ -9,17 +9,17 @@ Use a [user dictionary](/docs/glossary#user-dictionary) when a domain-specific w
 
 ## Quick Start
 
-Without a dictionary, `量子もつれ` (quantum entanglement) splits into two tokens. One TSV row joins it:
+Without a dictionary, `生成AI` (generative AI) splits into two tokens. One TSV row joins it:
 
 ```typescript
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
-const show = () => suzume.analyze('量子もつれを観測した').map((m) => m.surface).join(' | ')
+const show = () => suzume.analyze('生成AIで要約した').map((m) => m.surface).join(' | ')
 
-console.log(show()) // 量子 | もつれ | を | 観測 | し | た
-suzume.loadUserDictionary('量子もつれ\tNOUN\n')
-console.log(show()) // 量子もつれ | を | 観測 | し | た
+console.log(show()) // 生成 | AI | で | 要約 | し | た
+suzume.loadUserDictionary('生成AI\tNOUN\n')
+console.log(show()) // 生成AI | で | 要約 | し | た
 suzume.destroy()
 ```
 
@@ -45,7 +45,7 @@ surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
 This example registers a noun, a verb whose forms are expanded, and a noun with an explicit lemma, one per row:
 
 ```tsv
-量子もつれ	NOUN
+生成AI	NOUN
 もふる	VERB	GODAN_RA
 スマホ	NOUN		スマートフォン
 ```
@@ -54,7 +54,7 @@ Each row changes the analysis of a sentence:
 
 | Row | Sentence | Without the row | With the row |
 |-----|----------|-----------------|--------------|
-| `量子もつれ` `NOUN` | 量子もつれを観測した | 量子 / もつれ / を / 観測 / し / た | 量子もつれ / を / 観測 / し / た |
+| `生成AI` `NOUN` | 生成AIで要約した | 生成 / AI / で / 要約 / し / た | 生成AI / で / 要約 / し / た |
 | `もふる` `VERB` `GODAN_RA` | 猫をもふった | 猫 / を / も / ふっ / た | 猫 / を / もふっ / た (`もふっ` has lemma `もふる`) |
 | `スマホ` `NOUN` (lemma `スマートフォン`) | スマホを買った | `スマホ` has lemma `スマホ` | `スマホ` has lemma `スマートフォン` |
 
@@ -132,7 +132,7 @@ A wrong pick fails silently: the row loads with no error and no warning, but exp
 The legacy three-column CSV form remains accepted:
 
 ```csv
-量子もつれ,NOUN,5000
+生成AI,NOUN,5000
 ```
 
 Its third field is a compatibility cost column. Suzume ignores the value; it cannot change matching priority. Write new dictionaries in TSV and use `conj_type` when inflection expansion is required.
@@ -147,7 +147,7 @@ Each successful call adds another source or binary dictionary to the same instan
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
-const source = '量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n'
+const source = '生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n'
 
 try {
   const expandedCount = suzume.loadUserDictionaryCount(source)
@@ -162,7 +162,7 @@ try {
 ```python [Python]
 from suzume import Suzume
 
-source = "量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n"
+source = "生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n"
 
 with Suzume() as suzume:
     expanded_count = suzume.load_user_dict(source)
@@ -184,7 +184,7 @@ func main() {
 	}
 	defer analyzer.Close()
 
-	source := []byte("量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n")
+	source := []byte("生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n")
 	if _, err := analyzer.LoadUserDictionaryCount(source); err != nil {
 		log.Fatal(err)
 	}
@@ -199,7 +199,7 @@ func main() {
 int main() {
   suzume::Tokenizer tokenizer;
   const std::size_t expanded_count =
-      tokenizer.loadUserDictionaryCount("量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n");
+      tokenizer.loadUserDictionaryCount("生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n");
   return expanded_count == 0 ? 1 : 0;
 }
 ```
@@ -211,7 +211,7 @@ int main() {
 int main(void) {
   suzume_t tokenizer = suzume_create();
   if (!tokenizer) return 1;
-  const char* source = "量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n";
+  const char* source = "生成AI\tNOUN\nもふる\tVERB\tGODAN_RA\n";
   const size_t expanded_count =
       suzume_load_user_dict_count(tokenizer, source, strlen(source));
   suzume_destroy(tokenizer);
@@ -222,8 +222,8 @@ int main(void) {
 ```bash [CLI]
 # user.tsv contains the same tab-separated rows.
 # --dict is repeatable and also accepts compiled .dic files.
-suzume --dict user.tsv "量子もつれを観測した"                 # Python wheel
-suzume-cli analyze --dict user.tsv "量子もつれを観測した"     # native CLI
+suzume --dict user.tsv "生成AIで要約した"                 # Python wheel
+suzume-cli analyze --dict user.tsv "生成AIで要約した"     # native CLI
 ```
 
 :::
@@ -249,7 +249,7 @@ Runtime source loading skips a record with fewer than two fields. If another row
 
 ```text
 missing-pos
-量子もつれ	NOUN
+生成AI	NOUN
 ```
 
 An entry can also be parsed successfully and then rejected during installation, for example when its surface exceeds the 255-byte limit. Such expanded entries are skipped with a warning when at least one other entry installs. If every expanded entry is rejected, the load fails. Invalid UTF-8 is a parse error and rejects the whole load instead.
