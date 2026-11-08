@@ -8,10 +8,10 @@ The script measures the public JavaScript API, including result decoding. It fir
 
 | | Median |
 |---|---|
-| Create an analyzer in a loaded/shared WASM runtime | 2.386 ms |
-| First analysis after creation | 0.426 ms |
-| Steady-state analysis, per text | 0.300291 ms |
-| Steady-state throughput | 13,320 tokens/sec |
+| Create an analyzer in a loaded/shared WASM runtime | 2.263 ms |
+| First analysis after creation | 0.439 ms |
+| Steady-state analysis, per text | 0.290876 ms |
+| Steady-state throughput | 13,751 tokens/sec |
 
 ```bash
 make build
@@ -20,7 +20,7 @@ make wasm
 node scripts/measure_wasm_metrics.mjs --instances=3 --iterations=500 --samples=5 --warmup=1
 ```
 
-This run was measured on October 9, 2026, using Suzume 0.9.14 (commit `b0eaf611`) on an Apple M5 Max (arm64) with Node v24.21.0 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
+This run was measured on November 8, 2026, using Suzume 0.9.15 (commit `5f9a8b50`) on an Apple M5 Max (arm64) with Node v24.22.1 and the script's three built-in short texts. Pass `--corpus=/path/to/corpus.txt` to measure another input set. These are Node measurements; they do not predict browser or phone timings.
 
 The playground on [Getting Started](/docs/getting-started) and [How It Works](/docs/how-it-works) runs its own browser measurement on your device and prints the result below the output. The native CLI has a separate benchmark command:
 
@@ -39,12 +39,12 @@ Suzume is not measured by agreement with MeCab, since the two do not aim to prod
 | | Score |
 |---|---|
 | Boundary F1 | 0.9998 |
-| Boundary precision / recall | 0.9995 / 1.0000 |
+| Boundary precision / recall | 0.9996 / 1.0000 |
 | Token F1 | 0.9996 |
 | Token precision / recall | 0.9995 / 0.9998 |
-| Sentences segmented exactly | 0.9992 (6,628 / 6,633) |
+| Sentences segmented exactly | 0.9993 (6,884 / 6,889) |
 
-Scored on October 9, 2026, using Suzume 0.9.14 (commit `b0eaf611`), over 6,633 cases and 24,144 tokens.
+Scored on November 8, 2026, using Suzume 0.9.15 (commit `5f9a8b50`), over 6,889 cases and 25,286 tokens.
 
 ```bash
 make dict
