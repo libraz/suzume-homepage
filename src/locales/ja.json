@@ -1,54 +1,53 @@
 {
   "homeHero": {
-    "ariaLabel": "リリース状況と主要スペック",
+    "ariaLabel": "インストールと主な仕様",
+    "runtimeLabel": "ランタイム",
+    "copy": "コピー",
+    "copied": "コピー済み",
+    "guideLink": "手順を読む",
+    "notes": {
+      "js": "ブラウザ、Node.js、Deno、Bun で動きます。ほかのパッケージマネージャーと CDN 版は手順のページで扱います。",
+      "python": "Linux x86_64 または macOS arm64 の CPython 3.10 以上に対応します。wheel には suzume コマンドも入っています。",
+      "go": "cgo を有効にした Go 1.26 以上が必要です。先に C ライブラリをビルドし、モジュールからそのチェックアウトを参照します。",
+      "cpp": "ライブラリとヘッダーを /usr/local にインストールします。場所は PREFIX で変えられます。"
+    },
+    "sizeLabel": "WASM（gzip 後）",
+    "sizeNote": "未圧縮では {n} KiB、辞書を含む",
+    "runtimesLabel": "対応ランタイム",
+    "licenseLabel": "ライセンス",
+    "licenseNote": "ソースと Issue は GitHub で公開",
+    "releaseLabel": "リリース",
     "beta": "Beta",
-    "openSource": "オープンソース",
-    "gzipLabel": "gzip 後の WASM バイナリ",
-    "rawNote": "未圧縮の WASM バイナリ {n}KiB",
-    "clientLabel": "クライアント完結",
-    "clientNote": "サーバー・API 不要",
-    "runtimesLabel": "ランタイム"
+    "buildNote": "ビルド {hash}",
+    "benchLabel": "計測",
+    "benchLink": "速度と精度（計測条件つき）"
   },
   "features": {
     "eyebrow": "特徴",
     "heading": "フロントエンドのための設計",
-    "subheading": "サーバー・辞書・プライバシーの負担なしに、クライアント側で日本語をトークナイズできます。",
     "items": {
-      "size": {
-        "title": "小さなフットプリント",
-        "desc": "WASM バイナリは内蔵辞書を含めて gzip 後 {size} 以下です。数十 MB の辞書を取得・配信する必要がありません。"
-      },
       "client": {
-        "title": "クライアント完結の設計",
-        "desc": "ブラウザやランタイム上だけで動作します。トークナイズ用のサーバーも API 往復も CORS 設定も不要です。"
-      },
-      "privacy": {
-        "title": "テキストは手元に残る",
-        "desc": "解析は端末内で完結し、入力がブラウザの外に出ません。機微なテキストを自社インフラに預けずに済みます。"
+        "title": "クライアント完結・同期 API",
+        "desc": "ブラウザやアプリのプロセス内で動き、analyze() は同期で結果を返します。入力文は端末の外に出ず、トークン化用のサーバーもネットワーク往復も CORS 設定も要りません。"
       },
       "unknown": {
         "title": "未知語に強い",
         "desc": "コンパクトな辞書と文字種・文法のパターンを組み合わせ、辞書にない語も解析します。"
       },
-      "realtime": {
-        "title": "同期 API",
-        "desc": "同期 API でテキストを解析します。処理は手元で完結し、ネットワーク往復は発生しません。"
-      },
-      "typed": {
-        "title": "型付き・マルチランタイム",
-        "desc": "TypeScript の型を完備した C++ コア。Python・Go・ネイティブ C/C++ で、バックエンド・バッチ・組み込みにも使えます。"
+      "userDict": {
+        "title": "実行時のユーザー辞書",
+        "desc": "製品名や専門用語を TSV 文字列から実行時に読み込めます。再ビルドも辞書のコンパイルも不要で、clearUserDictionaries() で取り除けます。"
       }
     }
   },
   "comparison": {
     "eyebrow": "比較",
     "title": "Suzume の立ち位置",
-    "subtitle": "TinySegmenter の軽さと、MeCab に近い詳しさ。Suzume はその中間に位置します。",
+    "subtitle": "単純な分かち書きより詳しく、辞書ベースの解析器よりずっと小さいサイズで動きます。Suzume はその中間に位置します。",
     "feature": "機能",
     "browserRun": "ブラウザ動作",
     "dictionary": "外部辞書の準備",
     "bundleSize": "バンドルサイズ",
-    "serverFree": "サーバー不要",
     "unknownWords": "未知語対応",
     "posInfo": "品詞情報",
     "lemma": "原形復元",
@@ -58,25 +57,28 @@
     "bundled": "同梱",
     "required": "必須",
     "na": "N/A",
-    "light": "軽量",
-    "accurate": "高精度",
+    "small": "小さい",
+    "largeDict": "10 MB 以上",
     "builtIn": "標準",
+    "noDict": "辞書なし",
+    "fullDict": "フル辞書",
+    "segmenters": "軽量な分かち書きライブラリ",
+    "jsAnalyzers": "JS 製の辞書ベースの解析器",
     "guideTitle": "比較表だけでは見えない、設計思想の違い",
     "guideDescription": "分割単位・辞書への依存・未知語処理を具体例で解説します。",
-    "guideLink": "MeCabとの違いを読む",
+    "guideLink": "MeCab との違いを読む",
     "perfTitle": "速度と精度は？",
-    "perfDescription": "1回あたりのレイテンシ、初期化コスト、そして精度の数値が何を測っていて何を測っていないか。",
+    "perfDescription": "1 回あたりのレイテンシ、初期化コスト、そして精度の数値が何を測っていて何を測っていないか。",
     "perfLink": "速度と精度を読む"
   },
   "useCase": {
     "eyebrow": "プレイグラウンド",
     "title": "自分のテキストで試す",
-    "subtitle": "日常文・口語・方言・古語の例文を選ぶか、手元の文章を貼り付けて試せます。処理はブラウザ内で完結します。",
     "tagGen": "タグ生成",
-    "baseFormTab": "正規化",
+    "baseFormTab": "原形",
     "analyzeTab": "トークン化",
     "tagTitle": "キーワード自動抽出",
-    "tagDesc": "ブログ記事や商品説明からハッシュタグを自動生成",
+    "tagDesc": "ブログ記事や商品説明からハッシュタグを生成します。",
     "tagPlaceholder": "文章を入力してください...",
     "extractedTags": "抽出されたタグ",
     "excludeBasic": "基本動詞を除外",
@@ -84,20 +86,20 @@
     "noTags": "タグが見つかりません",
     "copyTags": "コピー",
     "copied": "コピー済み",
-    "baseTitle": "活用形 → 正規化形",
-    "baseDesc": "動詞・形容詞を辞書形に正規化して検索インデックスに活用",
+    "baseTitle": "活用形 → 原形",
+    "baseDesc": "動詞・形容詞を原形に戻し、検索インデックスに使えます。",
     "basePlaceholder": "活用形を含む文章を入力...",
     "surface": "表層形",
-    "baseForm": "正規化形",
+    "baseForm": "原形",
     "pos": "品詞",
-    "analyzeTitle": "トークン化デモ",
-    "analyzeDesc": "日本語テキストをトークン（言語単位）に分解",
+    "analyzeTitle": "トークン化",
+    "analyzeDesc": "日本語テキストをトークンに分け、品詞と原形を付けます。",
     "analyzePlaceholder": "日本語を入力してください...",
     "tokens": "トークン",
     "loading": "読み込み中...",
     "examples": "例文",
     "tagExamples": {
-      "sns": "SNS投稿",
+      "sns": "SNS 投稿",
       "tech": "技術記事"
     },
     "baseExamples": {
@@ -115,7 +117,7 @@
   },
   "typewriter": {
     "eyebrow": "ライブ",
-    "title": "読むそばからトークナイズ",
+    "title": "読むそばからトークン化",
     "source": "夏目漱石「吾輩は猫である」より"
   }
 }

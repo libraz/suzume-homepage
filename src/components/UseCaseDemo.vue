@@ -3,6 +3,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { analysisSampleTexts, baseFormSampleTexts, tagSampleTexts } from '@/data/demoSamples'
 import { Suzume, type Morpheme, type Tag } from '@/wasm/index.js'
+import TokenChip from './TokenChip.vue'
+import { posCategory } from './tokenOrigin'
 
 const { t, isJa } = useI18n()
 
@@ -67,6 +69,11 @@ const excludeBasic = ref(false)
 // Results (computed from watch)
 const extractedTags = ref<Tag[]>([])
 const baseFormResults = ref<{ surface: string; baseForm: string; posJa: string; pos: string }[]>([])
+const tabs = computed(() => [
+  { key: 'analyze' as const, label: t('useCase.analyzeTab') },
+  { key: 'tag' as const, label: t('useCase.tagGen') },
+  { key: 'base' as const, label: t('useCase.baseFormTab') },
+])
 const analyzedMorphemes = ref<Morpheme[]>([])
 
 let suzume: Suzume | null = null
@@ -101,7 +108,7 @@ function analyzeForBaseForm(text: string) {
       surface: m.surface,
       baseForm: m.baseForm,
       posJa: m.posJa,
-      pos: m.pos.toLowerCase()
+      pos: m.pos
     }))
 }
 
@@ -165,23 +172,6 @@ function setAnalyzeExample(text: string) {
   analyzeInput.value = text
 }
 
-// POS color mapping
-function getPosColor(pos: string): string {
-  const colors: Record<string, string> = {
-    noun: '#B45309',
-    verb: '#059669',
-    adjective: '#DC2626',
-    adj: '#DC2626',
-    adverb: '#7C3AED',
-    particle: '#0891B2',
-    auxiliary: '#4F46E5',
-    aux: '#4F46E5',
-    symbol: '#6B7280',
-    punct: '#6B7280',
-    other: '#6B7280',
-  }
-  return colors[pos.toLowerCase()] || '#6B7280'
-}
 </script>
 
 <template>
@@ -189,52 +179,41 @@ function getPosColor(pos: string): string {
     <div class="home-section-head">
       <span class="home-eyebrow">{{ t('useCase.eyebrow') }}</span>
       <h2 class="home-heading">{{ t('useCase.title') }}</h2>
-      <p class="home-subheading">{{ t('useCase.subtitle') }}</p>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <span class="spinner"></span>
-      {{ t('useCase.loading') }}
+    <div class="sz-seg tabs" role="tablist">
+      <button
+        v-for="tab in tabs"
+        :key="tab.key"
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === tab.key"
+        @click="activeTab = tab.key"
+      >
+        {{ tab.label }}
+      </button>
     </div>
 
-    <template v-else>
-      <!-- Tabs -->
-      <div class="tabs">
-        <button
-          :class="{ active: activeTab === 'analyze' }"
-          @click="activeTab = 'analyze'"
-        >
-          {{ t('useCase.analyzeTab') }}
-        </button>
-        <button
-          :class="{ active: activeTab === 'tag' }"
-          @click="activeTab = 'tag'"
-        >
-          {{ t('useCase.tagGen') }}
-        </button>
-        <button
-          :class="{ active: activeTab === 'base' }"
-          @click="activeTab = 'base'"
-        >
-          {{ t('useCase.baseFormTab') }}
-        </button>
+    <!-- The panel keeps one size across tabs and the loading state. -->
+    <div class="demo-panel sz-panel sz-demo" role="tabpanel">
+      <div v-if="loading" class="loading-state">
+        <span class="spinner"></span>
+        {{ t('useCase.loading') }}
       </div>
 
-      <!-- Analyze Demo -->
-      <div v-if="activeTab === 'analyze'" class="demo-panel">
+      <template v-else-if="activeTab === 'analyze'">
         <div class="demo-header">
           <h3>{{ t('useCase.analyzeTitle') }}</h3>
           <p>{{ t('useCase.analyzeDesc') }}</p>
         </div>
 
-        <div class="examples-row">
-          <span class="examples-label">{{ t('useCase.examples') }}:</span>
+        <div class="sz-pills examples-row">
           <button
             v-for="ex in analyzeExamples"
             :key="ex.label"
-            class="example-chip"
-            :class="{ active: analyzeInput === ex.text }"
+            type="button"
+            class="sz-pill"
+            :aria-pressed="analyzeInput === ex.text"
             @click="setAnalyzeExample(ex.text)"
           >
             {{ ex.label }}
@@ -243,48 +222,36 @@ function getPosColor(pos: string): string {
 
         <textarea
           v-model="analyzeInput"
+          :aria-label="t('useCase.analyzeTitle')"
           :placeholder="t('useCase.analyzePlaceholder')"
           rows="2"
-          class="demo-input"
+          class="sz-input"
         ></textarea>
 
         <div class="result-section">
           <div class="result-header">
-            <span class="result-label">{{ analyzedMorphemes.length }} {{ t('useCase.tokens') }}</span>
+            <span class="sz-label result-label">{{ analyzedMorphemes.length }} {{ t('useCase.tokens') }}</span>
           </div>
-          <div class="morpheme-strip" v-if="analyzedMorphemes.length > 0">
-            <div
-              v-for="(m, i) in analyzedMorphemes"
-              :key="i"
-              class="morpheme-block"
-              :style="{ '--pos-color': getPosColor(m.pos) }"
-            >
-              <span class="surface">{{ m.surface }}</span>
-              <span class="underline"></span>
-              <span class="chip">
-                <span class="pos">{{ isJa() ? m.posJa : m.pos }}</span>
-                <span class="base" v-if="m.baseForm && m.baseForm !== m.surface">→{{ m.baseForm }}</span>
-              </span>
-            </div>
+          <div v-if="analyzedMorphemes.length > 0" class="sz-tokens">
+            <TokenChip v-for="(m, i) in analyzedMorphemes" :key="i" :morpheme="m" :show-origin="false" />
           </div>
           <div v-else class="no-result">{{ t('useCase.analyzePlaceholder') }}</div>
         </div>
-      </div>
+      </template>
 
-      <!-- Tag Generation Demo -->
-      <div v-if="activeTab === 'tag'" class="demo-panel">
+      <template v-else-if="activeTab === 'tag'">
         <div class="demo-header">
           <h3>{{ t('useCase.tagTitle') }}</h3>
           <p>{{ t('useCase.tagDesc') }}</p>
         </div>
 
-        <div class="examples-row">
-          <span class="examples-label">{{ t('useCase.examples') }}:</span>
+        <div class="sz-pills examples-row">
           <button
             v-for="ex in tagExamples"
             :key="ex.label"
-            class="example-chip"
-            :class="{ active: tagInput === ex.text }"
+            type="button"
+            class="sz-pill"
+            :aria-pressed="tagInput === ex.text"
             @click="setTagExample(ex.text)"
           >
             {{ ex.label }}
@@ -293,57 +260,52 @@ function getPosColor(pos: string): string {
 
         <textarea
           v-model="tagInput"
+          :aria-label="t('useCase.tagTitle')"
           :placeholder="t('useCase.tagPlaceholder')"
-          rows="3"
-          class="demo-input"
+          rows="2"
+          class="sz-input"
         ></textarea>
 
         <div class="result-section">
           <div class="result-header">
-            <span class="result-label">{{ t('useCase.extractedTags') }}</span>
+            <span class="sz-label result-label">{{ t('useCase.extractedTags') }}</span>
             <div class="result-actions">
-              <label class="exclude-basic-toggle" :title="t('useCase.excludeBasicTip')">
-                <input type="checkbox" v-model="excludeBasic" />
+              <label class="sz-check" :title="t('useCase.excludeBasicTip')">
+                <input v-model="excludeBasic" type="checkbox" />
                 <span>{{ t('useCase.excludeBasic') }}</span>
               </label>
-              <button
-                v-if="extractedTags.length > 0"
-                class="copy-btn"
-                :class="{ copied: copiedTags }"
-                @click="copyTags"
-              >
+              <button type="button" class="copy-btn" :disabled="extractedTags.length === 0" @click="copyTags">
                 {{ copiedTags ? t('useCase.copied') : t('useCase.copyTags') }}
               </button>
             </div>
           </div>
-          <div class="tags-container" v-if="extractedTags.length > 0">
+          <div v-if="extractedTags.length > 0" class="tags-container">
             <span
               v-for="tag in extractedTags"
               :key="tag.tag"
               class="tag"
-              :class="tag.pos.toLowerCase()"
+              :data-pos="posCategory(tag.pos)"
             >
               #{{ tag.tag }}
             </span>
           </div>
           <div v-else class="no-result">{{ t('useCase.noTags') }}</div>
         </div>
-      </div>
+      </template>
 
-      <!-- Base Form Demo -->
-      <div v-if="activeTab === 'base'" class="demo-panel">
+      <template v-else>
         <div class="demo-header">
           <h3>{{ t('useCase.baseTitle') }}</h3>
           <p>{{ t('useCase.baseDesc') }}</p>
         </div>
 
-        <div class="examples-row">
-          <span class="examples-label">{{ t('useCase.examples') }}:</span>
+        <div class="sz-pills examples-row">
           <button
             v-for="ex in baseExamples"
             :key="ex.label"
-            class="example-chip"
-            :class="{ active: baseInput === ex.text }"
+            type="button"
+            class="sz-pill"
+            :aria-pressed="baseInput === ex.text"
             @click="setBaseExample(ex.text)"
           >
             {{ ex.label }}
@@ -352,46 +314,62 @@ function getPosColor(pos: string): string {
 
         <textarea
           v-model="baseInput"
+          :aria-label="t('useCase.baseTitle')"
           :placeholder="t('useCase.basePlaceholder')"
-          rows="3"
-          class="demo-input"
+          rows="2"
+          class="sz-input"
         ></textarea>
 
         <div class="result-section">
-          <div class="conversion-list" v-if="baseFormResults.length > 0">
-            <div
-              v-for="(item, i) in baseFormResults"
-              :key="i"
-              class="conversion-item"
-            >
+          <div v-if="baseFormResults.length > 0" class="conversion-list">
+            <div v-for="(item, i) in baseFormResults" :key="i" class="conversion-item">
               <span class="surface">{{ item.surface }}</span>
-              <span class="arrow">→</span>
+              <span class="arrow" aria-hidden="true">→</span>
               <span class="base">{{ item.baseForm }}</span>
-              <span class="pos-badge" :class="item.pos">{{ isJa() ? item.posJa : item.pos }}</span>
+              <span class="pos-badge" :data-pos="posCategory(item.pos)">{{
+                isJa() ? item.posJa : item.pos.toLowerCase()
+              }}</span>
             </div>
           </div>
           <div v-else class="no-result">{{ t('useCase.noTags') }}</div>
         </div>
-      </div>
-
-    </template>
+      </template>
+    </div>
   </section>
 </template>
 
 <style scoped>
-/* Loading */
+.tabs {
+  max-width: 28rem;
+  margin: 0 0 1rem;
+}
+
+.tabs > button {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* Fixed block size: the tallest tab fits, the others leave air, and the
+   result list scrolls inside rather than resizing the panel. */
+.demo-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 25rem;
+}
+
 .loading-state {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  padding: 3rem;
   color: var(--vp-c-text-2);
 }
 
 .spinner {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--vp-c-border);
   border-top-color: var(--vp-c-brand-1);
   border-radius: 50%;
@@ -402,148 +380,52 @@ function getPosColor(pos: string): string {
   to { transform: rotate(360deg); }
 }
 
-/* Tabs - equal-width segmented control */
-.tabs {
-  display: flex;
-  gap: 0.25rem;
-  width: 100%;
-  max-width: 460px;
-  margin: 0 0 1.5rem;
-  padding: 0.25rem;
-  background: var(--vp-c-bg-soft);
-  border: 1px solid var(--vp-c-border);
-  border-radius: 11px;
-}
-
-.tabs button {
-  flex: 1 1 0;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--vp-c-text-2);
-  cursor: pointer;
-  transition: color 0.2s, background-color 0.2s;
-}
-
-.tabs button:hover {
-  color: var(--vp-c-brand-1);
-}
-
-.tabs button.active {
-  background: var(--vp-c-brand-1);
-  color: white;
-}
-
-/* Demo Panel - reserve height so tab switches don't jump the layout */
-.demo-panel {
-  padding: 1.5rem;
-  min-height: 340px;
-  background: var(--vp-c-bg-soft);
-  border: 1px solid var(--vp-c-border);
-  border-radius: 12px;
-}
-
 .demo-header {
   margin-bottom: 1rem;
 }
 
-.demo-header h3 {
-  font-size: 1.1rem;
+.vp-doc .demo-header h3 {
+  margin: 0 0 0.25rem;
+  color: var(--vp-c-text-1);
+  font-size: 1.05rem;
   font-weight: 600;
-  color: var(--vp-c-text-1);
-  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
 }
 
-.demo-header p {
-  font-size: 0.85rem;
-  color: var(--vp-c-text-2);
+.vp-doc .demo-header p {
   margin: 0;
-}
-
-/* Examples */
-.examples-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.examples-label {
-  font-size: 0.8rem;
-  color: var(--vp-c-text-3);
-  font-weight: 500;
-}
-
-.example-chip {
-  padding: 0.25rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 100px;
-  background: var(--vp-c-bg);
   color: var(--vp-c-text-2);
-  cursor: pointer;
-  transition: all 0.2s;
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
-.example-chip:hover {
-  border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
+.examples-row {
+  margin-bottom: 0.75rem;
 }
 
-.example-chip.active {
-  background: var(--vp-c-brand-1);
-  border-color: var(--vp-c-brand-1);
-  color: white;
-}
-
-/* Input */
-.demo-input {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  font-size: 1rem;
-  border: 2px solid var(--vp-c-border);
-  border-radius: 12px;
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-1);
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.5;
-  transition: all 0.2s;
-}
-
-.demo-input:focus {
-  outline: none;
-  border-color: var(--vp-c-brand-1);
-  box-shadow: 0 0 0 3px var(--vp-c-brand-soft);
-}
-
-/* Result Section */
 .result-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   margin-top: 1rem;
   padding: 1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--sz-radius-control);
   background: var(--vp-c-bg);
-  border-radius: 12px;
-  border: 1px solid var(--vp-c-border);
 }
 
 .result-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem 1rem;
   margin-bottom: 0.75rem;
 }
 
 .result-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--vp-c-text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .result-actions {
@@ -552,97 +434,63 @@ function getPosColor(pos: string): string {
   gap: 0.75rem;
 }
 
-.exclude-basic-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
-  color: var(--vp-c-text-2);
-  cursor: pointer;
-  user-select: none;
-}
-
-.exclude-basic-toggle input[type="checkbox"] {
-  accent-color: var(--vp-c-brand-1);
-  cursor: pointer;
-}
-
 .copy-btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 6px;
+  min-width: 4.5rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: calc(var(--sz-radius-control) - 2px);
   background: var(--vp-c-bg-soft);
   color: var(--vp-c-text-2);
+  font-size: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.copy-btn:hover {
-  border-color: var(--vp-c-brand-1);
+.copy-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 50%, var(--vp-c-divider));
   color: var(--vp-c-brand-1);
 }
 
-.copy-btn.copied {
-  background: var(--vp-c-green-soft);
-  border-color: #059669;
-  color: #059669;
+.copy-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
-/* Tags */
 .tags-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .tag {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.9rem;
+  --tok: var(--vp-c-brand-1);
+  padding: 0.3rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--tok) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tok) 10%, var(--vp-c-bg));
+  color: var(--tok);
+  font-size: 0.875rem;
   font-weight: 500;
-  background: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
-  border-radius: 100px;
-  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
 }
 
-.tag.noun, .tag.pronoun {
-  background: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
-  border-color: color-mix(in srgb, var(--vp-c-brand-1) 30%, transparent);
-}
-
-.tag.verb {
-  background: rgba(5, 150, 105, 0.1);
-  color: #059669;
-  border-color: rgba(5, 150, 105, 0.3);
-}
-
-.tag.adjective {
-  background: rgba(220, 38, 38, 0.1);
-  color: #DC2626;
-  border-color: rgba(220, 38, 38, 0.3);
-}
-
-.tag.adverb {
-  background: rgba(124, 58, 237, 0.1);
-  color: #7C3AED;
-  border-color: rgba(124, 58, 237, 0.3);
-}
+.tag[data-pos='verb'],
+.pos-badge[data-pos='verb'] { --tok: var(--sz-pos-verb); }
+.tag[data-pos='adj'],
+.pos-badge[data-pos='adj'] { --tok: var(--sz-pos-adj); }
+.tag[data-pos='adv'],
+.pos-badge[data-pos='adv'] { --tok: var(--sz-pos-adv); }
 
 .no-result {
-  text-align: center;
   padding: 1rem;
   color: var(--vp-c-text-3);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  text-align: center;
 }
 
-/* Base Form Conversion */
 .conversion-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .conversion-item {
@@ -650,14 +498,14 @@ function getPosColor(pos: string): string {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
+  border-radius: calc(var(--sz-radius-control) - 2px);
   background: var(--vp-c-bg-soft);
-  border-radius: 8px;
 }
 
 .conversion-item .surface {
-  font-weight: 600;
+  min-width: 5rem;
   color: var(--vp-c-text-1);
-  min-width: 80px;
+  font-weight: 600;
 }
 
 .conversion-item .arrow {
@@ -665,141 +513,43 @@ function getPosColor(pos: string): string {
 }
 
 .conversion-item .base {
-  font-weight: 600;
+  min-width: 5rem;
   color: var(--vp-c-brand-1);
-  min-width: 80px;
+  font-weight: 600;
 }
 
 .pos-badge {
+  --tok: var(--sz-pos-other);
   margin-left: auto;
-  padding: 0.125rem 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--tok) 28%, transparent);
+  border-radius: var(--sz-radius-chip);
+  background: color-mix(in srgb, var(--tok) 10%, var(--vp-c-bg));
+  color: var(--tok);
   font-size: 0.7rem;
   font-weight: 600;
-  border-radius: 4px;
 }
 
-.pos-badge.verb {
-  background: rgba(5, 150, 105, 0.12);
-  color: #059669;
-}
-
-.pos-badge.adjective,
-.pos-badge.adj {
-  background: rgba(220, 38, 38, 0.12);
-  color: #DC2626;
-}
-
-/* Morpheme Strip (Analyze Tab) - matches TypewriterDemo style */
-.morpheme-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.125rem;
-}
-
-.morpheme-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.morpheme-block .surface {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--vp-c-text-1);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  line-height: 1.3;
-}
-
-.morpheme-block .underline {
-  width: 100%;
-  height: 2px;
-  background: var(--pos-color);
-  margin: 0.2rem 0;
-}
-
-.morpheme-block .chip {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.1rem 0.375rem;
-  background: color-mix(in srgb, var(--pos-color) 10%, var(--vp-c-bg));
-  border: 1px solid color-mix(in srgb, var(--pos-color) 25%, transparent);
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
-.morpheme-block .pos {
-  color: var(--pos-color);
-  font-weight: 500;
-  font-size: 0.65rem;
-}
-
-.morpheme-block .base {
-  color: var(--vp-c-text-3);
-  font-size: 0.6rem;
-}
-
-/* Responsive */
 @media (max-width: 640px) {
-  .tabs button {
-    padding: 0.5rem 0.5rem;
+  .tabs {
+    max-width: none;
+  }
+
+  .tabs > button {
     font-size: 0.8rem;
   }
 
   .demo-panel {
-    padding: 1rem;
-    min-height: 320px;
-    border-radius: 10px;
-  }
-
-  .demo-header h3 {
-    font-size: 1rem;
-  }
-
-  .demo-header p {
-    font-size: 0.8rem;
-  }
-
-  .demo-input {
-    font-size: 0.9rem;
-    padding: 0.75rem;
+    height: 34rem;
   }
 
   .result-section {
     padding: 0.75rem;
   }
 
-  .morpheme-block .surface {
-    font-size: 1.1rem;
-  }
-
-  .morpheme-block .chip {
-    padding: 0.1rem 0.25rem;
-  }
-
-  .morpheme-block .pos {
-    font-size: 0.6rem;
-  }
-
-  .morpheme-block .base {
-    font-size: 0.55rem;
-  }
-
-  .conversion-item {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
   .conversion-item .surface,
   .conversion-item .base {
-    min-width: 60px;
-  }
-
-  .pos-badge {
-    margin-left: 0;
+    min-width: 3.75rem;
   }
 }
 </style>

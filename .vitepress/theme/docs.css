@@ -116,19 +116,18 @@ html[lang='ja'] {
   content: '';
 }
 
-.VPDoc .vp-doc h3,
-.VPDoc .vp-doc h4 {
+.VPDoc .vp-doc :is(h3, h4):not(.sz-demo *) {
   font-family: var(--font-display);
   font-weight: 600;
 }
 
-.VPDoc .vp-doc h3 {
+.VPDoc .vp-doc h3:not(.sz-demo *) {
   margin-top: 2.25rem;
   font-size: 1.18rem;
   letter-spacing: -0.005em;
 }
 
-.VPDoc .vp-doc h4 {
+.VPDoc .vp-doc h4:not(.sz-demo *) {
   margin-top: 1.75rem;
   font-size: 1.02rem;
 }
@@ -145,34 +144,32 @@ html[lang='ja'] {
   opacity: 0.6;
 }
 
-/* Body type */
-.VPDoc .vp-doc p,
-.VPDoc .vp-doc li {
+/* Body type. Live demos (.sz-demo) keep their own compact type. */
+.VPDoc .vp-doc :is(p, li):not(.sz-demo *) {
   font-family: var(--font-reading);
   font-size: 16px;
   font-feature-settings: 'cv05' 1;
   line-height: 1.72;
 }
 
-.VPDoc .vp-doc p {
+.VPDoc .vp-doc p:not(.sz-demo *) {
   margin: 1rem 0;
 }
 
-.VPDoc .vp-doc :is(ul, ol) {
+.VPDoc .vp-doc :is(ul, ol):not(.sz-demo *) {
   padding-left: 1.4rem;
 }
 
-.VPDoc .vp-doc li + li {
+.VPDoc .vp-doc li:not(.sz-demo *) + li {
   margin-top: 0.35rem;
 }
 
-html[lang='ja'] .VPDoc .vp-doc p,
-html[lang='ja'] .VPDoc .vp-doc li {
+html[lang='ja'] .VPDoc .vp-doc :is(p, li):not(.sz-demo *) {
   line-height: 1.9;
   letter-spacing: 0.02em;
 }
 
-html[lang='ja'] .VPDoc .vp-doc :is(h1, h2, h3, h4) {
+html[lang='ja'] .VPDoc .vp-doc :is(h1, h2, h3, h4):not(.sz-demo *) {
   font-feature-settings: 'palt' 1;
   line-height: 1.45;
   letter-spacing: 0;

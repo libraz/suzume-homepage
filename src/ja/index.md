@@ -4,135 +4,43 @@ layout: home
 hero:
   name: Suzume
   text: ブラウザで動く軽量日本語トークナイザー
-  tagline: WebAssembly にコンパイルした軽量トークナイザー。WASM バイナリは gzip 後 __WASM_GZIP_SIZE__ 以下で、サーバーも巨大な辞書もなしにクライアント側だけで動作します。
+  tagline: Web アプリやサービスのための小さな日本語トークナイザーです。gzip 後 __WASM_GZIP_SIZE__ 以下で、サーバーも辞書のダウンロードも要りません。
   actions:
     - theme: brand
-      text: ライブデモを試す
-      link: '#demo'
-    - theme: alt
       text: はじめる
       link: /ja/docs/getting-started
+    - theme: alt
+      text: GitHub で見る
+      link: https://github.com/libraz/suzume
 ---
 
 <HomeHero />
-
-<TypewriterDemo />
-
-<HomeFeatures />
 
 <div id="demo"></div>
 
 <UseCaseDemo />
 
+<HomeFeatures />
+
 <ComparisonTable />
 
 <HomeProse>
 
-## インストール
+<div class="home-split">
+<div>
 
-::: code-group
+## 対象範囲
 
-```bash [npm]
-npm install @libraz/suzume
-```
+Suzume はトークナイザーです。実用的な境界でテキストを分け、複合語や数量表現はまとめたまま、各トークンに品詞と原形を付けます。辞書ベースの解析器と同じ分割を再現することは目指していないため、MeCab 形式のトークンを前提にしたコードでは期待値の見直しが必要です。[使い分けの指針](/ja/docs/how-it-works#when-to-use-which) を参照してください。
 
-```bash [yarn]
-yarn add @libraz/suzume
-```
+</div>
+<div>
 
-```bash [pnpm]
-pnpm add @libraz/suzume
-```
+## オープンソース
 
-```bash [bun]
-bun add @libraz/suzume
-```
+Apache-2.0 ライセンスです。C++ のコア、JavaScript と Python のバインディング、CLI、テストデータは [libraz/suzume](https://github.com/libraz/suzume) に、Go バインディングは [libraz/go-suzume](https://github.com/libraz/go-suzume) にあります。不具合の報告には、入力文と期待したトークンを添えてもらえると最も助かります。ビルド、テスト、CI が検査する設計上の規則は [CONTRIBUTING.md](https://github.com/libraz/suzume/blob/main/CONTRIBUTING.md) にまとめています。
 
-```bash [python (pip)]
-pip install suzume
-```
-
-```bash [Go]
-git clone https://github.com/libraz/go-suzume.git
-cd go-suzume && make lib
-cd /path/to/your/module
-go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
-go get github.com/libraz/go-suzume
-```
-
-```bash [C / C++]
-git clone https://github.com/libraz/suzume.git
-cd suzume && make install
-```
-
-:::
-
-Python 製のサービスやデータパイプラインでは [Python バインディング](/ja/docs/python)、Go では [Go バインディング](/ja/docs/go)、ネイティブ組み込みでは [C / C++ ライブラリ](/ja/docs/cpp)を参照してください。
-
-## 使い方
-
-ライブラリのバインディングは、言語ごとの命名に合わせて同じ解析モデルを公開します。
-
-::: code-group
-
-```typescript [TypeScript]
-import { Suzume } from '@libraz/suzume'
-
-const suzume = await Suzume.create()
-
-try {
-  for (const m of suzume.analyze('東京都に住んでいます')) {
-    console.log(m.surface, m.pos, m.baseForm)
-  }
-} finally {
-  suzume.destroy()
-}
-```
-
-```python [Python]
-from suzume import Suzume
-
-with Suzume() as sz:
-    for m in sz.analyze("東京都に住んでいます"):
-        print(m.surface, m.pos, m.base_form)
-```
-
-```go [Go]
-package main
-
-import (
-  "fmt"
-  "log"
-
-  "github.com/libraz/go-suzume"
-)
-
-func main() {
-  analyzer, err := suzume.New()
-  if err != nil {
-    log.Fatal(err)
-  }
-  defer analyzer.Close()
-
-  for _, m := range analyzer.Analyze("東京都に住んでいます") {
-    fmt.Println(m.Surface, m.POS, m.BaseForm)
-  }
-}
-```
-
-```cpp [C++]
-#include "suzume/suzume.hpp"
-#include <cstdio>
-
-int main() {
-  suzume::Tokenizer tokenizer;
-  for (const suzume::Morpheme& m : tokenizer.analyze("東京都に住んでいます"))
-    std::printf("%s\t%s\t%s\n", m.surface.c_str(), m.pos.c_str(), m.base_form.c_str());
-}
-```
-
-:::
-
-各トークンは表層形、品詞、原形、オフセットなどを持ちます。バインディングごとの名前は [JavaScript/WASM](/ja/docs/api)、[Python](/ja/docs/python)、[Go](/ja/docs/go)、[C / C++](/ja/docs/cpp) の各リファレンスを参照してください。
+</div>
+</div>
 
 </HomeProse>

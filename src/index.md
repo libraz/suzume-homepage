@@ -4,135 +4,43 @@ layout: home
 hero:
   name: Suzume
   text: Japanese tokenization, right in the browser
-  tagline: A lightweight tokenizer compiled to WebAssembly. Its WebAssembly binary is under __WASM_GZIP_SIZE__ gzipped, and the tokenizer runs entirely client-side — no server, no multi-megabyte dictionary.
+  tagline: A small Japanese tokenizer for web apps and services. Under __WASM_GZIP_SIZE__ gzipped, with no server and no dictionary download.
   actions:
     - theme: brand
-      text: Try the live demo
-      link: '#demo'
-    - theme: alt
       text: Get started
       link: /docs/getting-started
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/libraz/suzume
 ---
 
 <HomeHero />
-
-<TypewriterDemo />
-
-<HomeFeatures />
 
 <div id="demo"></div>
 
 <UseCaseDemo />
 
+<HomeFeatures />
+
 <ComparisonTable />
 
 <HomeProse>
 
-## Installation
+<div class="home-split">
+<div>
 
-::: code-group
+## Scope
 
-```bash [npm]
-npm install @libraz/suzume
-```
+Suzume is a tokenizer. It splits text on practical boundaries, keeps compounds and quantities together, and gives each token a POS and a lemma. It does not try to reproduce the segmentation of a dictionary-based analyzer, so code written against MeCab-style tokens needs its expectations restated. See [When to use which](/docs/how-it-works#when-to-use-which).
 
-```bash [yarn]
-yarn add @libraz/suzume
-```
+</div>
+<div>
 
-```bash [pnpm]
-pnpm add @libraz/suzume
-```
+## Open source
 
-```bash [bun]
-bun add @libraz/suzume
-```
+Apache-2.0. The C++ core, the JavaScript and Python bindings, the CLI, and the test data live in [libraz/suzume](https://github.com/libraz/suzume); the Go binding is [libraz/go-suzume](https://github.com/libraz/go-suzume). The most useful bug report is an input sentence with the tokens you expected. [CONTRIBUTING.md](https://github.com/libraz/suzume/blob/main/CONTRIBUTING.md) covers the build, the tests, and the design rules CI enforces.
 
-```bash [python (pip)]
-pip install suzume
-```
-
-```bash [Go]
-git clone https://github.com/libraz/go-suzume.git
-cd go-suzume && make lib
-cd /path/to/your/module
-go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
-go get github.com/libraz/go-suzume
-```
-
-```bash [C / C++]
-git clone https://github.com/libraz/suzume.git
-cd suzume && make install
-```
-
-:::
-
-For Python services and data pipelines, see the [Python bindings guide](/docs/python). Suzume is also available through the [Go binding](/docs/go) and as a [C / C++ library](/docs/cpp).
-
-## Usage
-
-The library bindings expose the same analysis model with names adapted to each language:
-
-::: code-group
-
-```typescript [TypeScript]
-import { Suzume } from '@libraz/suzume'
-
-const suzume = await Suzume.create()
-
-try {
-  for (const m of suzume.analyze('東京都に住んでいます')) {
-    console.log(m.surface, m.pos, m.baseForm)
-  }
-} finally {
-  suzume.destroy()
-}
-```
-
-```python [Python]
-from suzume import Suzume
-
-with Suzume() as sz:
-    for m in sz.analyze("東京都に住んでいます"):
-        print(m.surface, m.pos, m.base_form)
-```
-
-```go [Go]
-package main
-
-import (
-  "fmt"
-  "log"
-
-  "github.com/libraz/go-suzume"
-)
-
-func main() {
-  analyzer, err := suzume.New()
-  if err != nil {
-    log.Fatal(err)
-  }
-  defer analyzer.Close()
-
-  for _, m := range analyzer.Analyze("東京都に住んでいます") {
-    fmt.Println(m.Surface, m.POS, m.BaseForm)
-  }
-}
-```
-
-```cpp [C++]
-#include "suzume/suzume.hpp"
-#include <cstdio>
-
-int main() {
-  suzume::Tokenizer tokenizer;
-  for (const suzume::Morpheme& m : tokenizer.analyze("東京都に住んでいます"))
-    std::printf("%s\t%s\t%s\n", m.surface.c_str(), m.pos.c_str(), m.base_form.c_str());
-}
-```
-
-:::
-
-Each token carries a surface form, POS, base form, offsets, and more. See the [JavaScript/WASM](/docs/api), [Python](/docs/python), [Go](/docs/go), or [C / C++](/docs/cpp) reference for binding-specific names.
+</div>
+</div>
 
 </HomeProse>

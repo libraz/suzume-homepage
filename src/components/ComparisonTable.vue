@@ -15,17 +15,18 @@ const performanceLink = computed(() =>
   isJa() ? '/ja/docs/performance' : '/docs/performance'
 )
 
-// Ordered by what the application has to ship: the platform built-in, then a
-// lightweight segmenter, then Suzume, then the dictionary-based analyzers.
-const tools: { name: string; tag?: string }[] = [
-  { name: 'Intl.Segmenter', tag: 'comparison.builtIn' },
-  { name: 'TinySegmenter', tag: 'comparison.light' },
-  { name: 'Suzume' },
-  { name: 'kuromoji' },
-  { name: 'MeCab', tag: 'comparison.accurate' }
-]
+// Ordered by what the application has to ship: the platform built-in, then
+// lightweight segmenters, then Suzume, then the dictionary-based analyzers.
+// Columns other than the platform API and MeCab are categories, not products.
+const tools = computed(() => [
+  { key: 'intl', name: 'Intl.Segmenter', tag: 'comparison.builtIn' },
+  { key: 'segmenters', name: t('comparison.segmenters'), tag: 'comparison.noDict' },
+  { key: 'suzume', name: 'Suzume' },
+  { key: 'jsAnalyzers', name: t('comparison.jsAnalyzers') },
+  { key: 'mecab', name: 'MeCab', tag: 'comparison.fullDict' }
+])
 
-const suzumeIndex = tools.findIndex((tool) => tool.name === 'Suzume')
+const suzumeIndex = computed(() => tools.value.findIndex((tool) => tool.key === 'suzume'))
 
 const features = computed(() => [
   {
@@ -44,11 +45,13 @@ const features = computed(() => [
   },
   {
     name: t('comparison.bundleSize'),
-    values: ['0KB', '~10KB', isJa() ? `${WASM_GZIP_SIZE}（WASM）` : `${WASM_GZIP_SIZE} WASM`, '~20MB', t('comparison.na')]
-  },
-  {
-    name: t('comparison.serverFree'),
-    values: ['yes', 'yes', 'yes', 'partial', 'no']
+    values: [
+      '0KB',
+      t('comparison.small'),
+      isJa() ? `${WASM_GZIP_SIZE}（WASM）` : `${WASM_GZIP_SIZE} WASM`,
+      t('comparison.largeDict'),
+      t('comparison.na')
+    ]
   },
   {
     name: t('comparison.posInfo'),
@@ -100,7 +103,7 @@ function getCellDisplay(value: string) {
         <thead>
           <tr>
             <th class="feature-col">{{ t('comparison.feature') }}</th>
-            <th v-for="tool in tools" :key="tool.name" :class="{ highlight: tool.name === 'Suzume' }">
+            <th v-for="tool in tools" :key="tool.key" :class="{ highlight: tool.key === 'suzume' }">
               {{ tool.name }}
               <span v-if="tool.tag" class="tool-tag">{{ t(tool.tag) }}</span>
             </th>
@@ -121,6 +124,7 @@ function getCellDisplay(value: string) {
       </table>
     </div>
 
+    <div class="guide-links">
     <a class="comparison-guide-link" :href="comparisonLink">
       <span>
         <strong>{{ t('comparison.guideTitle') }}</strong>
@@ -142,6 +146,7 @@ function getCellDisplay(value: string) {
         <span class="guide-arrow" aria-hidden="true">→</span>
       </span>
     </a>
+    </div>
   </section>
 </template>
 
@@ -159,7 +164,7 @@ function getCellDisplay(value: string) {
 /* Table */
 .table-wrapper {
   overflow-x: auto;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .comparison-table {
@@ -169,9 +174,10 @@ function getCellDisplay(value: string) {
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
   background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-border);
-  border-radius: 12px;
+  border-radius: var(--sz-radius-panel);
   overflow: hidden;
 }
 
@@ -192,17 +198,18 @@ function getCellDisplay(value: string) {
 
 .comparison-table th,
 .comparison-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.55rem 0.85rem;
   text-align: center;
   border-bottom: 1px solid var(--vp-c-divider);
 }
 
 .comparison-table th {
   font-weight: 600;
-  color: var(--vp-c-text-2);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--vp-c-text-1);
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  line-height: 1.4;
+  vertical-align: top;
   position: relative;
 }
 
@@ -214,9 +221,9 @@ function getCellDisplay(value: string) {
   letter-spacing: 0;
   margin-top: 0.25rem;
   padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  color: var(--vp-c-text-2);
-  background: var(--vp-c-default-soft, var(--vp-c-bg-soft));
+  border-radius: var(--sz-radius-chip);
+  color: var(--vp-c-text-3);
+  background: var(--vp-c-default-soft);
 }
 
 .comparison-table th.highlight {
@@ -255,24 +262,36 @@ function getCellDisplay(value: string) {
   font-weight: 500;
 }
 
-/* Guide link — the single canonical entry point to the MeCab comparison */
+/* Guide links: the MeCab comparison and the measured numbers, side by side */
+.guide-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 760px) {
+  .guide-links {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .comparison-guide-link {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 0.75rem;
   padding: 1rem 1.25rem;
-  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 24%, var(--vp-c-border));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--vp-c-brand-1) 4%, var(--vp-c-bg));
+  border: 1px solid var(--vp-c-border);
+  border-radius: var(--sz-radius-panel);
+  background: var(--vp-c-bg);
   color: var(--vp-c-text-1);
   text-decoration: none !important;
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .comparison-guide-link:hover {
-  border-color: color-mix(in srgb, var(--vp-c-brand-1) 55%, var(--vp-c-border));
-  background: color-mix(in srgb, var(--vp-c-brand-1) 7%, var(--vp-c-bg));
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 45%, var(--vp-c-border));
 }
 
 .comparison-guide-link strong,
@@ -325,39 +344,15 @@ function getCellDisplay(value: string) {
   }
 }
 
+/* The table scrolls sideways on narrow screens instead of shrinking its type. */
 @media (max-width: 640px) {
-  .table-wrapper {
-    margin: 0 -0.5rem 1.5rem -0.5rem;
-  }
-
   .comparison-table {
-    font-size: 0.75rem;
-    border-radius: 8px;
+    min-width: 720px;
   }
 
   .comparison-table th,
   .comparison-table td {
-    padding: 0.4rem 0.35rem;
-    font-size: 0.7rem;
-  }
-
-  .comparison-table th {
-    font-size: 0.65rem;
-  }
-
-  .tool-tag {
-    font-size: 0.5rem;
-    padding: 0.1rem 0.25rem;
-  }
-
-  .cell-yes {
-    font-size: 0.9rem;
-  }
-
-  .comparison-guide-link {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.75rem;
+    padding: 0.5rem 0.45rem;
   }
 }
 </style>

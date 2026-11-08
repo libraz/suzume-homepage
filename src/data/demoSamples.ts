@@ -4,6 +4,14 @@ export const playgroundSampleTexts = [
   '東京スカイツリーに行って夜景を撮影しました',
 ] as const
 
+// Segmented differently by normal, search, and split modes.
+export const modeSampleText = 'API開発と高層ビル群'
+
+// Without a dictionary entry, ふるさと納税 splits into four tokens and 生成AI
+// into two; the prefilled entries merge both.
+export const userDictSampleText = 'ふるさと納税の返礼品を生成AIで比較した'
+export const userDictSampleSource = 'ふるさと納税\tNOUN\n生成AI\tNOUN\n'
+
 export const tagSampleTexts = [
   '推しのライブ、歌もダンスも最高でマジで尊かった。来年も絶対行きたい！',
   '生成AIカンファレンスで機械学習と自然言語処理の最新動向を学びました。',
@@ -80,4 +88,6 @@ export const allLiveDemoSampleTexts = [
   ...baseFormSampleTexts,
   ...analysisSampleTexts,
   ...typewriterSampleTexts,
+  modeSampleText,
+  userDictSampleText,
 ] as const

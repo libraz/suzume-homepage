@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { posCategory } from './tokenOrigin'
 
 const { isJa } = useI18n()
 
@@ -66,29 +67,6 @@ function parse(spec: string): Tok[] {
     })
 }
 
-function suzumeCategory(code: string): string {
-  switch (code) {
-    case 'NOUN':
-    case 'PRON':
-      return 'noun'
-    case 'VERB':
-      return 'verb'
-    case 'ADJ':
-      return 'adj'
-    case 'ADV':
-      return 'adv'
-    case 'AUX':
-    case 'PARTICLE':
-    case 'PREFIX':
-    case 'SUFFIX':
-    case 'DET':
-    case 'CONJ':
-      return 'function'
-    default:
-      return 'other'
-  }
-}
-
 function mecabCategory(pos: string): string {
   if (pos.startsWith('名詞') || pos.startsWith('代名詞')) return 'noun'
   if (pos.startsWith('動詞')) return 'verb'
@@ -113,7 +91,7 @@ function build(spec: string, suzume: boolean): Row[] {
       return {
         surface: t.surface,
         base: t.base,
-        category: suzumeCategory(t.pos),
+        category: posCategory(t.pos),
         primary: POS_JA[t.pos] ?? t.pos,
         code: POS_JA[t.pos] ? t.pos : undefined,
       }
@@ -131,7 +109,7 @@ const mecabTokens = computed(() => build(props.mecab, false))
 const suzumeTokens = computed(() => build(props.suzume, true))
 
 function count(n: number): string {
-  if (isJa()) return `${n}トークン`
+  if (isJa()) return `${n} トークン`
   return `${n} token${n === 1 ? '' : 's'}`
 }
 
@@ -140,7 +118,7 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
 </script>
 
 <template>
-  <div class="token-diff">
+  <div class="token-diff sz-demo">
     <div class="td-input">
       <span class="td-input-label">{{ inputLabel }}</span>
       <span class="td-input-text">{{ input }}</span>
@@ -149,18 +127,18 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
     <div class="td-rows">
       <div class="td-row">
         <span class="td-engine mecab">MeCab</span>
-        <div class="td-tokens">
+        <div class="sz-tokens td-tokens">
           <span
             v-for="(tok, i) in mecabTokens"
             :key="`m-${i}`"
-            class="td-token"
+            class="sz-token"
             :data-pos="tok.category"
           >
-            <span class="surface">{{ tok.surface }}</span>
-            <span class="underline"></span>
-            <span v-if="tok.primary || tok.base" class="chip">
-              <span v-if="tok.primary" class="pos">{{ tok.primary }}</span>
-              <span v-if="tok.base" class="base">→{{ tok.base }}</span>
+            <span class="sz-token__surface">{{ tok.surface }}</span>
+            <span class="sz-token__rule"></span>
+            <span v-if="tok.primary || tok.base" class="sz-token__chip">
+              <span v-if="tok.primary" class="sz-token__pos">{{ tok.primary }}</span>
+              <span v-if="tok.base" class="sz-token__base">→{{ tok.base }}</span>
             </span>
           </span>
         </div>
@@ -169,19 +147,19 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
 
       <div class="td-row is-suzume">
         <span class="td-engine suzume">Suzume</span>
-        <div class="td-tokens">
+        <div class="sz-tokens td-tokens">
           <span
             v-for="(tok, i) in suzumeTokens"
             :key="`s-${i}`"
-            class="td-token"
+            class="sz-token"
             :data-pos="tok.category"
           >
-            <span class="surface">{{ tok.surface }}</span>
-            <span class="underline"></span>
-            <span v-if="tok.primary || tok.base" class="chip">
-              <span v-if="tok.primary" class="pos">{{ tok.primary }}</span>
-              <span v-if="tok.code" class="code">{{ tok.code }}</span>
-              <span v-if="tok.base" class="base">→{{ tok.base }}</span>
+            <span class="sz-token__surface">{{ tok.surface }}</span>
+            <span class="sz-token__rule"></span>
+            <span v-if="tok.primary || tok.base" class="sz-token__chip">
+              <span v-if="tok.primary" class="sz-token__pos">{{ tok.primary }}</span>
+              <span v-if="tok.code" class="sz-token__code">{{ tok.code }}</span>
+              <span v-if="tok.base" class="sz-token__base">→{{ tok.base }}</span>
             </span>
           </span>
         </div>
@@ -197,7 +175,7 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
 .token-diff {
   margin: 1.25rem 0;
   border: 1px solid var(--vp-c-border);
-  border-radius: 12px;
+  border-radius: var(--sz-radius-panel);
   background: var(--vp-c-bg-soft);
   overflow: hidden;
 }
@@ -253,10 +231,10 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
   align-self: flex-start;
   margin-top: 0.15rem;
   padding: 0.15rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--sz-radius-chip);
   font-size: 0.72rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--vp-font-family-mono);
   white-space: nowrap;
   text-align: center;
 }
@@ -274,68 +252,8 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
 }
 
 .td-tokens {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.35rem 0.55rem;
   min-width: 0;
-}
-
-.td-token {
-  --accent: var(--vp-c-text-3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.td-token .surface {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--vp-c-text-1);
-  line-height: 1.3;
-  white-space: nowrap;
-}
-
-.td-token .underline {
-  width: 100%;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--accent);
-  margin: 0.18rem 0;
-}
-
-.td-token[data-pos='none'] .underline {
-  background: var(--vp-c-divider);
-}
-
-.td-token .chip {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.08rem 0.35rem;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--vp-c-bg));
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-  white-space: nowrap;
-}
-
-.td-token .pos {
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 0.66rem;
-}
-
-.td-token .code {
-  color: var(--vp-c-text-3);
-  font-size: 0.58rem;
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: 0.02em;
-}
-
-.td-token .base {
-  color: var(--vp-c-text-3);
-  font-size: 0.6rem;
+  --sz-token-size: 1.1rem;
 }
 
 .td-count {
@@ -356,44 +274,6 @@ const caption = computed(() => (isJa() ? props.noteJa || props.note : props.note
   color: var(--vp-c-text-2);
   font-size: 0.8rem;
   line-height: 1.5;
-}
-
-.td-token[data-pos='noun'] {
-  --accent: #2563eb;
-}
-.td-token[data-pos='verb'] {
-  --accent: #059669;
-}
-.td-token[data-pos='adj'] {
-  --accent: #dc2626;
-}
-.td-token[data-pos='adv'] {
-  --accent: #7c3aed;
-}
-.td-token[data-pos='function'] {
-  --accent: #0891b2;
-}
-.td-token[data-pos='other'] {
-  --accent: #6b7280;
-}
-
-.dark .td-token[data-pos='noun'] {
-  --accent: #60a5fa;
-}
-.dark .td-token[data-pos='verb'] {
-  --accent: #34d399;
-}
-.dark .td-token[data-pos='adj'] {
-  --accent: #f87171;
-}
-.dark .td-token[data-pos='adv'] {
-  --accent: #a78bfa;
-}
-.dark .td-token[data-pos='function'] {
-  --accent: #22d3ee;
-}
-.dark .td-token[data-pos='other'] {
-  --accent: #9ca3af;
 }
 
 @media (max-width: 640px) {

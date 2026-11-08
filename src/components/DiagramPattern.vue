@@ -4,73 +4,78 @@ import { useI18n } from '@/composables/useI18n'
 
 const { isJa } = useI18n()
 
+// Examples measured against the bundled WASM: every one is tokenized as an
+// unknown word (isUnknown = true) with the candidate POS shown.
+const examples = ['スカイツリー', '量子計算', '配信する', 'えぐい']
+const candidates = ['NOUN', 'NOUN', 'NOUN + VERB', 'ADJ']
+const rowY = [124, 156, 188, 220]
+
 const m = computed(() =>
   isJa()
     ? {
-        title: '未知語をパターンから候補化する',
-        d1: ['辞書に', 'ある?'],
-        no: 'いいえ',
-        d2: ['カタカナ', '列?'],
-        yes: 'はい',
-        result: '名詞候補を生成',
-        exLabel: 'ほかの例:',
-        ex: ['漢字列 → 名詞候補', '漢字 + する → サ変名詞 / 動詞候補', 'ひらがな + い → 形容詞候補'],
-        caption: 'たとえば辞書にないカタカナ列でも、名詞候補としてラティスに載せられます。',
+        head: 'パターンは候補を出すだけで、決めるのはスコア',
+        desc: '文字種パターンによる候補と辞書の候補がどちらもラティスに入り、Viterbi が最小コストの経路を選びます。',
+        band: 'パターンによる候補',
+        cols: ['文字の並び', '例', '候補'],
+        runs: ['カタカナの連続', '漢字の連続', '漢字 + する', 'ひらがな + い'],
+        dictH: '辞書の検索',
+        dictD: 'すべての辞書レイヤーのエントリ',
+        latticeH: 'ラティス',
+        latticeD: 'すべての候補が競合',
+        viterbiD: '最小コストの経路が残る',
+        caption: 'パターンの候補は辞書の検索に失敗したときだけでなく、辞書の候補と並んで常に生成されます。表の例はどれも未知語としてトークン化されたものです。',
       }
     : {
-        title: 'Pattern recognition for unknown words',
-        d1: ['In', 'dictionary?'],
-        no: 'No',
-        d2: ['Katakana', 'sequence?'],
-        yes: 'Yes',
-        result: 'Generate noun candidate',
-        exLabel: 'Other examples:',
-        ex: ['Kanji sequence → noun candidate', 'Kanji + する → verbal noun / verb candidate', 'Hiragana + い → adjective candidate'],
-        caption: 'For example, a katakana sequence that is not in the dictionary can still become a noun candidate.',
+        head: 'Patterns propose candidates; scoring decides',
+        desc: 'Candidates from character patterns and from the dictionary both enter the lattice, and Viterbi keeps the lowest-cost path.',
+        band: 'Pattern candidates',
+        cols: ['character run', 'example', 'candidate'],
+        runs: ['Katakana', 'Kanji', 'Kanji + する', 'Hiragana + い'],
+        dictH: 'Dictionary lookup',
+        dictD: 'entries from every dictionary layer',
+        latticeH: 'Lattice',
+        latticeD: 'all candidates compete',
+        viterbiD: 'lowest-cost path wins',
+        caption: 'Pattern candidates are generated next to dictionary candidates, not only when the lookup fails. Every example in the table is tokenized as an unknown word.',
       }
 )
 </script>
 
 <template>
-  <figure class="doc-diagram">
-    <svg viewBox="0 0 920 360" role="img" :aria-label="m.title">
-      <rect x="1" y="1" width="918" height="358" rx="16" class="dg-canvas" />
-      <text x="48" y="52" class="dg-ink" font-size="22" font-weight="700">{{ m.title }}</text>
-
-      <rect x="65" y="130" width="150" height="64" rx="12" class="dg-soft" />
-      <text x="140" y="168" text-anchor="middle" class="dg-brand" font-size="18" font-weight="700">スカイツリー</text>
-
-      <path d="M225 162h72" class="dg-arrow" />
-      <path d="M291 156l10 6-10 6" class="dg-arrow" />
-
-      <g transform="translate(320 100)">
-        <path d="M85 0l85 62-85 62L0 62z" class="dg-card" stroke-width="2" />
-        <text x="85" y="57" text-anchor="middle" class="dg-ink" font-size="15" font-weight="700">{{ m.d1[0] }}</text>
-        <text x="85" y="78" text-anchor="middle" class="dg-ink" font-size="15" font-weight="700">{{ m.d1[1] }}</text>
-      </g>
-
-      <text x="510" y="150" text-anchor="middle" class="dg-mut" font-size="13" font-weight="700">{{ m.no }}</text>
-      <path d="M493 162h68" class="dg-arrow" />
-      <path d="M555 156l10 6-10 6" class="dg-arrow" />
-
-      <g transform="translate(585 100)">
-        <path d="M85 0l85 62-85 62L0 62z" class="dg-card" stroke-width="2" />
-        <text x="85" y="57" text-anchor="middle" class="dg-ink" font-size="15" font-weight="700">{{ m.d2[0] }}</text>
-        <text x="85" y="78" text-anchor="middle" class="dg-ink" font-size="15" font-weight="700">{{ m.d2[1] }}</text>
-      </g>
-
-      <path d="M670 225v46" class="dg-arrow" />
-      <path d="M664 265l6 10 6-10" class="dg-arrow" />
-      <text x="700" y="253" text-anchor="middle" class="dg-mut" font-size="13" font-weight="700">{{ m.yes }}</text>
-
-      <rect x="555" y="278" width="230" height="48" rx="24" class="dg-soft" />
-      <text x="670" y="309" text-anchor="middle" class="dg-brand" font-size="16" font-weight="700">{{ m.result }}</text>
-
-      <text x="80" y="255" class="dg-mut" font-size="14">{{ m.exLabel }}</text>
-      <text x="80" y="281" class="dg-mut" font-size="14">{{ m.ex[0] }}</text>
-      <text x="80" y="305" class="dg-mut" font-size="14">{{ m.ex[1] }}</text>
-      <text x="80" y="329" class="dg-mut" font-size="14">{{ m.ex[2] }}</text>
+  <figure class="fig">
+    <div class="fig-head">{{ m.head }}</div>
+    <svg class="fig-svg" role="img" aria-labelledby="fig-pattern-title" viewBox="0 0 960 376" xmlns="http://www.w3.org/2000/svg">
+      <title id="fig-pattern-title">{{ m.desc }}</title>
+      <!-- pattern candidates -->
+      <rect class="fg-group fg-group--accent" x="32" y="24" width="560" height="224" rx="8" />
+      <text class="fg-lbl" x="56" y="52">{{ m.band }}</text>
+      <text class="fg-xs" x="56" y="84">{{ m.cols[0] }}</text>
+      <text class="fg-xs" x="248" y="84">{{ m.cols[1] }}</text>
+      <text class="fg-xs" x="400" y="84">{{ m.cols[2] }}</text>
+      <line class="fg-rule fg-rule--strong" x1="56" y1="96" x2="568" y2="96" />
+      <line class="fg-rule" x1="56" y1="136" x2="568" y2="136" />
+      <line class="fg-rule" x1="56" y1="168" x2="568" y2="168" />
+      <line class="fg-rule" x1="56" y1="200" x2="568" y2="200" />
+      <template v-for="(y, i) in rowY" :key="i">
+        <text class="fg-s" x="56" :y="y">{{ m.runs[i] }}</text>
+        <text class="fg-s fg-ink" x="248" :y="y">{{ examples[i] }}</text>
+        <text class="fg-m" x="400" :y="y">{{ candidates[i] }}</text>
+      </template>
+      <!-- dictionary -->
+      <rect class="fg-box" x="32" y="280" width="560" height="72" rx="8" />
+      <text class="fg-t" x="48" y="308">{{ m.dictH }}</text>
+      <text class="fg-s" x="48" y="332">{{ m.dictD }}</text>
+      <!-- both feed the lattice -->
+      <path class="fg-edge fg-edge--accent" d="M592 128H672" marker-end="url(#fg-ac)" />
+      <path class="fg-edge" d="M592 316H632V160H672" marker-end="url(#fg-a)" />
+      <rect class="fg-box" x="672" y="104" width="256" height="72" rx="8" />
+      <text class="fg-t" x="688" y="132">{{ m.latticeH }}</text>
+      <text class="fg-s" x="688" y="156">{{ m.latticeD }}</text>
+      <path class="fg-edge" d="M800 176V224" marker-end="url(#fg-a)" />
+      <rect class="fg-box" x="672" y="224" width="256" height="72" rx="8" />
+      <text class="fg-t" x="688" y="252">Viterbi</text>
+      <text class="fg-s" x="688" y="276">{{ m.viterbiD }}</text>
     </svg>
-    <figcaption>{{ m.caption }}</figcaption>
+    <figcaption class="fig-note">{{ m.caption }}</figcaption>
   </figure>
 </template>

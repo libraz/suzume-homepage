@@ -1,66 +1,69 @@
 {
   "homeHero": {
-    "ariaLabel": "Release status and key specs",
+    "ariaLabel": "Install and key facts",
+    "runtimeLabel": "Runtime",
+    "copy": "Copy",
+    "copied": "Copied",
+    "guideLink": "Setup guide",
+    "notes": {
+      "js": "Browser, Node.js, Deno, and Bun. Other package managers and the CDN build are covered in the guide.",
+      "python": "CPython 3.10+ on Linux x86_64 or macOS arm64. The wheel also installs the suzume command.",
+      "go": "Go 1.26+ with cgo. Build the C library first, then point your module at the checkout.",
+      "cpp": "Installs the library and headers into /usr/local. Set PREFIX to install elsewhere."
+    },
+    "sizeLabel": "WASM, gzipped",
+    "sizeNote": "{n} KiB uncompressed, dictionaries included",
+    "runtimesLabel": "Runs on",
+    "licenseLabel": "License",
+    "licenseNote": "Source and issues on GitHub",
+    "releaseLabel": "Release",
     "beta": "Beta",
-    "openSource": "open source",
-    "gzipLabel": "gzipped WASM binary",
-    "rawNote": "{n}KiB uncompressed WASM binary",
-    "clientLabel": "client-side",
-    "clientNote": "no server or API",
-    "runtimesLabel": "runtimes"
+    "buildNote": "Build {hash}",
+    "benchLabel": "Measured",
+    "benchLink": "Speed and accuracy, with method"
   },
   "features": {
     "eyebrow": "Why Suzume",
     "heading": "Designed for the frontend",
-    "subheading": "Client-side Japanese tokenization, without the usual server, dictionary, and privacy trade-offs.",
     "items": {
-      "size": {
-        "title": "Tiny footprint",
-        "desc": "The WebAssembly binary is under {size} gzipped and includes its bundled dictionaries — no multi-megabyte dictionary to fetch or host."
-      },
       "client": {
-        "title": "Client-side by design",
-        "desc": "Runs entirely in the browser or your runtime. No tokenization server, no API round-trip, no CORS setup."
-      },
-      "privacy": {
-        "title": "Text stays local",
-        "desc": "Analysis happens on-device, so user input never leaves the browser and sensitive text stays out of your infrastructure."
+        "title": "Client-side and synchronous",
+        "desc": "Runs in the browser or inside your own process, and analyze() returns synchronously. Input text never leaves the device, and there is no tokenization server, network round trip, or CORS setup."
       },
       "unknown": {
         "title": "Robust to unknown words",
         "desc": "Combines compact dictionaries with character and grammar patterns to handle words without a dictionary entry."
       },
-      "realtime": {
-        "title": "Synchronous analysis",
-        "desc": "A synchronous API for local text processing, without a network round trip."
-      },
-      "typed": {
-        "title": "Typed, multi-runtime",
-        "desc": "A C++ core with first-class TypeScript types, plus Python, Go, and native C/C++ bindings for backend, batch, and embedded use."
+      "userDict": {
+        "title": "Runtime user dictionary",
+        "desc": "Load product names and domain terms from a TSV string at runtime. No rebuild and no dictionary compiler; clearUserDictionaries() removes them again."
       }
     }
   },
   "comparison": {
     "eyebrow": "Compare",
     "title": "Where Suzume fits",
-    "subtitle": "TinySegmenter's light footprint, closer to MeCab's detail — Suzume sits between them.",
+    "subtitle": "More detail than a plain word segmenter, a fraction of the size of a dictionary-based analyzer. Suzume sits between them.",
     "feature": "Feature",
     "browserRun": "Browser",
-    "dictionary": "External Dictionary Setup",
-    "bundleSize": "Bundle Size",
-    "serverFree": "Server-free",
-    "unknownWords": "Unknown Words",
-    "posInfo": "POS Tagging",
+    "dictionary": "External dictionary setup",
+    "bundleSize": "Bundle size",
+    "unknownWords": "Unknown words",
+    "posInfo": "POS tagging",
     "lemma": "Lemmatization",
     "compound": "Dictionary-defined compound splitting",
-    "customDict": "Custom Dictionary",
+    "customDict": "Custom dictionary",
     "notRequired": "Not required",
     "bundled": "Bundled",
     "required": "Required",
     "na": "N/A",
-    "light": "Light",
-    "accurate": "Accurate",
+    "small": "Small",
+    "largeDict": "10 MB+",
     "builtIn": "Built-in",
+    "noDict": "No dictionary",
+    "fullDict": "Full dictionary",
+    "segmenters": "Lightweight segmenters",
+    "jsAnalyzers": "JS dictionary analyzers",
     "guideTitle": "There is more to the difference than this table",
     "guideDescription": "See concrete examples of token boundaries, dictionary dependence, and unknown-word handling.",
     "guideLink": "Read the MeCab comparison",
@@ -71,37 +74,36 @@
   "useCase": {
     "eyebrow": "Playground",
     "title": "Try it on your own text",
-    "subtitle": "Choose an everyday, colloquial, dialectal, or classical example, or paste your own text. Processing stays in your browser.",
-    "tagGen": "Tag Generation",
-    "baseFormTab": "Normalize",
+    "tagGen": "Tags",
+    "baseFormTab": "Base form",
     "analyzeTab": "Tokenize",
-    "tagTitle": "Auto Keyword Extraction",
-    "tagDesc": "Auto-generate hashtags from blog posts or product descriptions",
+    "tagTitle": "Automatic keyword extraction",
+    "tagDesc": "Generate hashtags from blog posts or product descriptions.",
     "tagPlaceholder": "Enter text to extract keywords...",
-    "extractedTags": "Extracted Tags",
+    "extractedTags": "Extracted tags",
     "excludeBasic": "Exclude basic verbs",
     "excludeBasicTip": "Filters out common verbs with hiragana-only lemma (する, いる, ある...)",
     "noTags": "No tags found",
     "copyTags": "Copy",
-    "copied": "Copied!",
-    "baseTitle": "Conjugated → Normalized Form",
-    "baseDesc": "Normalize verbs and adjectives to dictionary form for search indexing",
+    "copied": "Copied",
+    "baseTitle": "Conjugated → base form",
+    "baseDesc": "Reduce verbs and adjectives to their base form for search indexing.",
     "basePlaceholder": "Enter text with conjugated words...",
     "surface": "Surface",
-    "baseForm": "Normalized",
+    "baseForm": "Base form",
     "pos": "POS",
-    "analyzeTitle": "Tokenization Demo",
-    "analyzeDesc": "Break Japanese text into linguistic tokens",
+    "analyzeTitle": "Tokenization",
+    "analyzeDesc": "Split Japanese text into tokens with POS and lemma.",
     "analyzePlaceholder": "Enter Japanese text...",
     "tokens": "tokens",
     "loading": "Loading...",
     "examples": "Examples",
     "tagExamples": {
-      "sns": "SNS Post",
-      "tech": "Tech Article"
+      "sns": "Social post",
+      "tech": "Tech article"
     },
     "baseExamples": {
-      "verb": "Verb Forms",
+      "verb": "Verb forms",
       "adjective": "Adjectives",
       "colloquial": "Colloquial"
     },

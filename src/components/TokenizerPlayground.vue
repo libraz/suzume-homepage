@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { playgroundSampleTexts } from '@/data/demoSamples'
-import { Suzume, type Morpheme, type Tag } from '@/wasm/index.js'
+import { modeSampleText, playgroundSampleTexts } from '@/data/demoSamples'
+import { Suzume, type Morpheme, type SuzumeOptions, type Tag } from '@/wasm/index.js'
+import TokenChip from './TokenChip.vue'
+import TokenOriginLegend from './TokenOriginLegend.vue'
+
+type AnalysisMode = NonNullable<SuzumeOptions['mode']>
 
 const { isJa } = useI18n()
 
@@ -19,7 +23,15 @@ const examples = computed(() => [
     label: isJa() ? 'タグ抽出' : 'Tags',
     text: playgroundSampleTexts[2],
   },
+  {
+    label: isJa() ? '解析モード' : 'Modes',
+    text: modeSampleText,
+  },
 ])
+
+const modes: AnalysisMode[] = ['normal', 'search', 'split']
+const mode = ref<AnalysisMode>('normal')
+const mergeCompounds = ref(false)
 
 const input = ref(examples.value[0].text)
 const morphemes = ref<Morpheme[]>([])
@@ -37,22 +49,15 @@ const tokensPerSecond = ref(0)
 
 let suzume: Suzume | null = null
 let debounce: ReturnType<typeof setTimeout> | undefined
+let wasmPath = ''
+// Guards against an older re-creation finishing after a newer one.
+let generation = 0
 
 // One analysis of a short sentence runs well under a millisecond, which is at
 // the resolution floor of a clamped performance.now(). Timing a batch and
 // dividing gets a figure that means something without freezing the input.
 const TIMING_BUDGET_MS = 20
 const TIMING_MAX_ITERATIONS = 200
-
-function posCategory(pos: string): string {
-  const p = pos.toUpperCase()
-  if (p.startsWith('NOUN') || p === 'PROPN' || p === 'PRON' || p === 'NUM') return 'noun'
-  if (p.startsWith('VERB')) return 'verb'
-  if (p.startsWith('ADJ')) return 'adj'
-  if (p.startsWith('ADV')) return 'adv'
-  if (p === 'AUX' || p.startsWith('PART')) return 'function'
-  return 'other'
-}
 
 function analyze() {
   if (!suzume) return
@@ -102,11 +107,37 @@ watch(input, () => {
   debounce = setTimeout(analyze, 120)
 })
 
+// The mode switches on the live instance; mergeCompounds is fixed at creation.
+watch(mode, (value) => {
+  if (!suzume) return
+  suzume.mode = value
+  analyze()
+})
+
+watch(mergeCompounds, async (value) => {
+  if (!suzume) return
+  const current = ++generation
+  try {
+    const next = await Suzume.create({ wasmPath, mode: mode.value, mergeCompounds: value })
+    if (current !== generation) {
+      next.destroy()
+      return
+    }
+    // The mode may have changed while the new instance was being created.
+    next.mode = mode.value
+    suzume?.destroy()
+    suzume = next
+    analyze()
+  } catch {
+    error.value = isJa() ? 'Suzume WASM の読み込みに失敗しました。' : 'Failed to load Suzume WASM.'
+  }
+})
+
 onMounted(async () => {
   try {
-    const wasmPath = new URL('../wasm/suzume.wasm', import.meta.url).href
+    wasmPath = new URL('../wasm/suzume.wasm', import.meta.url).href
     const startedAt = performance.now()
-    suzume = await Suzume.create({ wasmPath })
+    suzume = await Suzume.create({ wasmPath, mode: mode.value, mergeCompounds: mergeCompounds.value })
     initMs.value = performance.now() - startedAt
     version.value = suzume.version
     loading.value = false
@@ -119,16 +150,20 @@ onMounted(async () => {
 
 onUnmounted(() => {
   clearTimeout(debounce)
+  generation += 1
   suzume?.destroy()
+  suzume = null
 })
 
 const label = computed(() => ({
-  title: isJa() ? 'ブラウザ内で試す' : 'Try It In The Browser',
+  title: isJa() ? 'ブラウザ内で試す' : 'Try it in the browser',
   description: isJa()
     ? '入力した文章はサーバーに送られません。ページに同梱された Suzume WASM が、その場で分割・原形復元・タグ抽出を実行します。'
     : 'Nothing is sent to a server. The Suzume WASM bundled with this page tokenizes, lemmatizes, and extracts tags locally.',
   input: isJa() ? '入力' : 'Input',
-  tokens: isJa() ? '形態素' : 'Morphemes',
+  tokens: isJa() ? 'トークン' : 'Tokens',
+  mode: isJa() ? '解析モード' : 'Mode',
+  mergeCompounds: isJa() ? '連続する名詞を結合（mergeCompounds）' : 'Merge noun compounds (mergeCompounds)',
   tags: isJa() ? '抽出タグ' : 'Extracted tags',
   loading: isJa() ? 'WASM を読み込み中...' : 'Loading WASM...',
   version: isJa() ? '実行中' : 'Running',
@@ -148,99 +183,108 @@ const formattedThroughput = computed(() =>
 </script>
 
 <template>
-  <section class="tokenizer-playground">
+  <section class="tokenizer-playground sz-panel sz-demo">
     <header class="playground-header">
       <div>
         <h3>{{ label.title }}</h3>
         <p>{{ label.description }}</p>
       </div>
-      <span v-if="version" class="version">{{ label.version }} {{ version }}</span>
+      <span v-if="version" class="version sz-num">{{ label.version }} {{ version }}</span>
     </header>
 
-    <div class="example-row">
+    <div class="sz-pills example-row">
       <button
         v-for="example in examples"
         :key="example.text"
         type="button"
-        class="example-button"
-        :class="{ active: input === example.text }"
+        class="sz-pill"
+        :aria-pressed="input === example.text"
         @click="input = example.text"
       >
         {{ example.label }}
       </button>
     </div>
 
-    <label class="input-label">
-      <span>{{ label.input }}</span>
-      <textarea v-model="input" rows="3" spellcheck="false" />
+    <label class="input-field">
+      <span class="sz-label">{{ label.input }}</span>
+      <textarea v-model="input" class="sz-input" rows="3" spellcheck="false" />
     </label>
 
-    <p v-if="loading" class="status">{{ label.loading }}</p>
-    <p v-else-if="error" class="status error">{{ error }}</p>
+    <div class="options-row">
+      <div class="sz-seg mode-picker" role="radiogroup" :aria-label="label.mode">
+        <button
+          v-for="m in modes"
+          :key="m"
+          type="button"
+          role="radio"
+          :aria-checked="mode === m"
+          @click="mode = m"
+        >
+          {{ m }}
+        </button>
+      </div>
+      <label class="sz-check">
+        <input v-model="mergeCompounds" type="checkbox" />
+        <span>{{ label.mergeCompounds }}</span>
+      </label>
+    </div>
 
-    <template v-else>
-      <div class="result-block">
-        <h4>{{ label.tokens }}</h4>
-        <div class="tokens">
-          <span
-            v-for="(morpheme, index) in morphemes"
-            :key="`${morpheme.surface}-${index}`"
-            class="token"
-            :data-pos="posCategory(morpheme.pos)"
-            :title="`${morpheme.surface}\n${morpheme.posJa} / ${morpheme.pos}\n${morpheme.extendedPos}`"
-          >
-            <span class="surface">{{ morpheme.surface }}</span>
-            <span class="underline"></span>
-            <span class="chip">
-              <span class="pos">{{ isJa() ? morpheme.posJa : morpheme.pos.toLowerCase() }}</span>
-              <span class="base" v-if="morpheme.baseForm !== morpheme.surface">→{{ morpheme.baseForm }}</span>
-            </span>
-          </span>
+    <div class="results">
+      <div v-if="loading" class="sz-status">{{ label.loading }}</div>
+      <div v-else-if="error" class="sz-status" data-kind="error">{{ error }}</div>
+
+      <template v-else>
+        <div class="result-block">
+          <div class="sz-label">{{ label.tokens }}</div>
+          <div class="sz-tokens token-area">
+            <TokenChip
+              v-for="(morpheme, index) in morphemes"
+              :key="`${morpheme.surface}-${index}`"
+              :morpheme="morpheme"
+            />
+          </div>
+          <TokenOriginLegend />
         </div>
-      </div>
 
-      <div class="result-block">
-        <h4>{{ label.tags }}</h4>
-        <div class="tags">
-          <span v-for="tag in tags" :key="`${tag.tag}-${tag.pos}`">#{{ tag.tag }}</span>
+        <div class="result-block">
+          <div class="sz-label">{{ label.tags }}</div>
+          <div class="tags">
+            <span v-for="tag in tags" :key="`${tag.tag}-${tag.pos}`">#{{ tag.tag }}</span>
+          </div>
         </div>
-      </div>
 
-      <div v-if="perCallMs > 0" class="measured">
-        <dl>
-          <div>
-            <dt>{{ label.init }}</dt>
-            <dd>{{ initMs.toFixed(1) }} ms</dd>
-          </div>
-          <div>
-            <dt>{{ label.perCall }}</dt>
-            <dd>{{ perCallMs.toFixed(3) }} ms</dd>
-          </div>
-          <div>
-            <dt>{{ label.throughput }}</dt>
-            <dd>{{ formattedThroughput }}</dd>
-          </div>
-        </dl>
-        <p>{{ label.measuredHere }}</p>
-      </div>
-    </template>
+        <div v-if="perCallMs > 0" class="measured">
+          <dl>
+            <div>
+              <dt>{{ label.init }}</dt>
+              <dd class="sz-num">{{ initMs.toFixed(1) }} ms</dd>
+            </div>
+            <div>
+              <dt>{{ label.perCall }}</dt>
+              <dd class="sz-num">{{ perCallMs.toFixed(3) }} ms</dd>
+            </div>
+            <div>
+              <dt>{{ label.throughput }}</dt>
+              <dd class="sz-num">{{ formattedThroughput }}</dd>
+            </div>
+          </dl>
+          <p>{{ label.measuredHere }}</p>
+        </div>
+      </template>
+    </div>
   </section>
 </template>
 
 <style scoped>
 .tokenizer-playground {
   margin: 1.5rem 0 2rem;
-  padding: 1.5rem;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 12px;
-  background: var(--vp-c-bg-soft);
 }
 
 .playground-header {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
 }
 
 .playground-header h3 {
@@ -251,8 +295,8 @@ const formattedThroughput = computed(() =>
 .playground-header p {
   margin: 0;
   color: var(--vp-c-text-2);
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.88rem;
+  line-height: 1.65;
 }
 
 .version {
@@ -260,209 +304,80 @@ const formattedThroughput = computed(() =>
   align-self: flex-start;
   padding: 0.15rem 0.55rem;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 100px;
+  border-radius: 999px;
   background: var(--vp-c-bg);
   color: var(--vp-c-text-3);
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.7rem;
   white-space: nowrap;
 }
 
 .example-row {
+  margin-bottom: 1rem;
+}
+
+.input-field {
+  display: block;
+}
+
+.options-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-bottom: 0.85rem;
-}
-
-.example-button {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 999px;
-  padding: 0.28rem 0.7rem;
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-2);
-  cursor: pointer;
-  font-size: 0.78rem;
-}
-
-.example-button.active,
-.example-button:hover {
-  border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
-}
-
-.input-label {
-  display: grid;
-  gap: 0.45rem;
-  color: var(--vp-c-text-2);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.input-label > span {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.input-label textarea {
-  box-sizing: border-box;
-  width: 100%;
-  resize: vertical;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
-  padding: 0.75rem 0.85rem;
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-1);
-  font-family: var(--vp-font-family-base);
-  font-size: 0.95rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  line-height: 1.7;
-}
-
-.input-label textarea:focus {
-  outline: 2px solid var(--vp-c-brand-soft);
-  border-color: var(--vp-c-brand-1);
-}
-
-.status {
-  margin: 1rem 0 0;
-  color: var(--vp-c-text-3);
-}
-
-.status.error {
-  color: var(--vp-c-danger-1, #dc2626);
-}
-
-.result-block {
-  margin-top: 1rem;
-}
-
-.result-block h4 {
-  margin: 0 0 0.55rem;
-  font-size: 0.78rem;
-  color: var(--vp-c-text-2);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.tokens {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.125rem 0.375rem;
-}
-
-.token {
-  --accent: var(--vp-c-text-3);
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  flex-shrink: 0;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.85rem;
 }
 
-.token .surface {
-  font-size: 1.15rem;
-  font-weight: 500;
-  color: var(--vp-c-text-1);
-  line-height: 1.3;
-  white-space: nowrap;
+.mode-picker {
+  flex: 0 0 16rem;
 }
 
-.token .underline {
-  width: 100%;
-  height: 2px;
-  background: var(--accent);
-  margin: 0.2rem 0;
+.mode-picker > button {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.78rem;
 }
 
-.token .chip {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.1rem 0.375rem;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--vp-c-bg));
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-  white-space: nowrap;
+/* Reserve the loaded height so the panel does not jump when WASM arrives or
+   when a mode switch changes the token count. */
+.results {
+  min-height: 15rem;
+  margin-top: 1.25rem;
 }
 
-.token .pos {
-  color: var(--accent);
-  font-weight: 500;
-  font-size: 0.65rem;
+.result-block + .result-block {
+  margin-top: 1.25rem;
 }
 
-.token .base {
-  color: var(--vp-c-text-3);
-  font-size: 0.6rem;
-}
-
-.token[data-pos='noun'] {
-  --accent: #2563eb;
-}
-
-.token[data-pos='verb'] {
-  --accent: #059669;
-}
-
-.token[data-pos='adj'] {
-  --accent: #dc2626;
-}
-
-.token[data-pos='adv'] {
-  --accent: #7c3aed;
-}
-
-.token[data-pos='function'] {
-  --accent: #0891b2;
-}
-
-.dark .token[data-pos='noun'] {
-  --accent: #60a5fa;
-}
-
-.dark .token[data-pos='verb'] {
-  --accent: #34d399;
-}
-
-.dark .token[data-pos='adj'] {
-  --accent: #f87171;
-}
-
-.dark .token[data-pos='adv'] {
-  --accent: #a78bfa;
-}
-
-.dark .token[data-pos='function'] {
-  --accent: #22d3ee;
+.token-area {
+  min-height: 6.5rem;
+  align-content: flex-start;
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+  min-height: 1.75rem;
 }
 
 .tags span {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 28%, transparent);
   border-radius: 999px;
-  padding: 0.24rem 0.6rem;
-  background: var(--vp-c-brand-soft);
+  background: color-mix(in srgb, var(--vp-c-brand-1) 10%, var(--vp-c-bg));
   color: var(--vp-c-brand-1);
   font-size: 0.8rem;
 }
 
 .measured {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px dashed var(--vp-c-border);
+  border-top: 1px solid var(--vp-c-divider);
 }
 
 .measured dl {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.75rem;
+  gap: 1rem 2.25rem;
   margin: 0;
 }
 
@@ -470,22 +385,18 @@ const formattedThroughput = computed(() =>
   margin-bottom: 0.15rem;
   color: var(--vp-c-text-3);
   font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .measured dd {
   margin: 0;
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.95rem;
-  font-variant-numeric: tabular-nums;
   color: var(--vp-c-text-1);
+  font-size: 0.92rem;
 }
 
 .measured p {
-  margin: 0.7rem 0 0;
+  margin: 0.75rem 0 0;
   color: var(--vp-c-text-3);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
 }
 
 @media (max-width: 640px) {
@@ -493,13 +404,13 @@ const formattedThroughput = computed(() =>
     display: block;
   }
 
-  .measured dl {
-    gap: 1rem 1.5rem;
-  }
-
   .version {
     display: inline-block;
     margin-top: 0.5rem;
+  }
+
+  .mode-picker {
+    flex: 1 1 100%;
   }
 }
 </style>

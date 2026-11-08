@@ -146,8 +146,8 @@ describe('documented JavaScript samples', () => {
     }
   })
 
-  it('analyzes all 61 live demo inputs and preserves their complete normalized text', () => {
-    expect(allLiveDemoSampleTexts).toHaveLength(61)
+  it('analyzes all 63 live demo inputs and preserves their complete normalized text', () => {
+    expect(allLiveDemoSampleTexts).toHaveLength(63)
 
     for (const input of allLiveDemoSampleTexts) {
       const { normalizedText, morphemes } = suzumeWithSymbols.analyzeWithNormalizedText(input)
