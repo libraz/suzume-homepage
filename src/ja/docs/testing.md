@@ -1,13 +1,18 @@
+---
+title: "テストガイド：コア・バインディング・CI"
+description: "Suzume コアリポジトリのテスト構成です。C++ コア、WASM と Python のバインディング、ネイティブ CLI、バインディング間の一致の検証と、テストの追加、ベンチマーク、CI を説明します。"
+---
+
 # テストガイド
 
-コアリポジトリでは、C++ コア、WASM・Python バインディング、ネイティブ CLI、MCP オラクル、サンプル、バインディング間整合性をテストします。Go バインディングは別リポジトリで管理・テストしています。
+コアリポジトリでは、C++ コア、WASM・Python バインディング、ネイティブ CLI、MCP の基準テスト、サンプル、バインディング間整合性をテストします。Go バインディングは別リポジトリで管理・テストしています。
 
 ## テストアーキテクチャ
 
 | レイヤー | フレームワーク | 場所 | 説明 |
 |---------|-------------|------|------|
 | C++ 単体/結合テスト | Google Test | `tests/**/*.cpp` | コアライブラリ、辞書、文法、正規化 |
-| データ駆動テスト | JSON + Google Test | `tests/data/tokenization/*.json` | トークナイズの正確性（自動検出） |
+| データ駆動テスト | JSON + Google Test | `tests/data/tokenization/*.json` | トークン化の正確性（自動検出） |
 | WASM | Vitest | `bindings/wasm/tests/` | JS/C API、メモリレイアウト、生成 ABI の互換性 |
 | Python | pytest | `bindings/python/tests/` | analyze/tags API、エラー、ABI レイアウト |
 | CLI | 組み込み | `test` / `test benchmark` | 単体/バッチテストとベンチマーク |
@@ -21,7 +26,7 @@
 # 辞書をビルドしてネイティブテストを実行
 make native-test
 
-# 手動で実行する場合:
+# 手動で実行する場合
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 cmake --build build --target build-dict   # 必須: 先に辞書をビルド
@@ -29,7 +34,7 @@ build/bin/suzume_test
 ctest --test-dir build --output-on-failure -R native_cli_contract
 ```
 
-名前パターンで特定のテストを実行:
+名前パターンで特定のテストを実行します。
 
 ```bash
 ctest --test-dir build -R "ConjugationTest" --output-on-failure
@@ -87,36 +92,38 @@ suzume-cli test -f tests.tsv -d user.dic
 
 ## テストの追加
 
-### データ駆動トークナイズテスト（推奨）
+### データ駆動トークン化テスト（推奨）
 
-`tests/data/tokenization/*.json` の期待値は、リファレンス解析器の正規化パイプラインから生成され、`universal_tokenization_test.cpp` によって自動検出されます。
+`tests/data/tokenization/*.json` の期待値は、基準となる辞書ベースの解析器の正規化パイプラインから生成され、`universal_tokenization_test.cpp` によって自動検出されます。
 
 ::: danger 生成フィクスチャを直接編集しない
-`tests/data/tokenization/*.json` と `data/**/*.tsv` はツール管理下にあり、リポジトリのフックが直接書き込みをブロックします。Suzume の現在の出力に合わせるためだけに期待トークンを変更してはいけません。解析器または正規化規則を修正し、ツール経由で再生成してください。
+`tests/data/tokenization/*.json` と `data/**/*.tsv` はツール管理下にあり、リポジトリのフックが直接書き込みをブロックします。Suzume の現在の出力に合わせるためだけに期待トークンを変更してはいけません。トークナイザーまたは正規化規則を修正し、ツール経由で再生成してください。
 :::
 
-リポジトリの MCP サーバーを設定している場合の標準フローは次のとおりです。
+リポジトリの MCP サーバーを設定している場合、不一致は 2 通りの修正のどちらかを経てから登録します。
+
+<DiagramFixtureLoop />
 
 ```text
 test_show(input_text="問題文")
-# 解析器または正規化規則を修正してリビルド
+# トークナイザーの規則を直してリビルドするか、正規化規則を直す
 test_show(input_text="問題文")
 test_add(input_text="問題文", file="verb_example.json")
 ```
 
-`scripts/mcp/src/suzume_mcp/core/` 以下の正規化規則を変更した後は、`test_needs_suzume_update(apply=True)` で影響する期待値を同期します。最新のフローとツール一覧はリポジトリの `CONTRIBUTING.md` と `AGENTS.md` を参照してください。
+正規化規則は `scripts/mcp/src/suzume_mcp/core/` 以下にあります。最新のフローとツール一覧はリポジトリの `CONTRIBUTING.md` と `AGENTS.md` を参照してください。
 
-::: warning フィクスチャの POS ラベル
+::: warning フィクスチャの品詞ラベル
 これらの JSON フィクスチャの `pos` 値は、先頭大文字のリファレンス用体系（`Noun`、`Particle` など）を使います。これはライブラリが返す実行時の `Morpheme.pos` 値とは別のラベル集合で、実行時の値は英大文字（`NOUN`、`PARTICLE` など）です。両者がそのまま一致するとは考えないでください。
 :::
 
 #### 既存のテストファイル
 
-スイートは随時追加され、言語カテゴリ別に整理されています。代表例:
+スイートは随時追加し、言語カテゴリ別に整理しています。代表例を次に示します。
 
 | カテゴリ | 説明 |
 |---------|------|
-| `basic.json` | 基本的なトークナイズ、単語 |
+| `basic.json` | 基本的なトークン化、単語 |
 | `adjective*.json` | イ形容詞、ナ形容詞、複合語 |
 | `verb*.json` | 一段、五段、サ変、受動、使役 |
 | `particle*.json` | 格助詞、係助詞、接続助詞 |
@@ -125,7 +132,7 @@ test_add(input_text="問題文", file="verb_example.json")
 
 ### C++ 単体テスト
 
-内部モジュールを直接テストする場合:
+内部モジュールを直接テストする場合は、次の手順を取ります。
 
 1. `tests/category/new_test.cpp` を作成
 2. `tests/CMakeLists.txt` の `TEST_SOURCES` に追加
@@ -148,9 +155,9 @@ TEST(ModuleTest, SpecificBehavior) {
 
 ### WASM テスト
 
-WebAssembly バインディングのテスト:
+WebAssembly バインディングのテストを追加します。
 
-`bindings/wasm/tests/feature.test.ts` を作成:
+`bindings/wasm/tests/feature.test.ts` を作成します。
 
 ```typescript
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -176,7 +183,7 @@ describe('Feature', () => {
 
 ### CLI テストファイル（TSV）
 
-CLI でのバッチテスト用:
+CLI でバッチテストを実行する場合の入力形式です。
 
 ```tsv
 # コメントは # で開始
@@ -184,7 +191,7 @@ CLI でのバッチテスト用:
 美しい花が咲いている	美しい,咲く
 ```
 
-実行:
+次のコマンドで実行します。
 
 ```bash
 suzume-cli test -f tests.tsv
@@ -194,10 +201,10 @@ suzume-cli test -f tests.tsv
 
 ## ベンチマーク
 
-CLI にベンチマークコマンドが組み込まれています:
+CLI にはベンチマークコマンドが組み込まれています。
 
 ```bash
-# 組み込みテストテキストをデフォルトの計測条件で実行
+# 組み込みテストテキストを既定の計測条件で実行
 suzume-cli test benchmark
 
 # 定常反復、統計サンプル、ウォームアップを指定
@@ -211,7 +218,7 @@ suzume-cli test benchmark -f corpus.txt
 
 ## デバッグビルド
 
-### サニタイザ付き
+### サニタイザー付き
 
 ```bash
 # AddressSanitizer
@@ -247,13 +254,13 @@ ctest --test-dir build --output-on-failure
 
 ## CI
 
-ドキュメントだけの変更を除き、GitHub Actions は `main` と `develop` への push、および `main` 向け pull request で動きます。ワークフローには7つのジョブがあり、`python-binding` だけは `develop` への直接 push ではスキップされます。
+ドキュメントだけの変更を除き、GitHub Actions は `main` と `develop` への push、および `main` 向け pull request で動きます。ワークフローには 7 つのジョブがあり、`python-binding` だけは `develop` への直接 push ではスキップされます。
 
 | ジョブ | 内容 |
 |--------|------|
 | `lint` | WASM の lint、MCP サーバーとリポジトリ内 Python スクリプトの Ruff 検査 |
-| `guardrails` | 生成ファイル、列挙値ミラー、オラクル、複合語、バージョン整合性の検査 |
-| `mcp-tests` | MeCab + IPADIC を使う MCP／オラクルテストと期待値同期 |
+| `guardrails` | 生成ファイル、列挙値ミラー、基準テスト、複合語、バージョン整合性の検査 |
+| `mcp-tests` | MeCab + IPADIC を使う MCP／基準テストと期待値同期 |
 | `sanitizers` | ネイティブの ASan・LSan・UBSan 検査 |
 | `manylinux-toolchain` | サポート対象で最古の manylinux ツールチェーンによる共有コアのコンパイル |
 | `build-and-test` | カバレッジ付きネイティブテストとサンプル、WASM ビルド・サイズ・テスト、バインディング間整合性 |
@@ -265,7 +272,7 @@ ctest --test-dir build --output-on-failure
 
 | ターゲット | 説明 |
 |-----------|------|
-| `make test` | ネイティブ、MCP、Python、WASM、サンプル、コンシューマー、バインディング整合性、ガードレールを検査 |
+| `make test` | ネイティブ、MCP、Python、WASM、サンプル、利用側スモークテスト、バインディング整合性、ガードレールを検査 |
 | `make build` | プロジェクトをビルド |
 | `make dict` | プロジェクトをビルド後、辞書をコンパイル |
 | `make wasm-test` | WASM ビルド + WASM テスト実行 |
@@ -273,5 +280,5 @@ ctest --test-dir build --output-on-failure
 | `make examples` | リポジトリ内の C/C++ サンプルをビルド |
 | `make consumer-smoke` | `find_package` 経由でインストール済みパッケージを検査 |
 | `make version-check` | バインディングマニフェスト間のバージョンを検証 |
-| `make format` | C++、MCP、WASM、Python をフォーマット/lint |
-| `make format-check` | 全言語のフォーマットを検査 |
+| `make format` | C++、MCP、WASM、Python を整形・lint |
+| `make format-check` | 全言語の整形状態を検査 |

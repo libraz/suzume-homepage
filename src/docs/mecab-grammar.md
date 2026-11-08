@@ -1,3 +1,8 @@
+---
+title: "MeCab vs Suzume: Verbs, Auxiliaries, and Particles"
+description: "Token boundaries for compound verbs, auxiliaries, particles, and colloquial and classical forms: what Suzume keeps whole and what it splits, versus MeCab."
+---
+
 # Verbs and Grammar
 
 Compound verbs, auxiliaries, and particles have different boundary rules. These examples show which expressions stay whole and which retain their grammatical parts, including colloquial and classical forms.
@@ -8,11 +13,11 @@ All examples use the [comparison baseline](/docs/mecab-comparison#comparison-bas
 
 ### Compound Verbs
 
-Verb stems in 連用形 followed by subsidiary verbs are merged into compound verbs.
+Verb stems in [連用形](/docs/glossary#renyokei) followed by subsidiary verbs are merged into compound verbs.
 
 <TokenDiff input="食べ続ける" mecab="食べ / 続ける" suzume="食べ続ける(VERB)" />
 
-Supported V2 elements include: 込む, 出す, 続く, 返す, 合う, 直す, 切る, 上がる, 抜く, こもる, 続ける, つける, 替える, 合わせる, 上げる, 下げる, 掛ける, 入れる, etc. (300+ kanji and kana forms)
+Supported second-verb elements include: 込む, 出す, 続く, 返す, 合う, 直す, 切る, 上がる, 抜く, こもる, 続ける, つける, 替える, 合わせる, 上げる, 下げる, 掛ける, 入れる, etc. (300+ forms, kanji and kana spellings combined)
 
 Grammaticalized subsidiaries such as 過ぎる and かねる are deliberately **not** merged — see [Subsidiary Auxiliary Splitting](#subsidiary-auxiliary-splitting).
 
@@ -36,7 +41,16 @@ In this construction, た and がる do not express past tense plus an independe
 
 ### Subsidiary Auxiliary Splitting
 
-Grammaticalized subsidiary verbs — 過ぎる (excess), かねる (inability), そびれる (missed chance), 尽くす (exhaustive) — split off from the main verb. Suzume records their auxiliary role in the extended POS; the public POS remains `VERB` for the `過ぎる` forms and is `AUX` for the other subsidiary forms below. MeCab's own treatment varies with the dictionary: some combinations come out merged (飲み過ぎ), others split with the 非自立 subcategory.
+Grammaticalized subsidiary verbs split off from the main verb. Suzume records their auxiliary role in the [extended POS](/docs/glossary#extended-pos); the public [POS](/docs/glossary#pos) is as follows.
+
+| Subsidiary | Meaning | Public POS |
+|------------|---------|------------|
+| 過ぎる | excess | `VERB` |
+| かねる | inability | `AUX` |
+| そびれる | missed chance | `AUX` |
+| 尽くす | exhaustive | `AUX` |
+
+MeCab's own treatment varies with the dictionary: some combinations come out merged (飲み過ぎ), others split with the 非自立 subcategory.
 
 <TokenDiff input="飲み過ぎた" mecab="飲み(動詞) / 過ぎ(動詞・非自立) / た(助動詞)" suzume="飲み(VERB) / 過ぎ(VERB, lemma: 過ぎる) / た(AUX)" />
 
@@ -48,7 +62,7 @@ Grammaticalized subsidiary verbs — 過ぎる (excess), かねる (inability), 
 
 <Why>
 
-These subsidiaries add grammatical meaning (degree, possibility, completion) rather than forming a new lexical verb. Keeping the main verb separate preserves its lemma for search, and one rule covers the whole family consistently.
+These subsidiaries add grammatical meaning (degree, possibility, completion) rather than forming a new lexical verb. Keeping the main verb separate preserves its [lemma](/docs/glossary#lemma) for search, and one rule covers the whole family consistently.
 
 </Why>
 
@@ -87,7 +101,7 @@ counterparts. The supported families include negative forms, conjectural and
 obligation auxiliaries, past and perfect auxiliaries, prohibitives, and
 imperatives. A compact sample:
 
-- Classical negative ぬ splits from the 未然形: 知らぬ → 知ら + ぬ (`AUX`)
+- Classical negative ぬ splits from the [未然形](/docs/glossary#mizenkei): 知らぬ → 知ら + ぬ (`AUX`)
 - Literary volitional ん splits the same way: 乗り越えん → 乗り越え + ん (`AUX`)
 - Classical past き keeps its own auxiliary boundary: 行かざりき → 行か + ざり + き
 
@@ -210,13 +224,13 @@ These stem+と combinations are conventionally used as adverbs and are more usef
 
 ### Kango + として
 
-For fixed tari-adverb constructions such as 依然として, MeCab treats the expression as one adverb. Suzume splits the adverb form from the する conjugation. Productive expressions such as 名詞として already have grammatical boundaries in both analyzers.
+For fixed tari-adverb constructions such as 依然として, MeCab treats the expression as one adverb. Suzume splits the adverb form from the conjugated する. Productive expressions such as 名詞として already have grammatical boundaries in both analyzers.
 
 <TokenDiff input="依然として" mecab="依然として(副詞)" suzume="依然と(ADV) / し(VERB) / て(PARTICLE)" />
 
 <Why>
 
-These are taru-adjective adverb forms (漢語 + と) followed by する conjugation. Splitting provides more accurate grammatical structure.
+These are adverbial forms of taru-adjectives (Sino-Japanese stem + と) followed by a conjugated する. Splitting shows the grammatical structure more accurately.
 
 </Why>
 
@@ -224,7 +238,7 @@ These are taru-adjective adverb forms (漢語 + と) followed by する conjugat
 
 ### Copula Negation
 
-After a nominal predicate, Suzume treats じゃ as the copula and ない as the
+After a nominal predicate, Suzume treats じゃ as the [copula](/docs/glossary#copula) and ない as the
 adjective. The nominal host is part of the comparison so the copular context is
 explicit.
 
@@ -239,7 +253,7 @@ visible.
 
 ### Causative-Passive
 
-MeCab sometimes merges godan verb 未然形 + causative さ into one token. Suzume normalizes this inconsistency.
+MeCab sometimes merges [godan](/docs/glossary#godan-ichidan) verb 未然形 + causative さ into one token. Suzume normalizes this inconsistency.
 
 <TokenDiff input="飲まされた" mecab="飲まさ(動詞) / れ(動詞・接尾) / た(助動詞)" suzume="飲ま(VERB, lemma: 飲む) / さ(AUX, lemma: す) / れ(AUX) / た(AUX)" />
 
@@ -251,7 +265,7 @@ The selected IPADIC analysis splits some causative-passive forms (読ま + さ +
 
 ### Formal Noun ふう
 
-ふうに after a demonstrative determiner is split into its grammatical determiner, formal-noun, and particle units.
+ふうに after a demonstrative determiner is split into its grammatical determiner, [formal-noun](/docs/glossary#formal-noun), and particle units.
 
 <TokenDiff input="そんなふうに" mecab="そんなふうに(副詞)" suzume="そんな(DET) / ふう(NOUN) / に(PARTICLE)" />
 

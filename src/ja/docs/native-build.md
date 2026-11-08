@@ -1,3 +1,8 @@
+---
+title: "ソースからビルド：C++17 と WASM"
+description: "CMake で Suzume の C++17 静的ライブラリとネイティブ CLI をソースからビルドします。共有 C ライブラリ、辞書の埋め込み、C/C++ サンプル、WASM ビルドも扱います。"
+---
+
 # ネイティブビルド
 
 Suzume は C++17 の静的ライブラリとネイティブ開発者向け CLI としてビルドできます。共有 C ABI ライブラリ、辞書埋め込み、連携サンプル、WASM は任意です。
@@ -14,7 +19,7 @@ Suzume は C++17 の静的ライブラリとネイティブ開発者向け CLI �
 - CMake 3.15 以降
 - ネイティブテスト（`BUILD_TESTING=ON`、既定）、埋め込み辞書（`SUZUME_EMBED_DICT=ON`）、WASM ビルド（`BUILD_WASM=ON`）のいずれかを使う場合は Python 3
 
-### 既定のビルド
+### 既定のビルド {#default-build}
 
 `BUILD_CLI` と `BUILD_TESTING` は既定で ON です。
 
@@ -46,12 +51,12 @@ build/bin/suzume-cli --help
 | `ENABLE_DEBUG_INFO` | ネイティブ `ON`、WASM `OFF` | 候補の生成元を追跡 |
 | `ENABLE_DEBUG_LOG` | ネイティブ `ON`、WASM `OFF` | `SUZUME_DEBUG` ログをコンパイル |
 | `ENABLE_COVERAGE` | `OFF` | コンパイラのカバレッジ計測を追加 |
-| `ENABLE_SANITIZER` | `OFF` | サニタイザフラグを有効化 |
+| `ENABLE_SANITIZER` | `OFF` | サニタイザーのフラグを有効化 |
 | `ENABLE_ASAN` | `OFF` | AddressSanitizer を選択 |
 | `ENABLE_UBSAN` | `OFF` | UndefinedBehaviorSanitizer を選択 |
 | `ENABLE_TSAN` | `OFF` | ThreadSanitizer を選択 |
 
-`ENABLE_SANITIZER=ON` で個別のサニタイザを選ばなかった場合は、AddressSanitizer と UndefinedBehaviorSanitizer が有効になります。
+`ENABLE_SANITIZER=ON` で個別のサニタイザーを選ばなかった場合は、AddressSanitizer と UndefinedBehaviorSanitizer が有効になります。
 
 ```bash
 cmake -S . -B build \
@@ -79,7 +84,7 @@ cmake --install build-lib
 
 この構成では `suzume-cli`、`build-dict`、`validate-dict` を生成しません。CLI が生成する `core.dic` と `user.dic` もインストール対象外です。`SUZUME_EMBED_DICT=OFF` なら、コンパイル済み辞書を別にインストールするか、それを置いたディレクトリを実行時に指定してください。`Options::data_directory`、対応する C オプション、または `SUZUME_DATA_DIR` を使えます。
 
-辞書を含む1つの静的アーカイブを作る場合は、クリーンなチェックアウトで先に辞書をビルドします。
+辞書を含む 1 つの静的アーカイブを作る場合は、クリーンなチェックアウトで先に辞書をビルドします。
 
 ```bash
 make dict

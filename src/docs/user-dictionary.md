@@ -1,6 +1,31 @@
+---
+title: "Add Custom Words with a User Dictionary"
+description: "Keep domain terms as one token or set their part of speech and lemma: write a TSV user dictionary, load it at runtime, and compile it into a binary dictionary."
+---
+
 # User Dictionary
 
-Use a user dictionary when a domain-specific word should be treated as one token or needs an explicit part of speech.
+Use a [user dictionary](/docs/glossary#user-dictionary) when a domain-specific word should be treated as one token or needs an explicit part of speech or [lemma](/docs/glossary#lemma).
+
+## Quick Start
+
+Without a dictionary, `量子もつれ` (quantum entanglement) splits into two tokens. One TSV row joins it:
+
+```typescript
+import { Suzume } from '@libraz/suzume'
+
+const suzume = await Suzume.create()
+const show = () => suzume.analyze('量子もつれを観測した').map((m) => m.surface).join(' | ')
+
+console.log(show()) // 量子 | もつれ | を | 観測 | し | た
+suzume.loadUserDictionary('量子もつれ\tNOUN\n')
+console.log(show()) // 量子もつれ | を | 観測 | し | た
+suzume.destroy()
+```
+
+Try your own rows here. The demo analyzes the same text with and without the dictionary:
+
+<UserDictDemo />
 
 ## Source Format
 
@@ -13,21 +38,34 @@ surface<TAB>POS[<TAB>conj_type][<TAB>lemma]
 | Field | Required | Description |
 |-------|----------|-------------|
 | `surface` | Yes | Text matched by the dictionary |
-| `POS` | Yes | Part of speech |
-| `conj_type` | No | Conjugation or proper-name marker |
-| `lemma` | No | Base form; leave `conj_type` empty when only a lemma is needed |
+| `POS` | Yes | [Part of speech](/docs/glossary#pos) |
+| `conj_type` | No | [Conjugation type](/docs/glossary#conjugation-type) or proper-name marker |
+| `lemma` | No | Lemma; leave `conj_type` empty when only a lemma is needed |
 
-This example contains a noun, a verb whose forms will be expanded, and a literal verb form with an explicit lemma:
+This example registers a noun, a verb whose forms are expanded, and a noun with an explicit lemma, one per row:
 
 ```tsv
-東京公園	NOUN
-点検する	VERB	SURU
-点検した	VERB		点検する
+量子もつれ	NOUN
+もふる	VERB	GODAN_RA
+スマホ	NOUN		スマートフォン
 ```
+
+Each row changes the analysis of a sentence:
+
+| Row | Sentence | Without the row | With the row |
+|-----|----------|-----------------|--------------|
+| `量子もつれ` `NOUN` | 量子もつれを観測した | 量子 / もつれ / を / 観測 / し / た | 量子もつれ / を / 観測 / し / た |
+| `もふる` `VERB` `GODAN_RA` | 猫をもふった | 猫 / を / も / ふっ / た | 猫 / を / もふっ / た (`もふっ` has lemma `もふる`) |
+| `スマホ` `NOUN` (lemma `スマートフォン`) | スマホを買った | `スマホ` has lemma `スマホ` | `スマホ` has lemma `スマートフォン` |
 
 Use actual tab characters between fields. The delimiter is selected from the first data row, so do not mix TSV and CSV rows in one load. Blank lines and lines whose first non-whitespace character is `#` are ignored.
 
-At runtime, a `surface` may be at most 255 bytes after UTF-8 encoding. This is a byte limit, so the maximum number of characters depends on the text.
+Field lengths are counted in bytes after UTF-8 encoding, so the maximum number of characters depends on the text:
+
+| Field | Loaded from source at runtime | Compiled into a `.dic` file |
+|-------|-------------------------------|-----------------------------|
+| `surface` | At most 255 bytes | At most 255 bytes |
+| `lemma` | No byte limit | At most 255 bytes; `dict compile` rejects a longer lemma |
 
 ### Part-of-speech Values
 
@@ -56,7 +94,7 @@ The long English aliases accepted by the parser include `ADJECTIVE`, `ADVERB`, `
 
 ### Conjugation Types
 
-Set `conj_type` to describe conjugation or a more specific grammatical class. Matching verbs and i-adjectives generate inflected entries from the base form.
+Set `conj_type` to describe conjugation or a more specific grammatical class. Matching verbs and i-adjectives generate inflected entries from the lemma.
 
 | Value | Use |
 |-------|-----|
@@ -68,31 +106,48 @@ Set `conj_type` to describe conjugation or a more specific grammatical class. Ma
 | `INTJ` | Interjection marker |
 | `FAMILY`, `GIVEN` | Family-name or given-name marker |
 
-`conj_type` is case-sensitive. A verb or i-adjective with a matching marker expands into the forms installed in the runtime dictionary. This is why an expanded-entry count can be larger than the number of source rows.
+`conj_type` is case-sensitive. A verb or i-adjective with a matching marker expands into its inflected forms, and each form becomes its own runtime entry.
+
+<DiagramConjExpansion />
 
 A third field that is neither a marker nor a number is read as the lemma. A misspelled or lowercase marker such as `suru` therefore loads without a warning, as a lemma, and no forms are expanded.
+
+::: tip How to pick conj_type
+Find the class from the dictionary form. See [godan and ichidan](/docs/glossary#godan-ichidan) for the verb distinction.
+
+| Entry | `POS` | `conj_type` | Class |
+|-------|-------|-------------|-------|
+| 食べる | `VERB` | `ICHIDAN` | Ichidan verb: 食べない, 食べます |
+| 書く | `VERB` | `GODAN_KA` | Godan verb ending in く: 書かない, 書きます |
+| 話す | `VERB` | `GODAN_SA` | Godan verb ending in す: 話さない, 話します |
+| 点検する | `VERB` | `SURU` | Noun + する |
+| 高い | `ADJ` | `I_ADJ` | I-adjective: 高くない |
+| 静か | `ADJ` | `NA_ADJ` | Na-adjective: 静かな |
+
+A wrong pick fails silently: the row loads with no error and no warning, but expands into the wrong forms, as the `ICHIDAN` row in the figure above shows. After loading, analyze a conjugated sentence and check the [user-dictionary flag](#verifying-a-match).
+:::
 
 ### Legacy CSV Compatibility
 
 The legacy three-column CSV form remains accepted:
 
 ```csv
-東京公園,NOUN,5000
+量子もつれ,NOUN,5000
 ```
 
 Its third field is a compatibility cost column. Suzume ignores the value; it cannot change matching priority. Write new dictionaries in TSV and use `conj_type` when inflection expansion is required.
 
 ## Runtime Loading
 
-Each successful call adds another source or binary dictionary to the same analyzer. The native CLI applies each repeatable `--dict` argument to the analyzer used by that command.
+Each successful call adds another source or binary dictionary to the same instance. The CLIs apply each repeatable `--dict` argument to the instance used by that command.
 
 ::: code-group
 
-```typescript [Node]
+```typescript [JavaScript]
 import { Suzume } from '@libraz/suzume'
 
 const suzume = await Suzume.create()
-const source = '東京公園\tNOUN\n点検する\tVERB\tSURU\n'
+const source = '量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n'
 
 try {
   const expandedCount = suzume.loadUserDictionaryCount(source)
@@ -107,7 +162,7 @@ try {
 ```python [Python]
 from suzume import Suzume
 
-source = "東京公園\tNOUN\n点検する\tVERB\tSURU\n"
+source = "量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n"
 
 with Suzume() as suzume:
     expanded_count = suzume.load_user_dict(source)
@@ -129,8 +184,8 @@ func main() {
 	}
 	defer analyzer.Close()
 
-	source := []byte("東京公園\tNOUN\n点検する\tVERB\tSURU\n")
-	if err := analyzer.LoadUserDictionary(source); err != nil {
+	source := []byte("量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n")
+	if _, err := analyzer.LoadUserDictionaryCount(source); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -144,15 +199,9 @@ func main() {
 int main() {
   suzume::Tokenizer tokenizer;
   const std::size_t expanded_count =
-      tokenizer.loadUserDictionaryCount("東京公園\tNOUN\n点検する\tVERB\tSURU\n");
+      tokenizer.loadUserDictionaryCount("量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n");
   return expanded_count == 0 ? 1 : 0;
 }
-```
-
-```bash [Native CLI]
-# user.tsv contains the same tab-separated rows.
-# --dict is repeatable and also accepts compiled .dic files.
-suzume-cli analyze --dict user.tsv "東京公園を点検する"
 ```
 
 ```c [C]
@@ -162,7 +211,7 @@ suzume-cli analyze --dict user.tsv "東京公園を点検する"
 int main(void) {
   suzume_t tokenizer = suzume_create();
   if (!tokenizer) return 1;
-  const char* source = "東京公園\tNOUN\n点検する\tVERB\tSURU\n";
+  const char* source = "量子もつれ\tNOUN\nもふる\tVERB\tGODAN_RA\n";
   const size_t expanded_count =
       suzume_load_user_dict_count(tokenizer, source, strlen(source));
   suzume_destroy(tokenizer);
@@ -170,29 +219,29 @@ int main(void) {
 }
 ```
 
-```bash [Python CLI]
+```bash [CLI]
 # user.tsv contains the same tab-separated rows.
-suzume --dict user.tsv "東京公園を点検する"
+# --dict is repeatable and also accepts compiled .dic files.
+suzume --dict user.tsv "量子もつれを観測した"                 # Python wheel
+suzume-cli analyze --dict user.tsv "量子もつれを観測した"     # native CLI
 ```
 
 :::
 
-In Go, use `LoadUserDictionaryCount([]byte) (int, error)` when you need the expanded-entry count, and `ClearUserDictionaries() error` to remove caller-loaded dictionaries. See the [Go API guide](/docs/go) for examples.
-
 ### Return Values and Errors
 
-| Surface | Source dictionary result | Failure details |
+| Binding | Source dictionary result | Failure details |
 |---------|--------------------------|-----------------|
-| Node | `loadUserDictionary()` returns `boolean`; `loadUserDictionaryCount()` returns the expanded-entry count | Read `lastError` / `lastErrorCode`, or use `loadUserDictionaryOrThrow()` |
+| JavaScript | `loadUserDictionary()` returns `boolean`; `loadUserDictionaryCount()` returns the expanded-entry count | Read `lastError` / `lastErrorCode`, or use `loadUserDictionaryOrThrow()` |
 | Python | `load_user_dict()` returns the expanded-entry count | Raises `SuzumeError` |
 | Go | `LoadUserDictionary()` returns `error`; `LoadUserDictionaryCount()` returns `(int, error)` | The returned error includes the native message when available |
 | C++ | `loadUserDictionary()` returns `bool`; `loadUserDictionaryCount()` returns the expanded-entry count | Read `Tokenizer::lastError()` / `lastErrorCode()` |
 | C ABI | `suzume_load_user_dict()` returns `1` or `0`; `suzume_load_user_dict_count()` returns the expanded-entry count | Read `suzume_last_error()` / `suzume_last_error_code()` |
-| Native CLI | Exits nonzero when a dictionary cannot be loaded | Prints the load error to standard error |
+| CLI | Exits nonzero when a dictionary cannot be loaded | Prints the load error to standard error |
 
 The count APIs return `0` on failure. A successful source load always installs at least one entry. The count is measured after conjugation expansion and duplicate removal, not by counting source rows.
 
-A failed source or binary load does not remove or replace dictionaries already installed on the analyzer. It also does not install the valid prefix of a source file. Successful loads remain additive until they are cleared or the analyzer is destroyed.
+A failed source or binary load does not remove or replace dictionaries already installed on the instance. It also does not install the valid prefix of a source file. Successful loads remain additive until they are cleared or the instance is destroyed.
 
 ### Warnings and Partially Valid Input
 
@@ -200,51 +249,74 @@ Runtime source loading skips a record with fewer than two fields. If another row
 
 ```text
 missing-pos
-東京公園	NOUN
+量子もつれ	NOUN
 ```
 
 An entry can also be parsed successfully and then rejected during installation, for example when its surface exceeds the 255-byte limit. Such expanded entries are skipped with a warning when at least one other entry installs. If every expanded entry is rejected, the load fails. Invalid UTF-8 is a parse error and rejects the whole load instead.
 
-Warnings from runtime loads are appended to the analyzer's dictionary-warning list. Read them through `dictionaryWarnings` in Node, `dictionary_warnings` in Python, `DictionaryWarnings()` in Go, `Tokenizer::dictionaryWarnings()` in C++, or the `suzume_dictionary_warning_*` C functions. `clearUserDictionaries()` and its equivalents clear runtime-load warnings but retain construction-time warnings. The native CLI does not currently print warnings added while processing a `--dict` source file.
+Warnings from runtime loads are appended to the instance's dictionary-warning list:
+
+| Binding | Read warnings |
+|---------|---------------|
+| JavaScript | `dictionaryWarnings` |
+| Python | `dictionary_warnings` |
+| Go | `DictionaryWarnings()` |
+| C++ | `Tokenizer::dictionaryWarnings()` |
+| C ABI | `suzume_dictionary_warning_count()` and `suzume_dictionary_warning()` |
+| Native CLI | Not printed for a `--dict` source file |
+
+`clearUserDictionaries()` and its equivalents clear runtime-load warnings but retain construction-time warnings.
 
 If every data row is skipped, the load fails because there are no loadable entries. Unknown POS values, empty required fields, invalid UTF-8, and malformed legacy CSV quoting also fail the whole load. Unexpected non-empty TSV columns reject the whole load; legacy CSV ignores columns after the fourth field.
 
-## Clearing Caller-loaded Dictionaries
+## Dictionary Layers {#dictionary-layers}
 
-Clearing removes every source and binary user dictionary explicitly loaded on that analyzer:
+<DiagramDictionaryLayers />
 
-| Surface | Clear operation |
-|---------|-----------------|
-| Node | `suzume.clearUserDictionaries()` |
-| Python | `suzume.clear_user_dictionaries()` |
-| Go | `analyzer.ClearUserDictionaries()` returns `error` |
-| C++ | `tokenizer.clearUserDictionaries()` |
-| C ABI | `suzume_clear_user_dictionaries(handle)` |
-| Native CLI | No persistent analyzer to clear; dictionaries last for one invocation |
+All four layers are consulted at every position, and no layer hides another layer's entries. The built-in layer is always present, `core.dic` and `user.dic` load automatically when the instance is created, and caller-loaded dictionaries come from the [runtime loading](#runtime-loading) calls and stay until they are cleared or the instance is destroyed. Entries from the bundled and caller-loaded user dictionaries receive a score bonus, which is why a user-dictionary row usually wins over the split it replaces.
 
-The automatically loaded bundled user dictionary remains installed. Built-in and core dictionaries are also unaffected.
+Tokens from both user-dictionary layers report the [user-dictionary flag](#verifying-a-match). The npm package, the PyPI wheel, and the Go binding embed or ship `core.dic` and `user.dic`, so no setup is needed.
+
+The skip options apply only when an instance is created. Clearing removes every source and binary dictionary loaded on that instance and leaves the other three layers in place:
+
+| Binding | Skip `core.dic` | Skip bundled `user.dic` | Clear caller-loaded dictionaries |
+|---------|-----------------|-------------------------|----------------------------------|
+| JavaScript | `skipCoreDictionary: true` | `skipUserDictionary: true` | `clearUserDictionaries()` |
+| Python | `skip_core_dictionary=True` | `skip_user_dictionary=True` | `clear_user_dictionaries()` |
+| Go | `ExtendedOptions.SkipCoreDictionary` | `ExtendedOptions.SkipUserDictionary` | `ClearUserDictionaries()`, which returns `error` |
+| C++ | `Options::skip_core_dictionary` | `Options::skip_user_dictionary` | `clearUserDictionaries()` |
+| C ABI | `skip_core_dictionary` in `suzume_extended_options_t` | `skip_user_dictionary` in `suzume_extended_options_t` | `suzume_clear_user_dictionaries(handle)` |
+| CLI | `--no-core-dict` | `--no-user-dict` | Not needed; dictionaries last for one invocation |
+
+`--no-user-dict` skips only the bundled `user.dic`; files passed with `--dict` still load.
 
 ## Verifying a Match
 
-An analyzed morpheme has `isUserDict` in Node, `is_user_dict` in Python and C++, `IsUserDict` in Go, or the `SUZUME_MORPHEME_USER_DICT` flag in C. The value is true when the selected token came from a user dictionary, including the bundled user dictionary.
+A token reports whether it came from a user dictionary, including the bundled one:
+
+| Binding | Flag |
+|---------|------|
+| JavaScript | `isUserDict` |
+| Python | `is_user_dict` |
+| Go | `IsUserDict` |
+| C++ | `is_user_dict` |
+| C ABI | `SUZUME_MORPHEME_USER_DICT` flag |
 
 ## Binary Dictionaries
 
-Compile source TSV when startup time matters or when the same dictionary will be loaded repeatedly:
+Compile source TSV when startup time matters or when the same dictionary will be loaded repeatedly. Compiling needs the native [`suzume-cli`](/docs/installation#suzume-cli), which the npm package and the PyPI wheel do not include.
 
 ```bash
 suzume-cli dict compile user.tsv   # writes user.dic
 ```
 
-Load `.dic` bytes with `loadBinaryDictionary()` in Node and C++, `load_binary_dict()` in Python, `LoadBinaryDictionary()` in Go, or `suzume_load_binary_dict()` in C. The native CLI accepts a `.dic` path through `--dict`.
+<DiagramBinaryDictFlow />
 
-Binary loads are additive and preserve existing dictionaries on failure. The current `.dic` format is version 4. Suzume rejects other binary format versions, so keep the TSV source and recompile it with the current CLI when needed.
-
-The file has a 16-byte `SZMD` header, a front-coded surface table, a grammar palette, an adaptive entry array, and an optional deduplicated lemma table. Repeated surfaces can retain distinct grammatical entries.
+The C ABI loads the same bytes with `suzume_load_binary_dict()`. See [`dict` in the Native CLI reference](/docs/cli#dict) for the compiler and the file layout.
 
 ## Persistence
 
-Caller-loaded dictionaries live in the analyzer instance and disappear when it is destroyed. Store the TSV source or compiled `.dic` in your application, then load it into each new analyzer.
+Caller-loaded dictionaries live in the instance and disappear when it is destroyed. Store the TSV source or compiled `.dic` in your application, then load it into each new instance.
 
 ## Recommended Practice
 

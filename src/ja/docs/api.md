@@ -1,3 +1,8 @@
+---
+title: "JavaScript / WASM API リファレンス"
+description: "ブラウザ・Node.js・Deno・Bun 向け @libraz/suzume のリファレンスです。Suzume.create のオプション、analyze、generateTags、ユーザー辞書、Morpheme、エラーを扱います。"
+---
+
 # API リファレンス
 
 このページは Suzume の JavaScript / WASM バインディングについて解説します。npm では [`@libraz/suzume`](/ja/docs/installation) として公開しています。Python、Go、C/C++、2 種類のコマンドラインインターフェースには別のガイドがあります。
@@ -16,7 +21,7 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 
 **`SuzumeOptions`:**
 
-| オプション | 型 | デフォルト | 説明 |
+| オプション | 型 | 既定 | 説明 |
 |-----------|------|---------|-------------|
 | `wasmPath` | `string` | `undefined` | WASM ファイルのカスタムパス |
 | `freshWasmModule` | `boolean` | `false` | 共有キャッシュを使わず、独立した WASM ランタイムを作成 |
@@ -24,7 +29,7 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `preserveCase` | `boolean` | `true` | 大文字小文字を保持（ASCII を小文字化しない） |
 | `preserveSymbols` | `boolean` | `false` | 句読点などの `SYMBOL` トークンを保持。絵文字や内容を持つ記号は、この設定にかかわらず `OTHER` として保持 |
 | `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | 解析モード。検索向けの分割には `search` または `split` を使用 |
-| `lemmatize` | `boolean` | `true` | 補正した辞書形を保持。品詞と活用情報はこの設定にかかわらず計算 |
+| `lemmatize` | `boolean` | `true` | 原形補正を適用。品詞と活用情報はこの設定にかかわらず計算 |
 | `mergeCompounds` | `boolean` | `false` | 連続する名詞複合を可能な範囲で結合 |
 | `skipUserDictionary` | `boolean` | `false` | 同梱ユーザー辞書の自動読み込みを省略 |
 | `skipCoreDictionary` | `boolean` | `false` | 同梱 L2 コア辞書の自動読み込みを省略 |
@@ -63,9 +68,11 @@ searchSuzume.destroy()
 
 `mode` オプションはテキストの分割方法を制御します。
 
-- **`normal`** — 汎用向けのバランスの取れた分割（デフォルト）。
-- **`search`** — 連続する名詞複合語を大きな検索単位として結合する、検索向けの出力。
-- **`split`** — 最も細かい分割。複合語を意味を持つ最小単位まで分解します。
+| モード | 分割 |
+|-------|------|
+| `normal` | 汎用向けのバランスの取れた分割（既定） |
+| `search` | 連続する名詞複合語を大きな検索単位として結合する、検索向けの出力 |
+| `split` | 最も細かい分割。複合語を意味を持つ最小単位まで分解 |
 
 `normal` モードでは `mergeCompounds` が名詞複合語の結合を制御します。`search` は結合を有効にし、`split` は無効にします。
 
@@ -73,7 +80,9 @@ searchSuzume.destroy()
 
 #### 共有 WASM ランタイム
 
-デフォルトでは、同じ `wasmPath` を使う呼び出しが 1 つの WASM ランタイムを共有します。各 `Suzume` オブジェクトは個別の解析ハンドルと設定を持ちますが、WebAssembly の線形メモリは共有です。`destroy()` が解放するのは 1 つのハンドルだけです。キャッシュ済みランタイムは残り、ほかのハンドルにも影響しません。
+既定では、同じ `wasmPath` を使う呼び出しが 1 つの WASM ランタイムを共有します。各 `Suzume` オブジェクトは、そのランタイムの線形メモリ上に個別の解析ハンドルと設定を持ちます。
+
+<DiagramWasmRuntime />
 
 ランタイムごと分離する必要がある場合は `freshWasmModule: true` を指定します。単独の `version()` 関数も、`freshWasmModule: true` を指定しない限り同じキャッシュを使います。
 
@@ -127,7 +136,7 @@ const result = suzume.analyze('東京に行きました')
 
 ### `analyzeWithNormalizedText(text)`
 
-形態素と、そのオフセットが参照する正規化後の文字列を返します。
+トークンと、そのオフセットが参照する正規化後の文字列を返します。
 
 ```typescript
 interface AnalysisResult {
@@ -153,13 +162,15 @@ for (const morpheme of morphemes) {
 }
 ```
 
-`start` と `end` は `normalizedText` 内の Unicode コードポイント単位の位置です。`startUtf16` と `endUtf16` は JavaScript の UTF-16 コードユニット単位で、そのまま `String.prototype.slice()` に渡せます。絵文字や一部の漢字など、基本多言語面の外にある文字より後ろ、またはその文字をまたぐ範囲では両者の値が異なります。オフセットは入力ではなく正規化後の文字列を参照します。内容を持つ記号と絵文字は、`preserveSymbols` が `false` でも `OTHER` として既定の出力に残るため、その範囲も欠けません。
+`start` と `end` は `normalizedText` 内の Unicode コードポイント単位の位置です。`startUtf16` と `endUtf16` は JavaScript の UTF-16 コードユニット単位で、そのまま `String.prototype.slice()` に渡せます。絵文字や一部の漢字など、基本多言語面の外にある文字より後ろ、またはその文字をまたぐ範囲では両者の値が異なります。
+
+オフセットは入力ではなく[正規化](/ja/docs/glossary#normalization)後の文字列を参照します。詳しくは[オフセット](/ja/docs/analysis-modes#offsets)を参照してください。内容を持つ記号と絵文字は、`preserveSymbols` が `false` でも `OTHER` として出力に残るため、オフセットの対応が欠けません。
 
 ---
 
 ### `generateTags(text, options?)`
 
-検索インデックス、分類、コンテンツ分析用のタグを生成します。デフォルトでは内容語（名詞、動詞、形容詞、副詞）を返し、助詞、助動詞、形式名詞、低情報語を除外します。
+検索インデックス、分類、コンテンツ分析用のタグを生成します。既定では内容語（名詞、動詞、形容詞、副詞）を返し、助詞、助動詞、形式名詞、低情報語を除外します。
 
 ```typescript
 generateTags(text: string, options?: TagOptions): Tag[]
@@ -170,7 +181,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | プロパティ | 型 | 説明 |
 |----------|------|-------------|
 | `tag` | `string` | タグテキスト（`useLemma` 設定に応じて表層形または原形） |
-| `pos` | `string` | 品詞（`NOUN`, `VERB`, `ADJ`, `ADV` 等） |
+| `pos` | `string` | [品詞](/ja/docs/glossary#pos)（`NOUN`, `VERB`, `ADJ`, `ADV` 等） |
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
@@ -179,12 +190,12 @@ generateTags(text: string, options?: TagOptions): Tag[]
 
 **`TagOptions`:**
 
-| オプション | 型 | デフォルト | 説明 |
+| オプション | 型 | 既定 | 説明 |
 |-----------|------|---------|-------------|
-| `posFilter` | `readonly TagPosFilterName[]` | `undefined`（全て） | 抽出する品詞カテゴリ。空配列もフィルタ可能な全カテゴリを含み、代名詞は `noun` に含まれます |
+| `posFilter` | `readonly TagPosFilterName[]` | `undefined`（全て） | 抽出する品詞カテゴリ。空配列もフィルター可能な全カテゴリを含み、代名詞は `noun` に含まれます |
 | `pos` | `readonly TagPosFilterName[]` | `undefined` | `posFilter` の非推奨エイリアス。両方を指定した場合は `posFilter` を優先 |
 | `excludeBasic` | `boolean` | `false` | ひらがなのみの原形を持つ基本動詞等を除外 |
-| `useLemma` | `boolean` | `true` | 表層形の代わりに原形（辞書形）を使用 |
+| `useLemma` | `boolean` | `true` | 表層形の代わりに[原形](/ja/docs/glossary#lemma)を使用 |
 | `minLength` | `number` | `2` | タグの最小文字数 |
 | `maxTags` | `number` | `0` | タグの最大数（0 = 無制限） |
 | `excludeParticles` | `boolean` | `true` | 助詞を除外 |
@@ -252,26 +263,28 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 ```
 
 ::: tip excludeBasic
-`excludeBasic: true` は原形（辞書形）がすべてひらがなで書かれた語を除外します。する、いる、ある、なる、いく、くるなどを除外し、開始、管理、確認など漢字を含む語は残します。
+`excludeBasic: true` は原形がすべてひらがなで書かれた語を除外します。する、いる、ある、なる、いく、くるなどを除外し、開始、管理、確認など漢字を含む語は残します。
 :::
 
 <details>
-<summary>フィルタパイプライン</summary>
+<summary>フィルターパイプライン</summary>
 
-タグジェネレーターは以下の順序でフィルタを適用します：
+タグジェネレーターは以下の順序でフィルターを適用します。
 
-1. **助詞** — `excludeParticles` が `true` の場合に除外（デフォルト）
-2. **助動詞** — `excludeAuxiliaries` が `true` の場合に除外（デフォルト）
-3. **形式名詞** — `excludeFormalNouns` が `true` の場合に除外（デフォルト）
-4. **低情報語** — `excludeLowInfo` が `true` の場合に除外（デフォルト）
-5. **接続詞** — 常に除外
-6. **記号** — 常に除外
-7. **品詞フィルタ** — `posFilter` が空でない場合は一致するカテゴリのみ通過。空または未指定でも、名詞（代名詞を含む）、動詞、形容詞、副詞、助詞、助動詞だけが対象
-8. **基本語** — `excludeBasic: true` の場合、ひらがなのみの原形を持つ語を除外
-9. **タグ文字列** — `useLemma` に従って原形または表層形を選択
-10. **最小文字数** — Unicode 文字数が `minLength` 未満のタグを除外
-11. **重複排除** — `removeDuplicates` が `true` の場合に重複タグを削除
-12. **結果数** — `maxTags` 件で生成を終了。`0` は無制限
+| 手順 | フィルター | 動作 |
+|----:|-----------|------|
+| 1 | 助詞 | `excludeParticles` が `true` の場合に除外（既定） |
+| 2 | 助動詞 | `excludeAuxiliaries` が `true` の場合に除外（既定） |
+| 3 | 形式名詞 | `excludeFormalNouns` が `true` の場合に除外（既定） |
+| 4 | 低情報語 | `excludeLowInfo` が `true` の場合に除外（既定） |
+| 5 | 接続詞 | 常に除外 |
+| 6 | 記号 | 常に除外 |
+| 7 | 品詞フィルター | `posFilter` が空でない場合は一致するカテゴリのみ通過。空または未指定でも、名詞（代名詞を含む）、動詞、形容詞、副詞、助詞、助動詞だけが対象 |
+| 8 | 基本語 | `excludeBasic: true` の場合、ひらがなのみの原形を持つ語を除外 |
+| 9 | タグ文字列 | `useLemma` に従って原形または表層形を選択 |
+| 10 | 最小文字数 | Unicode 文字数が `minLength` 未満のタグを除外 |
+| 11 | 重複排除 | `removeDuplicates` が `true` の場合に重複タグを削除 |
+| 12 | 結果数 | `maxTags` 件で生成を終了。`0` は無制限 |
 
 </details>
 
@@ -279,7 +292,7 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 
 ### `loadUserDictionary(data)`
 
-解析器にソース辞書のエントリを追加します。`clearUserDictionaries()` を呼ぶまで、読み込み内容は累積します。
+解析器にソース形式の[ユーザー辞書](/ja/docs/glossary#user-dictionary)エントリを追加します。`clearUserDictionaries()` を呼ぶまで、読み込み内容は累積します。
 
 ```typescript
 loadUserDictionary(data: string): boolean
@@ -291,7 +304,7 @@ loadUserDictionary(data: string): boolean
 
 **戻り値:** `boolean` — 展開後のエントリを 1 件以上登録できた場合は `true`。
 
-**現行形式:** `表層形<TAB>品詞[<TAB>活用型][<TAB>原形]`。活用型は省略可能で、活用形を展開させる場合に指定します。第3列が既知の活用型でなければ原形として扱われます。完全な形式は[ユーザー辞書](/ja/docs/user-dictionary)を参照してください。
+**現行形式:** `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]`。`conj_type` は省略可能で、活用形を展開させる場合に指定します。3 列目が既知の活用型でなければ原形として扱います。完全な形式は[ユーザー辞書](/ja/docs/user-dictionary)を参照してください。
 
 **例:**
 ```typescript
@@ -345,9 +358,9 @@ loadBinaryDictionary(data: Uint8Array): boolean
 
 | パラメータ | 型 | 説明 |
 |-----------|------|-------------|
-| `data` | `Uint8Array` | バイナリ辞書データ（.dic形式） |
+| `data` | `Uint8Array` | バイナリ辞書データ（.dic 形式） |
 
-**戻り値:** `boolean` - 成功時 `true`
+**戻り値:** `boolean` — 成功時 `true`
 
 **例:**
 ```typescript
@@ -356,7 +369,7 @@ import { readFile } from 'fs/promises'
 const dictData = new Uint8Array(await readFile('custom.dic'))
 suzume.loadBinaryDictionary(dictData)
 
-// URLから読み込み（ブラウザ）
+// URL から読み込み（ブラウザ）
 const response = await fetch('/dictionaries/custom.dic')
 const browserDictData = new Uint8Array(await response.arrayBuffer())
 suzume.loadBinaryDictionary(browserDictData)
@@ -441,7 +454,7 @@ WASM ランタイムを作成または取得するため、この関数は非同
 
 ### `lastError`
 
-現在のスレッドにおける最後のC APIエラーを返します。直前のC API呼び出しが成功していれば空文字列です。
+現在のスレッドにおける最後の C API エラーを返します。直前の C API 呼び出しが成功していれば空文字列です。
 
 ```typescript
 get lastError(): string
@@ -493,9 +506,7 @@ wasmMemoryBytes(): number
 destroy(): void
 ```
 
-::: info FinalizationRegistry による自動クリーンアップ
-Suzume は `FinalizationRegistry` コールバックを登録しているため、インスタンスがガベージコレクションされるとリソースは自動的に解放されます。ただし、`destroy()` を明示的に呼び出して即座にクリーンアップすることを推奨します。特に Node.js では GC のタイミングが不定で、WASM メモリは GC のヒープ使用量に反映されず、メモリ逼迫と判断されにくいためです。
-:::
+使い終わったインスタンスでは明示的に呼び出してください。呼ばなかった場合の挙動は[メモリ管理](#メモリ管理)を参照してください。
 
 **例:**
 ```typescript
@@ -514,10 +525,10 @@ suzume.destroy() // 即座にリソースを解放
 interface Morpheme {
   surface: string      // 表層形（テキスト中の表記）
   pos: string          // 品詞（英語）
-  baseForm: string     // 基本形/辞書形
+  baseForm: string     // 原形
   posJa: string        // 品詞（日本語）
-  conjType: string | null  // 活用型
-  conjForm: string | null  // 活用形
+  conjType: string | null  // 活用型。該当なしなら null
+  conjForm: string | null  // 活用形。活用しない場合は null
   extendedPos: string  // 安定した拡張品詞コード（例: "VERB_連用"）
   start: number        // 正規化後テキスト内の開始位置（Unicode コードポイント単位）
   end: number          // 正規化後テキスト内の終了位置（Unicode コードポイント単位）
@@ -537,22 +548,24 @@ interface Morpheme {
 | プロパティ | 型 | 説明 | 例 |
 |----------|------|-------------|---------|
 | `surface` | `string` | テキスト中の表層形 | `"食べ"` |
-| `pos` | `string` | 品詞（英語） | `"VERB"` |
-| `baseForm` | `string` | 辞書形/基本形 | `"食べる"` |
+| `pos` | `string` | [品詞](/ja/docs/glossary#pos)（英語） | `"VERB"` |
+| `baseForm` | `string` | [原形](/ja/docs/glossary#lemma) | `"食べる"` |
 | `posJa` | `string` | 品詞（日本語） | `"動詞"` |
-| `conjType` | `string \| null` | 活用型（動詞/形容詞） | `"一段"` |
-| `conjForm` | `string \| null` | 活用形 | `"連用形"` |
-| `extendedPos` | `string` | 安定した拡張品詞コード | `"VERB_連用"` |
+| `conjType` | `string \| null` | [活用型](/ja/docs/glossary#conjugation-type) | `"一段"` |
+| `conjForm` | `string \| null` | [活用形](/ja/docs/glossary#conjugation-form) | `"連用形"` |
+| `extendedPos` | `string` | 安定した[拡張品詞](/ja/docs/glossary#extended-pos)コード | `"VERB_連用"` |
 | `start` | `number` | 正規化後テキスト内の開始位置（Unicode コードポイント単位） | `0` |
 | `end` | `number` | 正規化後テキスト内の終了位置（Unicode コードポイント単位） | `2` |
 | `startUtf16` | `number` | 正規化後テキスト内の開始位置（JavaScript UTF-16 単位） | `0` |
 | `endUtf16` | `number` | 正規化後テキスト内の終了位置（JavaScript UTF-16 単位） | `2` |
 | `isUserDict` | `boolean` | ユーザー辞書に一致した場合 `true` | `false` |
-| `isFormalNoun` | `boolean` | こと、もの等の形式名詞なら `true` | `false` |
+| `isFormalNoun` | `boolean` | こと、もの等の[形式名詞](/ja/docs/glossary#formal-noun)なら `true` | `false` |
 | `isLowInfo` | `boolean` | タグ生成で低情報語として扱われる場合 `true` | `false` |
 | `isUnknown` | `boolean` | 未知語候補として生成された場合 `true` | `true` |
 | `isFromDictionary` | `boolean` | いずれかの辞書に一致した場合 `true` | `false` |
 | `score` | `number` | 解析器が使う候補スコア/コスト | `-0.17` |
+
+`conjType` と `conjForm` は、活用しないトークン（名詞、助詞など）では `null` です。活用するトークンでも `null` や一部のみの設定になることがあります。たとえば形容詞 `美しかっ` は `conjForm` が `連用形` ですが `conjType` は `null` で、`見ている` の助動詞 `いる`（`AUX_継続`）も `conjForm` は `終止形` ですが `conjType` は `null` です。`conjType` が `null` でも活用しないとは限らないため、形の判断には `pos`、`extendedPos`、`conjForm` を使ってください。
 
 ### 品詞一覧（pos）
 
@@ -740,20 +753,25 @@ try {
 }
 ```
 
-`Suzume.create()`、`analyze()`、`analyzeWithNormalizedText()`、`generateTags()`、辞書読み込みの `OrThrow` メソッド、モード変更、`clearUserDictionaries()` は、ネイティブ側で失敗すると例外を投げます。`OrThrow` のない辞書メソッドは、ネイティブ側の辞書読み込みに失敗すると `false` または `0` を返します。詳細は `lastError` と `lastErrorCode` で確認できます。ただし、JavaScript 側の検証は常に例外を投げます。辞書テキストや `scorerOptions` のキー・文字列値を含め、対になっていない UTF-16 サロゲートを含むテキスト引数を渡すと、`InvalidUtf8` の `SuzumeError` になります。有効なハンドルを必要とするメソッドも、`destroy()` の後は例外を投げます。
+| 状況 | 結果 |
+|------|------|
+| `Suzume.create()`、`analyze()`、`analyzeWithNormalizedText()`、`generateTags()`、辞書読み込みの `OrThrow` メソッド、モード変更、`clearUserDictionaries()` でネイティブ側が失敗した | `SuzumeError` を投げる |
+| `OrThrow` のない辞書メソッドでネイティブ側の辞書読み込みが失敗した | `false` または `0` を返す。詳細は `lastError` と `lastErrorCode` で確認 |
+| 辞書テキストや `scorerOptions` のキー・文字列値を含め、対になっていない UTF-16 サロゲートを含むテキスト引数を渡した | `InvalidUtf8` の `SuzumeError` を投げる（JavaScript 側の検証） |
+| `destroy()` の後に、有効なハンドルを必要とするメソッドを呼んだ | 例外を投げる |
 
 ::: danger WebAssembly のメモリ不足
-メモリ確保に失敗すると、通常の `OutOfMemory` を返さず WASM ランタイムが停止します。回復可能な `SuzumeError` の経路には入らず、停止したランタイムは再利用できません。デフォルトでは複数のインスタンスがランタイムを共有するため、同じランタイム上のほかのハンドルも使えなくなります。長い文書は分割して処理してください。障害をランタイム単位で分離する必要がある場合は `freshWasmModule: true` を使います。
+メモリ確保に失敗すると、通常の `OutOfMemory` を返さず WASM ランタイムが停止します。回復可能な `SuzumeError` の経路には入らず、停止したランタイムは再利用できません。既定では複数のインスタンスがランタイムを共有するため、同じランタイム上のほかのハンドルも使えなくなります。長い文書は分割して処理してください。障害をランタイム単位で分離する必要がある場合は `freshWasmModule: true` を使います。
 :::
 
 ---
 
 ## メモリ管理
 
-Suzume は JavaScript ヒープ外にメモリを確保する WebAssembly を使用します。`FinalizationRegistry` により GC 時にクリーンアップされますが、明示的な `destroy()` を強く推奨します。特に Node.js では GC のタイミングが不定で、WASM メモリは GC のヒープ使用量に反映されず、メモリ逼迫と判断されにくいためです。
+Suzume は JavaScript ヒープの外にある WebAssembly 線形メモリにメモリを確保します。GC からどちら側が見えるかは[共有 WASM ランタイム](#共有-wasm-ランタイム) の図を参照してください。Node.js では、WASM メモリは V8 のヒープ使用量に反映されません。`destroy()` を呼ばずに多くのハンドルを作成すると、GC が負荷を検知できず、`FinalizationRegistry` による解放も遅れるため、メモリ使用量が増える場合があります。サーバーサイドのコードでは特に、`destroy()` を明示的に呼び出してください。
 
 ```typescript
-// 良い例：使用後にクリーンアップ
+// 使用後にクリーンアップ
 const suzume = await Suzume.create()
 try {
   const result = suzume.analyze(text)
@@ -762,7 +780,7 @@ try {
   suzume.destroy()
 }
 
-// 長時間実行アプリ：インスタンスを再利用
+// 長時間実行するアプリではインスタンスを再利用
 class MyApp {
   private suzume: Suzume | null = null
 
@@ -780,7 +798,3 @@ class MyApp {
   }
 }
 ```
-
-::: warning Node.js での注意
-Node.js では WASM メモリは V8 のヒープサイズに追跡されません。`destroy()` を呼ばずに多くのハンドルを作成すると、GC からは圧力が見えず、メモリ使用量が増える場合があります。サーバーサイドコードでは `destroy()` を明示的に呼び出してください。
-:::

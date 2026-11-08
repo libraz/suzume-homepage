@@ -1,20 +1,23 @@
+---
+title: "How It Works: Tokenizing Without a Large Dictionary"
+description: "How Suzume tokenizes Japanese with a small built-in dictionary, pattern-based unknown-word candidates and connection scoring, and when to use which tool."
+---
+
 # How It Works
 
 ## Why So Small?
 
-Suzume's WebAssembly binary, including its built-in dictionaries, is about <WasmSize /> gzipped. Traditional analyzers often need tens of megabytes of dictionaries. How does Suzume keep its binary small?
+Suzume's WebAssembly binary, including its built-in dictionaries, is about <WasmSize /> gzipped. Dictionary-based analyzers often need tens of megabytes of dictionaries. How does Suzume keep its binary small?
 
 ### The Short Answer
 
-| MeCab with an IPADIC-style dictionary | Suzume |
-|---------------------------------------|--------|
-| Loads a broad word list with morphological metadata | Stores selected words and exceptions |
-| Loads a pre-computed connection-cost matrix | Computes connections from compact rules |
-| Uses dictionary entries plus unknown-word definitions | Uses dictionary entries plus pattern-generated candidates |
+| | MeCab with an IPADIC-style dictionary | Suzume |
+|---|---------------------------------------|--------|
+| Vocabulary | Loads a broad word list with morphological metadata | Stores selected words and exceptions |
+| Connections | Loads a pre-computed connection-cost matrix | Computes connections from compact rules |
+| Words not in the dictionary | Unknown-word definitions by character type | Pattern-generated candidates |
 
-::: tip Key Insight
-The dictionary selected for MeCab supplies its vocabulary, labels, and connection costs. Suzume instead keeps a smaller lexical set and generates additional candidates from character and grammar patterns. The exact MeCab setup used elsewhere in these docs is recorded in the [comparison baseline](/docs/mecab-comparison#comparison-baseline).
-:::
+The exact MeCab setup used elsewhere in these docs is recorded in the [comparison baseline](/docs/mecab-comparison#comparison-baseline). Which tool fits which job is covered in [When to Use Which](#when-to-use-which).
 
 ### The Three Pillars
 
@@ -26,7 +29,7 @@ Breaking text into meaningful units (tokens) and identifying their parts of spee
 
 ## 1. Minimal Dictionary
 
-Traditional analyzers store exhaustive word lists:
+Dictionary-based analyzers store exhaustive word lists:
 
 ```
 # MeCab dictionary entry (simplified)
@@ -35,31 +38,24 @@ Traditional analyzers store exhaustive word lists:
 
 Suzume stores high-frequency function words, particles, auxiliaries, and selected exceptions. For many content words, it relies on character patterns and grammar rules instead of shipping every possible surface form.
 
-| Category | Traditional dictionary analyzer | Suzume |
+| Category | Dictionary-based analyzer | Suzume |
 |----------|---------------------------------|--------|
 | Function words | Stored in the dictionary | Compact entries and grammar rules |
 | Verbs and adjectives | Many surface/conjugated entries | Conjugation rules plus selected exceptions |
 | General and proper nouns | Broad lexical coverage | Character-pattern candidates plus a compact dictionary |
 | Domain-specific terms | Dictionary package or customization | Runtime user dictionary |
 
-## 2. Pattern Recognition
+## 2. Pattern Recognition {#pattern-recognition}
 
 Instead of storing every word, Suzume recognizes patterns:
 
 <DiagramPattern />
 
-| Pattern | Rule | Result |
-|---------|------|--------|
-| `[カタカナ]+` | Generate a noun candidate | noun candidate |
-| `[漢字]+` | Generate a compound-noun candidate | noun candidate |
-| `[漢字]+する` | Generate a verbal-noun construction | noun + する (verb) |
-| `[ひらがな]+い` | Ending in い = adjective candidate | adjective |
-
 ::: info Why This Works
 Japanese character types and inflectional endings provide useful candidate signals. Suzume combines those signals with dictionary entries and surrounding connection scores; a pattern match alone does not guarantee the final POS or boundary.
 :::
 
-Try it with your own text:
+Try it with your own text. The playground marks each token's origin, so you can see which tokens came from a dictionary and which were generated from patterns ([unknown words](/docs/glossary#unknown-word)):
 
 <TokenizerPlayground />
 
@@ -81,25 +77,7 @@ Suzume computes connection scores dynamically using compact rules:
 
 ## Consistency of Analysis
 
-Suzume decides parts of speech and boundaries from both dictionary entries and shared rules for character types, conjugation, and connections. Applying shared rules across many candidates reduces reliance on individually tuned lexical entries, although context and competing candidates can still change the result.
-
-In a dictionary-and-cost-table design, entries with similar grammatical roles can still carry different labels or costs. Shared construction rules reduce that source of variation, while dictionary candidates and surrounding context continue to affect the selected path.
-
-For example, "じゃ" is analyzed as the auxiliary lemma "だ" in "本じゃない", "本じゃなかった", and "本じゃな". The negative "ない" and "なかっ" in the first two examples are adjectives; the final "な" in the last example is a particle. The causative-passive rules likewise aim to normalize equivalent constructions while still resolving them in context (see the relevant sections in the [MeCab comparison](/docs/mecab-comparison)).
-
-This consistency is separate from the question of which segmentation is "correct". It does not claim that Suzume's analysis is the only right one; it refers to the property that whichever rules are adopted are applied uniformly across inputs. The rules also have limits, and within those the classification can still vary (see [Constraints](/docs/mecab-comparison#constraints)).
-
-## Different Optimization Targets
-
-::: info Choose by purpose
-Suzume is optimized for compact, search-friendly tokenization in browsers, edge runtimes, and native applications. A full dictionary analyzer is a different tool: choose one when its dictionary coverage and detailed morphological taxonomy are requirements. The outputs are not intended to be interchangeable, so a MeCab match rate is not Suzume's success metric. See [When to Use Which](/docs/mecab-comparison#when-to-use-which) for a full requirement-by-requirement comparison.
-:::
-
-The dictionary, pattern-based candidate generation, and Viterbi scoring pipeline described here always runs. `SuzumeOptions` controls normalization and segmentation, dictionary loading, scorer configuration, and whether a JavaScript instance uses an isolated WASM runtime. See the API reference for the complete option set.
-
-::: tip Tuning tokenization
-`mode: 'search' | 'split'` and `mergeCompounds` let you adjust how aggressively compounds are segmented or merged for your use case. See the [API reference](/docs/api) for details.
-:::
+Suzume decides boundaries and POS from shared rules for character types, conjugation and connections, so the same construction gets the same analysis wherever it appears: `じゃ` is an `AUX` with the lemma `だ` in `本じゃない`, `本じゃなかった` and `本じゃな` alike. This is a property of the rules, not a claim that Suzume's segmentation is the only correct one; see [Copula Negation](/docs/mecab-grammar#copula-negation), [Causative-Passive](/docs/mecab-grammar#causative-passive), and the known limits under [Constraints](/docs/mecab-comparison#constraints).
 
 ## Technical Deep Dive
 
@@ -115,15 +93,9 @@ A dynamic programming algorithm that finds the optimal path through the lattice.
 
 <DiagramPipeline />
 
-### Unknown Word Handling
+The pipeline always runs in this order. An [unknown word](/docs/glossary#unknown-word) such as `スカイツリー` takes the pattern branch: the katakana run yields a noun candidate, which competes with every other candidate in the lattice and survives only if Viterbi scores it best.
 
-When Suzume encounters an unknown word like "スカイツリー":
-
-1. **Not in dictionary** — no stored entry
-2. **Pattern match** — recognized as katakana sequence
-3. **Generate candidate** — create noun hypothesis
-4. **Compete in lattice** — scored against other possibilities
-5. **Select best** — Viterbi finds optimal segmentation
+Options change what goes into and comes out of the pipeline, not the pipeline itself: [normalization](/docs/analysis-modes#normalization), the [segmentation mode and compound merging](/docs/analysis-modes#modes), dictionary loading, scorer configuration, and (in JavaScript) whether an instance uses an isolated WASM runtime. The full option set is in the [API reference](/docs/api).
 
 ### Verb Conjugation
 
@@ -138,20 +110,26 @@ Base: 食べる (to eat)
 └── 食べれ + ば → conditional
 ```
 
-The rules generate regular forms, while selected dictionary entries may materialize their expanded forms at compile or load time.
+## When to Use Which {#when-to-use-which}
 
-## Summary
+Suzume is built for compact tokenization for search and display, with one core running in browsers, edge and server runtimes, Python, Go and C/C++. A dictionary-based analyzer such as MeCab is a different tool, chosen when its dictionary's coverage and detailed taxonomy are requirements. The two outputs are not meant to be interchangeable, so agreement with MeCab is not Suzume's success metric.
 
-| Question | Answer |
-|----------|--------|
-| Why is the MeCab + IPADIC setup larger? | IPADIC supplies a broad lexicon and pre-computed connection costs |
-| Why is Suzume small? | Stores rules + minimal dictionary |
-| Are MeCab and Suzume outputs interchangeable? | No. Their goals, boundaries, and POS taxonomies differ |
-| When to use MeCab? | When a MeCab dictionary's lexical coverage and analysis conventions are required |
-| When to use Suzume? | Compact search/display tokenization across browsers, server runtimes, Python, Go, and C/C++ |
+| Requirement | Choose | Why |
+|-------------|--------|-----|
+| Tokenize in the browser or on the client, with no server | Suzume | Compact dictionaries are embedded in the WASM binary (about <WasmSize /> gzipped) |
+| Tokenize as the user types | Suzume | No network round trip |
+| Search indexing or tag extraction | Suzume | Compounds stay whole, or merge in [`search` mode](/docs/analysis-modes#modes) |
+| Words that no dictionary lists | Suzume | Pattern-based candidates cover character sequences without an entry |
+| The same tokenizer across browser, server, Python, Go and C/C++ | Suzume | One core behind every binding |
+| Compatibility with a particular MeCab dictionary or corpus | MeCab | Keeps that dictionary's boundaries and taxonomy |
+| Dictionary-defined boundaries inside compounds (`東京都庁前`) | MeCab | Boundaries come from the selected dictionary; with Suzume, register them in a [user dictionary](/docs/user-dictionary) |
+| Readings and a detailed POS hierarchy | MeCab | The dictionary supplies them; Suzume's [POS](/docs/glossary#pos) set is coarser |
+
+For concrete differences on the same input, see [Differences from MeCab](/docs/mecab-comparison).
 
 ## See also
 
+- [Modes, Offsets, and Normalization](/docs/analysis-modes)
 - [API reference](/docs/api)
-- [MeCab comparison](/docs/mecab-comparison)
+- [Differences from MeCab](/docs/mecab-comparison)
 - [Getting started](/docs/getting-started)

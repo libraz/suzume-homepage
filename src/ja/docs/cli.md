@@ -1,8 +1,13 @@
+---
+title: "suzume-cli：ネイティブ開発 CLI リファレンス"
+description: "ネイティブ開発用コマンド suzume-cli のリファレンスです。複数の出力形式での解析、辞書のコンパイルと検証、トークン化テストとベンチマークの実行方法を説明します。"
+---
+
 # ネイティブ開発 CLI リファレンス
 
 `suzume-cli` は Suzume のネイティブ開発コマンドです。解析に加えて、辞書のコンパイルと検証、テスト、ベンチマークを提供します。
 
-Python ホイールは、解析に絞った別の `suzume` コマンドをインストールします。そちらは [Python CLI](/ja/docs/python-cli)を参照してください。
+Python ホイールは、解析に絞った別の `suzume` コマンドをインストールします。そちらは [Python CLI](/ja/docs/python-cli) を参照してください。
 
 このページはコマンドの使い方を説明します。バイナリをソースからビルドする方法は [ネイティブビルド](/ja/docs/native-build) を参照してください。
 
@@ -14,7 +19,7 @@ Python ホイールは、解析に絞った別の `suzume` コマンドをイン
 suzume-cli [command] [options] [arguments]
 
 コマンド:
-  analyze     トークン化（デフォルト）
+  analyze     トークン化（既定）
   dict        辞書管理
   test        検証・テスト
   version     バージョン情報の表示
@@ -23,7 +28,7 @@ suzume-cli [command] [options] [arguments]
 
 ## analyze
 
-日本語テキストをトークナイズします。デフォルトコマンドなので `analyze` は省略できます。
+日本語テキストをトークン化します。既定のコマンドなので `analyze` は省略できます。
 
 ```bash
 # 基本的な使い方
@@ -38,20 +43,21 @@ echo "東京スカイツリーに行きました" | suzume-cli
 
 位置引数を渡すと、CLI はそれらを半角スペース 1 つで連結します。引数がなく非対話的な標準入力がある場合は、1 つの文書として読み込みます。解析前に先頭の UTF-8 BOM と末尾の LF 1 個（または CRLF）を取り除き、途中の改行は保持します。
 
-### 出力フォーマット
+### 出力形式
 
 `-f, --format` フラグで出力の形を選びます。
 
-| フォーマット | 説明 |
+| 形式 | 説明 |
 |--------|-------------|
-| `morpheme` | デフォルト。`表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
+| `morpheme` | 既定。`表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
 | `tags` | 内容語の `タグ` TAB `品詞` の組（[タグ抽出](#tag-extraction)を参照） |
 | `json` | 解析・デバッグ用フィールドを含む構造化 JSON |
 | `tsv` | `表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
-| `chasen` | ChaSen 風フォーマット（日本語の品詞名と活用情報） |
+| `chasen` | ChaSen 風の形式（日本語の品詞名と活用情報） |
 
 ```bash
-# デフォルト: 表層形 TAB 品詞 TAB 原形 TAB 開始位置 TAB 終了位置
+# 既定: 表層形 TAB 品詞 TAB 原形 TAB 開始位置 TAB 終了位置
+# （実際の列区切りはタブ。ここでは見やすさのためスペースで揃えています）
 suzume-cli "食べている"
 # 食べ    VERB        食べる    0    2
 # て      PARTICLE    て        2    3
@@ -69,16 +75,16 @@ suzume-cli -f tags "東京スカイツリーに行きました"
 # TSV（全フィールド: 表層形, 品詞, 原形, 開始位置, 終了位置）
 suzume-cli -f tsv "食べている"
 
-# ChaSen 風フォーマット（日本語品詞、活用情報）
+# ChaSen 風の形式（日本語品詞、活用情報）
 suzume-cli -f chasen "食べている"
 ```
 
-JSON 出力は、トップレベルに `input`、`normalized_text`、`morphemes` を持つオブジェクトです。各形態素には `surface`、`pos`、`lemma`、`start`、`end`、`extended_pos`、`is_user_dict`、`is_formal_noun`、`is_low_info`、`is_unknown`、`is_from_dictionary`、`score` が含まれます。`start` と `end` は `normalized_text` 内の Unicode コードポイントオフセットです。
+JSON 出力は、トップレベルに `input`、`normalized_text`、`morphemes` を持つオブジェクトです。各トークンには `surface`、`pos`、`lemma`、`start`、`end`、`extended_pos`、`is_user_dict`、`is_formal_noun`、`is_low_info`、`is_unknown`、`is_from_dictionary`、`score` が含まれます。`start` と `end` は `normalized_text` 内の Unicode コードポイントオフセットです。
 
 ### 解析モード
 
 ```bash
-# 通常モード（デフォルト）
+# 通常モード（既定）
 suzume-cli -m normal "API開発と高層ビル群"
 # API開発 / と / 高層 / ビル / 群
 
@@ -95,13 +101,13 @@ suzume-cli -m split "API開発と高層ビル群"
 
 | オプション | 説明 |
 |--------|-------------|
-| `-f, --format FMT` | 出力フォーマット: `morpheme`, `tags`, `json`, `tsv`, `chasen` |
+| `-f, --format FMT` | 出力形式: `morpheme`, `tags`, `json`, `tsv`, `chasen` |
 | `-m, --mode MODE` | 解析モード: `normal`, `search`, `split` |
 | `-d, --dict PATH` | ユーザー辞書を読み込み（複数指定可） |
 | `--no-lemmatize` | 解析後の原形補正を無効化。辞書由来の原形と活用・品詞情報は保持 |
-| `--merge-compounds` | 連続する名詞複合語を結合（デフォルトは無効） |
-| `--normalize-vu` | ヴ をビ等に正規化（デフォルト: 保持） |
-| `--lowercase` | ASCII を小文字に変換（デフォルト: 保持） |
+| `--merge-compounds` | 連続する名詞複合語を結合（既定は無効） |
+| `--normalize-vu` | ヴをビなどに正規化（既定: 保持） |
+| `--lowercase` | ASCII を小文字に変換（既定: 保持） |
 | `--preserve-symbols` | 句読点などの `SYMBOL` を出力に保持（既定：除去）。内容を持つ記号と絵文字は設定にかかわらず `OTHER` として保持 |
 | `--no-user-dict` | ユーザー辞書を無効化 |
 | `--no-core-dict` | コア辞書を無効化 |
@@ -111,13 +117,26 @@ suzume-cli -m split "API開発と高層ビル群"
 | `-V, --verbose` | 詳細出力 |
 | `-VV, --very-verbose` | より詳細な出力（ラティスダンプを含む） |
 
-グローバルフラグとして `-v, --version` と `-h, --help` も使えます。
+グローバルフラグとして `-v, --version` と `-h, --help` も使えます。値を取る長いオプションは `--option=value` 形式でも指定できます（例: `--mode=search`、`--tag-min-length=1`）。
+
+### 環境変数
+
+| 変数 | 効果 |
+|----------|--------|
+| `SUZUME_DATA_DIR` | `analyze` が `core.dic` と `user.dic` を探すデータルート。`dict lookup` は `core/*.tsv` と `user/*.tsv` を探します。未設定の場合は `~/.suzume`、インストール先、`./data` の順に探します |
+| `SUZUME_DEBUG` | stderr に出すデバッグログのレベル。`1` が基本、`2` が詳細、`3` がトレース。`--debug` はレベル `1` を設定します。`ENABLE_DEBUG_LOG` を有効にしたビルドでのみ働きます（ネイティブビルドでは既定で有効） |
+| `SUZUME_SCORER_CONFIG` | スコアラーオプションを上書きする JSON ファイルのパス |
+| `SUZUME_SCORER_{SECTION}_{KEY}` | スコアラーオプションを 1 つ上書きします。`SECTION` は `JOIN`、`SPLIT`、`UNARY`、`BIGRAM`、`VERB`、`INFL` のいずれか、`KEY` はオプションのフィールド名です |
+
+<DiagramScorerConfig />
+
+JSON ファイルに未知のセクションやキーがあると、無視せずに拒否します。
 
 ### タグ抽出 {#tag-extraction}
 
-`-f tags` を指定すると、Suzume は内容語のタグを抽出し、情報量の少ないトークンをデフォルトで除きます。次のフラグでタグ集合に何を残すかを調整できます。
+`-f tags` を指定すると、Suzume は内容語のタグを抽出し、情報量の少ないトークンを既定で除きます。次のフラグでタグ集合に何を残すかを調整できます。
 
-| オプション | デフォルト | 説明 |
+| オプション | 既定 | 説明 |
 |--------|---------|-------------|
 | `--include-particles` | 無効 | 助詞をタグに残す |
 | `--include-auxiliaries` | 無効 | 助動詞をタグに残す |
@@ -125,7 +144,7 @@ suzume-cli -m split "API開発と高層ビル群"
 | `--include-low-info` | 無効 | 情報量の少ないトークンを残す |
 | `--tag-keep-duplicates` | 無効 | 重複を除去せずそのまま残す |
 | `--tag-use-surface` | 無効 | 原形ではなく表層形を使う |
-| `--tag-pos POS` | すべて | 1つの品詞を残す。複数指定可。助詞・助動詞には対応する `--include-*` も必要 |
+| `--tag-pos POS` | すべて | 1 つの品詞（`noun`、`verb`、`adjective`、`adverb`、`particle`、`auxiliary`）を残す。複数指定可。助詞・助動詞には対応する `--include-*` も必要 |
 | `--tag-exclude-basic` | 無効 | 原形がひらがなのみのタグを除外 |
 | `--tag-min-length LENGTH` | `2` | タグの最小文字数 |
 | `--tag-max-tags MAX` | `0` | タグの最大数（`0` = 無制限） |
@@ -150,7 +169,7 @@ suzume-cli --compare -d user.dic "ChatGPTを使う"
 # 名詞複合語を結合
 suzume-cli --merge-compounds "東京都新宿区"
 
-# 原形化なしで解析
+# 原形補正なしで解析
 suzume-cli --no-lemmatize "食べている"
 
 # ヴの正規化
@@ -160,7 +179,7 @@ suzume-cli --normalize-vu "ヴァイオリン"
 
 ## dict
 
-辞書管理：辞書の作成、編集、コンパイル、検証を行います。
+辞書の作成、編集、コンパイル、検証を行います。
 
 ### サブコマンド
 
@@ -173,6 +192,7 @@ suzume-cli dict compile user.tsv           # → user.dic（既存ファイル�
 suzume-cli dict compile user.tsv user.dic  # user.dic を明示して置き換える
 suzume-cli dict compile user.tsv out.dic   # 出力先を指定
 suzume-cli dict compile a.tsv b.tsv out.dic   # 複数の入力を 1 つのファイルにまとめる
+suzume-cli dict compile --filter-trivial user.tsv   # 3 文字以上の純漢字・純カタカナのエントリを除く
 
 # バイナリを TSV に逆コンパイル（--force なしでは上書きしない）
 suzume-cli dict decompile user.dic         # → user.dump.tsv
@@ -193,7 +213,7 @@ suzume-cli dict search user.tsv "パターン"
 suzume-cli dict list user.tsv --pos=NOUN --pattern="東京*" --limit=20
 ```
 
-`dict lookup` は、組み込み L1 のエントリ、`SUZUME_DATA_DIR`（未設定時は既定の `data`）配下の `core/` と `user/` にあるすべての `*.tsv`、および単語の後に指定した追加の TSV／`.dic` パスを検索します。
+`dict lookup` は、組み込み L1 のエントリ、`SUZUME_DATA_DIR`（未設定時は `data`）配下の `core/` と `user/` にあるすべての `*.tsv`、および単語の後に指定した追加の TSV／`.dic` パスを検索します。
 
 ### インタラクティブモード
 
@@ -203,9 +223,9 @@ suzume-cli dict list user.tsv --pos=NOUN --pattern="東京*" --limit=20
 suzume-cli dict -i user.tsv
 ```
 
-`suzume-cli dict interactive user.tsv` と `suzume-cli dict edit user.tsv` は同じ意味の長い形式のエイリアスです。
+`suzume-cli dict interactive user.tsv` と `suzume-cli dict edit user.tsv` は同じ意味の長い形式の別名です。
 
-インタラクティブコマンド:
+インタラクティブコマンドは次のとおりです。
 
 | コマンド | 説明 |
 |---------|-------------|
@@ -226,17 +246,11 @@ suzume-cli dict -i user.tsv
 
 ### 辞書レイヤー
 
-Suzume は階層型辞書システムを採用しています。
+`layer` と `find` が指す組み込み・コア・ユーザーの各レイヤーについては、[辞書レイヤー](/ja/docs/user-dictionary#dictionary-layers) を参照してください。
 
-| レイヤー | ソース | 説明 |
-|---------|--------|-------------|
-| レイヤー 1 | ハードコード | 助詞、助動詞（バイナリに組み込み） |
-| レイヤー 2 | `core.dic` | コア語彙 |
-| レイヤー 3 | `user.dic` | ユーザー/ドメイン固有の単語 |
+### TSV 形式
 
-### TSV フォーマット
-
-辞書ソースファイルは TSV フォーマットを使用します。
+辞書ソースファイルは TSV 形式です。
 
 ```tsv
 東京	NOUN
@@ -244,23 +258,27 @@ Suzume は階層型辞書システムを採用しています。
 読み直し	NOUN	読み直す
 ```
 
-行形式は `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]` です。活用型は省略可能で、活用形を展開させる場合に指定します。第3列が既知の活用型でなければ原形として扱われます。完全な形式は[ユーザー辞書](/ja/docs/user-dictionary)を参照してください。
+行形式は `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]` です。活用型は省略可能で、活用形を展開させる場合に指定します。第3列が既知の活用型でなければ原形として扱われます。完全な形式は [ユーザー辞書](/ja/docs/user-dictionary) を参照してください。
 
 **品詞（POS）:** `NOUN`、`PROPN`、`VERB`、`ADJ`／`ADJECTIVE`、`ADV`／`ADVERB`、`PARTICLE`、`AUX`／`AUXILIARY`、`CONJUNCTION`、`DETERMINER`、`PRONOUN`、`PREFIX`、`SUFFIX`、`INTERJECTION`、`SYMBOL`／`SYM`、`OTHER`
 
 この辞書ファイル用の品詞語彙は、解析 API が返す実行時の `Morpheme.pos` 値（`NOUN`, `VERB`, `ADJ`, `ADV`, ...）よりも意図的に細かく分かれています。
 
-**活用型（VERB/ADJECTIVE 用）:** `ICHIDAN`, `GODAN_KA`, `GODAN_GA`, `GODAN_SA`, `GODAN_TA`, `GODAN_NA`, `GODAN_BA`, `GODAN_MA`, `GODAN_RA`, `GODAN_WA`, `SURU`, `KURU`, `I_ADJ`, `NA_ADJ`
+**活用型:** 動詞・形容詞用の `ICHIDAN`, `GODAN_KA`, `GODAN_GA`, `GODAN_SA`, `GODAN_TA`, `GODAN_NA`, `GODAN_BA`, `GODAN_MA`, `GODAN_RA`, `GODAN_WA`, `SURU`, `KURU`, `I_ADJ`, `NA_ADJ` に加えて、マーカーの `INTJ`（感動詞）と `FAMILY`／`GIVEN`（姓と名）を受け付けます。パーサーが受け付けるのはこの集合だけです。詳しくは [活用型](/ja/docs/user-dictionary#活用型) を参照してください。
+
+### バイナリ形式
+
+`dict compile` は `.dic` バイナリ形式を書き出します。現在の形式はバージョン 4 です。Suzume は別バージョンの形式を拒否するため、TSV ソースを保管し、必要になったときに現在の CLI で再コンパイルしてください。ファイルは 16 バイトの `SZMD` ヘッダー、前方差分で圧縮した表層形テーブル、文法パレット、可変長のエントリ配列、省略可能な重複除去済みの原形テーブルで構成されます。同じ表層形に異なる文法エントリを保持できます。バイナリの読み込みは追加方式で、失敗しても既存の辞書は維持されます。コードからの読み込みは [バイナリ辞書](/ja/docs/user-dictionary#binary-dictionaries) を参照してください。
 
 ## test
 
-検証テストとベンチマークを実行します。
+検証テストとベンチマークを実行します。解析、正規化、辞書、`--tag-*` の各オプションは `analyze` と共通です。
 
 ```bash
 # 単一入力のテスト
 suzume-cli test "テスト文" --expect "テスト"
 
-# ファイルからテストを実行
+# ファイルからテストを実行（-f と --file は同じ意味）
 suzume-cli test -f tests.tsv
 
 # ユーザー辞書を指定してテスト
@@ -270,9 +288,11 @@ suzume-cli test -f tests.tsv -d user.dic
 suzume-cli test benchmark --iterations=1000 --samples=5 --warmup=1
 ```
 
+`--expect` の単一テストは、カンマ区切りの期待タグを生成されたタグ集合と比較します。成功すると何も出力せず、終了コード `0` で終わります。失敗すると `FAIL:` に続けて期待・実際・不足・余分のタグを出力し、終了コード `1` で終わります。ファイルモードは全行を実行して `Results:` の集計行を出力し、1 件でも失敗すれば終了コード `1` になります。
+
 ベンチマークは初期化・初回解析・定常解析の中央値、定常スループット、テキストごとのレイテンシ、ピーク RSS を報告します。組み込みコーパスを置き換えるには `-f corpus.txt` を指定します。
 
-### テストファイルフォーマット
+### テストファイル形式
 
 入力と期待されるタグの TSV です。
 

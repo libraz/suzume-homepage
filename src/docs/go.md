@@ -1,8 +1,13 @@
+---
+title: "Go Bindings: Tokenize Japanese in Go"
+description: "Tokenize Japanese in Go with github.com/libraz/go-suzume, a cgo binding with embedded dictionaries: setup, analysis modes, offsets, tags, user dictionaries."
+---
+
 # Go Bindings
 
 The [`github.com/libraz/go-suzume`](https://github.com/libraz/go-suzume) module provides Go bindings for Suzume. Use it when you want the same Japanese tokenizer from Go services and command-line tools without going through the JavaScript/WASM package.
 
-The bindings are a thin cgo layer over the native C++ core. The core and user dictionaries are embedded in the module with `go:embed` and made available to the analyzer automatically at startup, so a built binary needs no external dictionary files.
+The bindings are a thin cgo layer over the native C++ core. The core and user dictionaries are embedded with `go:embed`, so a built binary needs no external dictionary files.
 
 ## Requirements
 
@@ -14,7 +19,11 @@ Unlike the Python wheel, the module does not ship a precompiled binary: the Suzu
 
 ## Installation
 
-The static library and the dictionaries are both produced from the C++ sources, and neither is published inside the Go module, so `go get` on its own is not enough. Clone the repository and build it once:
+The static library and the dictionaries are both produced from the C++ sources, and neither is published inside the Go module, so `go get` on its own is not enough.
+
+<DiagramGoBuild />
+
+Clone the repository and build it once:
 
 ```bash
 git clone https://github.com/libraz/go-suzume.git
@@ -39,11 +48,16 @@ The build writes into the checkout, so keep it in a directory you can write to. 
 make lib
 ```
 
-Synchronization replaces the cached core and dictionaries, so the next build uses the selected source. `make sync` instead fetches the upstream default branch.
+Synchronization replaces the cached core and dictionaries, so the next build uses the selected source. Two Makefile shortcuts wrap the script:
+
+| Command | Source |
+|---------|--------|
+| `make sync` | Fetches the upstream default branch (`./sync-upstream.sh`) |
+| `make sync-local` | Copies the sibling `../suzume` checkout (`./sync-upstream.sh --local`) |
 
 ## Quick start
 
-The package name is `suzume`. Create an analyzer with `New()`, defer `Close()` so the native handle is released, and iterate over the analyzed morphemes:
+The package name is `suzume`. Create an analyzer with `New()`, defer `Close()` so the native handle is released, and iterate over the analyzed tokens:
 
 ```go
 package main
@@ -68,7 +82,7 @@ func main() {
 }
 ```
 
-`Analyze()` returns a `[]Morpheme` slice, or `nil` when the input produces no morphemes or the call fails. It does not return an error, and `LastError()` cannot reliably distinguish these cases: the native diagnostic belongs to the current OS thread, while the Go runtime may move the goroutine before it reads the value. `Close()` is safe to call multiple times, and a finalizer frees the handle as a fallback, but deferring `Close()` explicitly is the intended pattern.
+`Analyze()` returns a `[]Morpheme` slice, or `nil` when the input produces no tokens or the call fails. It does not return an error, and `LastError()` cannot reliably distinguish these cases: the native diagnostic belongs to the current OS thread, while the Go runtime may move the goroutine before it reads the value. `Close()` is safe to call multiple times, and a finalizer frees the handle as a fallback, but deferring `Close()` explicitly is the intended pattern.
 
 An instance holds native mutable state and is not safe for concurrent calls. Use one instance per goroutine, or serialize access; separate instances may run concurrently, and creating one is inexpensive.
 
@@ -78,7 +92,7 @@ At package init, the embedded dictionaries are written to a content-addressed ca
 
 ## Analysis modes
 
-`NewWithExtendedOptions()` gives full control over segmentation, lemmatization, and compound merging. Start from `DefaultExtendedOptions()` — the zero value of `ExtendedOptions` does not match the library defaults (it would disable lemmatization and case/ヴ preservation):
+`NewWithExtendedOptions()` gives full control over segmentation, [lemma](/docs/glossary#lemma) correction, and [compound](/docs/glossary#compound) merging. Start from `DefaultExtendedOptions()`, because the zero value of `ExtendedOptions` does not match the library defaults (see [Zero values](#zero-values)):
 
 ```go
 opts := suzume.DefaultExtendedOptions()
@@ -102,7 +116,7 @@ The available modes are `ModeNormal` (default), `ModeSearch`, and `ModeSplit`. S
 | `PreserveCase` | `bool` | `true` | Preserve ASCII letter case |
 | `PreserveSymbols` | `bool` | `false` | Keep punctuation-like `SYMBOL` tokens |
 | `Mode` | `AnalysisMode` | `ModeNormal` | Select `ModeNormal`, `ModeSearch`, or `ModeSplit` |
-| `Lemmatize` | `bool` | `true` | Apply lemma correction |
+| `Lemmatize` | `bool` | `true` | Apply [lemma](/docs/glossary#lemma) correction |
 | `MergeCompounds` | `bool` | `false` | Merge consecutive noun compounds |
 | `SkipUserDictionary` | `bool` | `false` | Skip automatic loading of the bundled user dictionary |
 | `SkipCoreDictionary` | `bool` | `false` | Skip automatic loading of the bundled core dictionary |
@@ -111,7 +125,15 @@ The available modes are `ModeNormal` (default), `ModeSearch`, and `ModeSplit`. S
 | `ScorerOptionsJSON` | `string` | empty | Apply JSON scorer overrides after environment configuration |
 | `DataDirectory` | `string` | empty | Load dictionaries only from this directory |
 
-`ScorerOptionsJSON` must contain valid JSON. An invalid value makes `NewWithExtendedOptions()` return a `*suzume.Error` with `ErrorCodeParse`. `SkipEnvConfig` disables environment configuration but does not disable `ScorerOptionsJSON`. A non-empty `DataDirectory` takes precedence over `SUZUME_DATA_DIR` and the package's embedded dictionary staging; the core and bundled user dictionaries are searched only in that directory. With an empty `DataDirectory`, the package stages its embedded dictionaries automatically unless `SUZUME_DATA_DIR` was already set.
+`ScorerOptionsJSON` must contain valid JSON. An invalid value makes `NewWithExtendedOptions()` return a `*suzume.Error` with `ErrorCodeParse`. `SkipEnvConfig` disables environment configuration but does not disable `ScorerOptionsJSON`.
+
+The core and bundled user dictionaries come from one location, chosen as follows:
+
+| `DataDirectory` | `SUZUME_DATA_DIR` | Dictionaries are read from |
+|-----------------|-------------------|----------------------------|
+| non-empty | any | `DataDirectory` only |
+| empty | set before startup | `SUZUME_DATA_DIR` |
+| empty | unset | The embedded copies, staged in the cache directory at package init |
 
 `Mode()` reports the current mode. `SetMode()` changes it without reloading dictionaries; a closed instance returns an ordinary Go error, while an invalid mode returns a `*suzume.Error` with `ErrorCodeInvalidInput`. After `Close()`, `Mode()` returns `ModeInvalid`.
 
@@ -128,11 +150,21 @@ if err := s.SetMode(suzume.ModeSplit); err != nil {
 fmt.Println(s.Mode())
 ```
 
-For the common case of tweaking only normalization, `NewWithOptions(Options)` takes just the three toggles `PreserveVu`, `PreserveCase`, and `PreserveSymbols`, keeping the library defaults for mode and lemmatization. `PreserveSymbols` controls punctuation-like `SYMBOL` tokens; content-bearing symbols and emoji remain `OTHER` either way.
+For the common case of tweaking only normalization, `NewWithOptions(Options)` takes just the three toggles `PreserveVu`, `PreserveCase`, and `PreserveSymbols`, keeping the library defaults for mode and lemma correction. `PreserveSymbols` controls punctuation-like `SYMBOL` tokens; content-bearing symbols and emoji remain `OTHER` either way.
+
+### Zero values {#zero-values}
+
+The option structs copy every field, so a struct literal with unset fields turns the library defaults off:
+
+| Struct | Zero value effect | Start from |
+|--------|-------------------|------------|
+| `Options` | `NewWithOptions(Options{})` sets `PreserveVu` and `PreserveCase` to `false`, which turns ヴ and ASCII-case preservation off. Set all three toggles explicitly | A literal with all three fields set |
+| `ExtendedOptions` | Disables lemma correction and ヴ and case preservation | `DefaultExtendedOptions()` |
+| `TagOptions` | Disables every exclusion filter | `DefaultTagOptions()` |
 
 ## Normalized text and offsets
 
-`AnalyzeWithNormalizedText()` returns an `AnalysisResult` containing both `NormalizedText` and the `Morphemes` whose `Start` and `End` offsets index into it. The offsets count Unicode code points, so convert the normalized string to `[]rune` before slicing. The method has no error return; a closed instance or a native analysis failure produces the zero `AnalysisResult`, with the same ambiguity as `Analyze()`.
+`AnalyzeWithNormalizedText()` returns an `AnalysisResult` with `NormalizedText` and `Morphemes`; each `Start` and `End` is an offset into `NormalizedText`. The offsets count Unicode code points, so convert the normalized string to `[]rune` before slicing. The method has no error return; a closed instance or a native analysis failure produces the zero `AnalysisResult`, with the same ambiguity as `Analyze()`.
 
 ```go
 result := s.AnalyzeWithNormalizedText("ＡＢＣを検索")
@@ -144,23 +176,23 @@ for _, m := range result.Morphemes {
 
 ## Morpheme fields
 
-`Analyze()` returns a slice of `Morpheme` structs:
+`Analyze()` returns a slice of `Morpheme` structs. For the [part-of-speech](/docs/glossary#pos) terms used below, see the [Glossary](/docs/glossary).
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `Surface` | `string` | Surface form as it appears in text |
 | `POS` | `string` | Part of speech in English (UPPERCASE, e.g. `NOUN`) |
-| `BaseForm` | `string` | Dictionary/base form |
+| `BaseForm` | `string` | [Lemma](/docs/glossary#lemma) (base form) |
 | `POSJa` | `string` | Part of speech in Japanese (e.g. 名詞) |
-| `ConjType` | `string` | Conjugation type; may be empty even when `IsConjugatable` is true |
-| `ConjForm` | `string` | Conjugation form; meaningful when `IsConjugatable` is true |
-| `ExtendedPOS` | `string` | Stable extended POS code (e.g. `VERB_連用`) |
+| `ConjType` | `string` | [Conjugation type](/docs/glossary#conjugation-type); may be empty even when `IsConjugatable` is true |
+| `ConjForm` | `string` | [Conjugation form](/docs/glossary#conjugation-form); meaningful when `IsConjugatable` is true |
+| `ExtendedPOS` | `string` | Stable [extended POS](/docs/glossary#extended-pos) code (e.g. `VERB_連用`) |
 | `Start` | `int` | Start Unicode code-point offset in normalized text |
 | `End` | `int` | End Unicode code-point offset in normalized text |
 | `IsUserDict` | `bool` | True when matched from a user dictionary |
-| `IsFormalNoun` | `bool` | True for formal nouns such as こと and もの |
-| `IsLowInfo` | `bool` | True when marked as low information for tag generation |
-| `IsUnknown` | `bool` | True when generated as an unknown-word candidate |
+| `IsFormalNoun` | `bool` | True for [formal nouns](/docs/glossary#formal-noun) such as こと and もの |
+| `IsLowInfo` | `bool` | True when marked [low information](/docs/glossary#low-info) for tag generation |
+| `IsUnknown` | `bool` | True when generated as an [unknown-word](/docs/glossary#unknown-word) candidate |
 | `IsFromDictionary` | `bool` | True when matched from any dictionary |
 | `IsConjugatable` | `bool` | True when the conjugation fields carry meaning |
 | `Score` | `float32` | Candidate score/cost used by the analyzer |
@@ -208,7 +240,7 @@ The remaining `TagOptions` fields and their library defaults are:
 
 ## User dictionaries
 
-Add custom words at runtime from the current TSV format with `LoadUserDictionary()`. Legacy three-column CSV is also accepted:
+Add custom words to the [user dictionary](/docs/glossary#user-dictionary) at runtime from the current TSV format with `LoadUserDictionary()`. Legacy three-column CSV is also accepted:
 
 ```go
 source := []byte("東京公園\tNOUN\n点検する\tVERB\tSURU\n")
@@ -255,7 +287,18 @@ fmt.Println("installed:", installed)
 
 ## Errors
 
-Constructors and error-returning methods that cross the native API capture native failures as `*suzume.Error`. Its `Code` is one of the stable `ErrorCode` values and `Message` contains the diagnostic. Closed-handle and empty-input checks return ordinary Go errors. Use `errors.As` to inspect a native error instead of parsing its message:
+Constructors and error-returning methods that cross the native API capture native failures as `*suzume.Error`. It has two fields: `Code`, one of the stable `ErrorCode` values below, and `Message`, which joins the failed operation with the native diagnostic as `operation: diagnostic`. Closed-handle and empty-input checks return ordinary Go errors. Use `errors.As` to inspect a native error instead of parsing its message.
+
+| Constant | Raised when |
+|----------|-------------|
+| `ErrorCodeSuccess` | No error is set (`LastErrorCode()` only) |
+| `ErrorCodeInvalidUTF8` | Input is not valid UTF-8 |
+| `ErrorCodeDictionaryLoadFailed` | A dictionary could not be loaded |
+| `ErrorCodeFileNotFound` | A required file is missing |
+| `ErrorCodeParse` | Source or JSON input could not be parsed, such as an invalid `ScorerOptionsJSON` |
+| `ErrorCodeOutOfMemory` | The native allocation failed |
+| `ErrorCodeInvalidInput` | An argument is invalid, such as an unknown mode passed to `SetMode()` |
+| `ErrorCodeInternal` | An unexpected internal failure |
 
 ```go
 package main

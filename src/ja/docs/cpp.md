@@ -1,3 +1,8 @@
+---
+title: "C / C++ ライブラリ：ネイティブに組み込む"
+description: "C++17 ラッパーと C ABI で Suzume をネイティブコードに組み込みます。インストール、CMake と pkg-config、解析結果、モード、タグ生成、エラー、所有権、ABI 互換性を扱います。"
+---
+
 # C / C++ ライブラリ
 
 Suzume にはネイティブの静的ライブラリ、任意でビルドする共有ライブラリ、2つの公開ヘッダーがあります。
@@ -30,7 +35,7 @@ make install                 # /usr/local へ。PREFIX=/opt/suzume で変更可
 
 ## C++ の使い方
 
-`analyzeWithNormalizedText()` は、オフセットの基準となる正規化済みテキストと形態素をまとめて返します。
+`analyzeWithNormalizedText()` は、オフセットの基準となる正規化済みテキストとトークンをまとめて返します。
 
 ```cpp
 #include <cstdio>
@@ -63,7 +68,7 @@ int main() {
 }
 ```
 
-`analyze()` は形態素のベクターだけを返します。どちらの解析メソッドも `std::string_view` を受け取るため、部分文字列を NUL 終端の一時コピーにする必要はありません。`Tokenizer` はムーブ専用で、デストラクタから `suzume_destroy()` を呼びます。
+`valid()` はハンドルが作成されたかどうかを返し、`explicit operator bool` も同じ判定です。`analyze()` はトークンのベクターだけを返します。どちらの解析メソッドも `std::string_view` を受け取るため、部分文字列を NUL 終端の一時コピーにする必要はありません。`Tokenizer` はムーブ専用で、デストラクタから `suzume_destroy()` を呼びます。
 
 新しいコードでは `Morpheme::base_form` を使ってください。`Morpheme::lemma` は同じ値を持つ、非推奨のソース互換エイリアスです。
 
@@ -118,7 +123,7 @@ int main(void) {
 - `suzume_generate_tags_n(handle, text, size)`
 - `suzume_generate_tags_with_options_n(handle, text, size, options)`
 
-空入力は正常です。`count == 0` の NULL でない結果を返します。不正な UTF-8 は NULL を返し、最終エラーを設定します。
+空入力は成功し、`count == 0` の結果を返します（NULL ではありません）。不正な UTF-8 は NULL を返し、最終エラーを設定します。
 
 ## 解析結果
 
@@ -127,14 +132,14 @@ int main(void) {
 | C++ | C | 説明 |
 |-----|---|------|
 | `normalized_text` | `normalized_text`, `normalized_text_size` | 正規化済み UTF-8 とバイト長 |
-| `morphemes` | `morphemes`, `count` | 形態素配列と要素数 |
+| `morphemes` | `morphemes`, `count` | トークン配列と要素数 |
 
 `start` と `end` は正規化済みテキスト上の文字オフセットです。UTF-8 のバイトオフセットではありません。
 
 | C++ `Morpheme` | C `suzume_morpheme_t` | 説明 |
 |----------------|-------------------------|------|
 | `surface` | `surface`, `surface_size` | 表層形の UTF-8 ビューとバイト長 |
-| `base_form` | `base_form`, `base_form_size` | 辞書形／原形とバイト長 |
+| `base_form` | `base_form`, `base_form_size` | 原形とバイト長 |
 | `pos` / `pos_ja` | `pos` | C++ では英語／日本語ラベル、C では安定した `SUZUME_POS_*` コード |
 | `conj_type` | `conjugation_type` | C++ では日本語ラベル、C では安定した数値コード |
 | `conj_form` | `conjugation_form` | C++ では日本語ラベル、C では安定した数値コード |
@@ -170,11 +175,13 @@ tokenizer.setMode(suzume::Mode::Split);
 const suzume::Mode current = tokenizer.mode();
 ```
 
-C のアクセサーは `suzume_set_mode()` と `suzume_mode()` です。無効なハンドルを渡した `suzume_mode()` は `SUZUME_MODE_INVALID` を返します。
+`setMode()` は成功すると `true` を返し、無効なハンドルや未知のモードでは `false` を返します。無効な `Tokenizer` に対する `mode()` は `Mode::Normal` を返すので、両者を区別したいときは `valid()` を確認してください。
+
+C のアクセサーは `suzume_set_mode()` と `suzume_mode()` です。無効なハンドルを渡した `suzume_mode()` は `SUZUME_MODE_INVALID` を返します。C++ ラッパーはこの値を公開しません。
 
 | C++ `Options` / C フィールド | 既定値 | 意味 |
 |------------------------------|--------|------|
-| `preserve_vu` | `true` | 正規化時に ヴ を保持 |
+| `preserve_vu` | `true` | 正規化時に ヴを保持 |
 | `preserve_case` | `true` | ASCII の大文字／小文字を保持 |
 | `preserve_symbols` | `false` | 句読点などの `SYMBOL` を保持。内容を持つ記号と絵文字は設定にかかわらず `OTHER` として保持 |
 | `mode` | Normal | 解析モード |
@@ -250,7 +257,7 @@ C ABI は安定した数値コードを使います。次の関数は静的ラ�
 |-----|---|------|
 | `loadUserDictionary()` | `suzume_load_user_dict()` | UTF-8 TSV または旧3列 CSV のバイト列を読み込み |
 | `loadUserDictionaryCount()` | `suzume_load_user_dict_count()` | ソース辞書を読み込み、登録件数を返す |
-| `loadBinaryDictionary()` | `suzume_load_binary_dict()` | コンパイル済み `.dic` をメモリから読み込み |
+| `loadBinaryDictionary(const std::uint8_t*, std::size_t)` | `suzume_load_binary_dict()` | コンパイル済み `.dic` をメモリから読み込み。`bool` を返す |
 | `clearUserDictionaries()` | `suzume_clear_user_dictionaries()` | 呼び出し側が追加した辞書を削除。同梱ユーザー辞書は保持 |
 | `hasCoreDictionary()` | `suzume_has_core_dictionary()` | L2 コア辞書が読み込まれているか確認 |
 | `dictionaryWarnings()` | `suzume_dictionary_warning_count()`, `suzume_dictionary_warning()` | 読み込み、解析、スコアラーの診断を取得 |
@@ -273,7 +280,7 @@ if (loaded == 0) {
 
 NULL でない `suzume_result_t*` は、必ず `suzume_result_free()` でちょうど1回解放してください。配列と文字列も同時に無効になります。`suzume_tags_t*` と `suzume_tags_free()` にも同じ規則が適用されます。各ハンドルは `suzume_destroy()` で破棄します。3つの解放／破棄関数は NULL を受け取れます。
 
-C++ 例外が C ABI を越えることはありません。例外を有効にしたネイティブビルドでは、メモリ確保失敗を所定の失敗戻り値と `SUZUME_ERROR_OUT_OF_MEMORY` に変換します。WASM パッケージを含む `-fno-exceptions` ビルドはメモリ確保失敗から回復できず、処理を終了します。C++ ラッパーは成功した C の結果を標準ライブラリの所有コンテナーへコピーするため、そのメモリ確保が `std::bad_alloc` を投げる場合があります。
+C++ 例外が C ABI を越えることはありません。例外を有効にしたネイティブビルドでは、メモリ確保失敗を所定の失敗戻り値と `SUZUME_ERROR_OUT_OF_MEMORY` に変換します。WASM パッケージを含む `-fno-exceptions` ビルドはメモリ確保失敗から回復できず、処理を終了します。C++ ラッパーは成功した C の結果を標準ライブラリのコンテナーへコピーするため、そのメモリ確保が `std::bad_alloc` を投げる場合があります。
 
 ## ABI 互換性
 
@@ -286,9 +293,9 @@ if (suzume_abi_version() != SUZUME_ABI_VERSION) {
 }
 ```
 
-ヘッダーと、リンクまたは動的読み込みするライブラリを別々に取得する場合は、ライブラリが返した構造体を使う前にこの比較を行ってください。不一致ならサイズやフィールドオフセットを信用できません。配置済みライブラリのヘッダーでコンシューマーを再コンパイルするか、ヘッダーに合うライブラリを配置してください。シンボルの削除やシグネチャ変更はリンク時またはロード時にも失敗します。
+ヘッダーと、リンクまたは動的読み込みするライブラリを別々に取得する場合は、ライブラリが返した構造体を使う前にこの比較を行ってください。不一致ならサイズやフィールドオフセットを信用できません。配置済みライブラリのヘッダーで利用側を再コンパイルするか、ヘッダーに合うライブラリを配置してください。シンボルの削除やシグネチャ変更はリンク時またはロード時にも失敗します。
 
-`suzume_sizeof_*()` と `suzume_offsetof_*()` は、バインディング生成と ABI テストがライブラリ側の構造体レイアウトを調べるためのオラクルです。ABI リビジョン比較の代わりにはなりません。
+`suzume_sizeof_*()` と `suzume_offsetof_*()` は、バインディング生成と ABI テストがライブラリ側の構造体レイアウトを調べるための基準です。ABI リビジョン比較の代わりにはなりません。
 
 インストール済みの CMake パッケージと pkg-config メタデータを使うと、通常は同じプレフィックスのヘッダーとライブラリを参照できます。
 
@@ -305,14 +312,14 @@ target_link_libraries(myapp PRIVATE suzume::suzume)          # 静的
 set_target_properties(myapp PROPERTIES LINKER_LANGUAGE CXX)
 ```
 
-pkg-config の例:
+pkg-config では次のようにします。
 
 ```bash
 cc -c myapp.c $(pkg-config --cflags suzume) -o myapp.o
 c++ myapp.o $(pkg-config --libs suzume) -o myapp
 ```
 
-実行可能な C / C++ プログラムと、単独の `find_package` コンシューマーは [`examples/`](https://github.com/libraz/suzume/tree/main/examples) にあります。
+実行可能な C / C++ プログラムと、単独の `find_package` 利用側プログラムは [`examples/`](https://github.com/libraz/suzume/tree/main/examples) にあります。
 
 ## 辞書の組み込み
 
@@ -323,6 +330,18 @@ make embedded
 ```
 
 `core.dic` と `user.dic` が静的ライブラリへ埋め込まれ、辞書ファイルの探索を行わなくなります。スコアラー設定は `SUZUME_SCORER_CONFIG` を読み得るため、環境変数で指定されたファイルも参照させない場合は `Options::skip_env_config = true`（または同名の C オプションフィールド）を指定します。C++ ランタイムとヒープを持つホスト型組み込み／RTOS で利用できます。freestanding のベアメタルは対象外です。
+
+## シンボルの可視性
+
+`suzume_c.h` は、すべてのエントリポイントに `SUZUME_EXPORT` を付けています。展開結果を決めるマクロは次のとおりです。
+
+| マクロ | 定義する側 | 効果 |
+|-------|------------|--------|
+| `SUZUME_EXPORTS` | 共有ライブラリをコンパイルするビルド | シンボルをエクスポート（Windows では `dllexport`、その他では既定の可視性） |
+| `SUZUME_STATIC` | `suzume::suzume` の CMake ターゲット（利用側へ伝播） | 装飾なし |
+| どちらもなし | 共有ライブラリの利用側 | インポート（Windows では `dllimport`） |
+
+インストールされた CMake ターゲットや pkg-config 経由でリンクすれば、これらは正しく設定されます。`SUZUME_STATIC` を自分で定義するのは、CMake ターゲットを使わずに Windows で静的アーカイブをリンクするときだけです。定義しないとヘッダーが関数を `dllimport` として宣言し、リンクに失敗します。利用側で `SUZUME_EXPORTS` を定義してはいけません。
 
 ## スレッド安全性
 

@@ -1,3 +1,8 @@
+---
+title: "MeCab vs Suzume: Kana, Identifiers, and Symbols"
+description: "How Suzume tokenizes everyday kana words, expressive spellings, technical notation such as identifiers and URLs, and symbols, compared with MeCab output."
+---
+
 # Text and Notation
 
 Word boundaries also depend on how text is written. These examples cover everyday kana, expressive spelling, identifiers, and symbols.
@@ -44,7 +49,7 @@ These words function as indivisible adjectives in modern Japanese. The "stem + �
 
 ### Prolonged Sound Marks
 
-Prolonged sound marks (ー) are merged with the preceding token. For recognized colloquial i-adjectives, Suzume keeps the marks in the surface while normalizing the lemma to the ordinary dictionary form.
+Prolonged sound marks (ー) are merged with the preceding token. For recognized colloquial i-adjectives, Suzume keeps the marks in the surface while normalizing the [lemma](/docs/glossary#lemma) to the ordinary dictionary form.
 
 <TokenDiff input="そうー" mecab="そう(副詞) / ー(名詞)" suzume="そうー(ADV)" />
 
@@ -62,7 +67,7 @@ A small vowel extending a particle stays with that particle: `のにぃ` is one 
 
 ### Emphatic Colloquial Particles
 
-Colloquial emphatic particles are split as single units instead of being fragmented.
+Colloquial emphatic particles are kept as single units instead of being fragmented.
 
 **ったら topic particle:**
 
@@ -80,7 +85,7 @@ Fixed conversational phrases lexicalized as fillers are decomposed into their gr
 
 <Why>
 
-As one opaque filler the phrase hides its structure. Decomposing it applies the same copula and particle handling as everywhere else.
+As one opaque filler the phrase hides its structure. Decomposing it applies the same [copula](/docs/glossary#copula) and particle handling as everywhere else.
 
 </Why>
 

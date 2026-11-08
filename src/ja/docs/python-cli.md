@@ -1,3 +1,8 @@
+---
+title: "Python CLI：コマンドラインで日本語を解析"
+description: "Python ホイールに含まれる suzume コマンドの使い方です。引数や標準入力からの解析、出力形式、解析オプション、辞書の読み込み、タグ出力、オフセット付き JSON を説明します。"
+---
+
 # Python CLI
 
 Python ホイールをインストールすると、解析とタグ抽出を行う `suzume` コマンドが追加されます。Python API と同じ同梱ネイティブライブラリおよび辞書を使います。
@@ -28,18 +33,18 @@ suzume --mode search "東京の公園"
 suzume analyze --mode search "東京の公園"
 ```
 
-ハイフンで始まる入力の前には `--` を置いてください。
+ハイフンで始まる入力の前には `--` を置いてください。入力テキストがない場合は、標準エラー出力に `suzume: error: no input text provided` を出力し、終了ステータス 1 で終了します。
 
-## 出力フォーマット
+## 出力形式
 
-`-f` または `--format` でフォーマットを選びます。
+`-f` または `--format` で出力形式を選びます。
 
-| フォーマット | 出力 |
+| 形式 | 出力 |
 |-------------|------|
 | `morpheme` | 既定。`表層形` TAB `品詞` TAB `原形` TAB `開始位置` TAB `終了位置` |
 | `tsv` | `morpheme` と同じフィールド |
 | `tags` | 1 行につき `タグ` TAB `品詞` |
-| `json` | `input`、`normalized_text`、`morphemes` を持つオブジェクト |
+| `json` | `input`、`normalized_text`、`morphemes` を持つオブジェクト（[JSON とオフセット](#json-とオフセット)を参照） |
 | `chasen` | ChaSen 風フィールド。末尾に `EOS` を出力 |
 
 ```bash
@@ -69,7 +74,9 @@ suzume --normalize-vu --preserve-symbols "ヴァイオリン、ビオラ"
 
 通貨・単位記号、矢印、技術記号、絵文字は、既定でも `OTHER` として残ります。`--preserve-symbols` を指定すると、`、` や `。` など句読点系のトークンも加わります。
 
-現在のオプション一覧は `suzume --help`、インストール済みネイティブライブラリのバージョンは `suzume --version` で確認できます。
+値を取るオプションは `--option value` と `--option=value` のどちらの形でも指定できます。
+
+現在のオプション一覧は `suzume --help` で確認できます。`suzume --version`、`suzume -v`、`suzume version` はいずれも、インストール済みネイティブライブラリのバージョンを出力します。バージョン指定は唯一の引数にしてください。
 
 ## 辞書
 
@@ -120,13 +127,24 @@ suzume --format tags \
 
 ## JSON とオフセット
 
-形態素の `start` と `end` は正規化後テキスト上の Unicode コードポイントオフセットであり、元の入力上の位置とは限りません。JSON 出力には、その正規化後テキストが `normalized_text` として含まれます。
+トークンの `start` と `end` は[正規化](/ja/docs/glossary#normalization)後テキスト上の Unicode コードポイントオフセットであり、元の入力上の位置とは限りません。詳しくは[オフセット](/ja/docs/analysis-modes#offsets)を参照してください。JSON 出力には、その正規化後テキストが `normalized_text` として含まれます。`morphemes` の各要素は次のキーを持ちます。
+
+| キー | 値 |
+|-----|-----|
+| `surface` | 表層形 |
+| `pos` | 英語の品詞 |
+| `lemma` | 原形（キーは `base_form` ではなく `lemma`） |
+| `start`、`end` | `normalized_text` 上のコードポイントオフセット |
+| `extended_pos` | 拡張品詞コード |
+| `is_user_dict`、`is_formal_noun`、`is_low_info`、`is_unknown`、`is_from_dictionary` | Python の `Morpheme` と同じ真偽値フラグ |
+| `score` | 候補スコア |
+
 
 ```bash
 suzume --lowercase --format json "ABCを検索"
 ```
 
-正規化によって入力が変わる可能性があり、後続処理でオフセットを使って文字列を切り出す場合は JSON を使ってください。
+正規化で入力が変わることがあるため、オフセットで文字列を切り出すなら JSON 出力を使ってください。
 
 ## 対象範囲
 

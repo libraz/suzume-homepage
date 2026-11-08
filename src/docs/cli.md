@@ -1,3 +1,8 @@
+---
+title: "suzume-cli: Native Developer CLI Reference"
+description: "Reference for suzume-cli, the native developer command: analyze text in several output formats, compile and validate dictionaries, run tests and benchmarks."
+---
+
 # Native Developer CLI Reference
 
 `suzume-cli` is the native developer command for Suzume. It provides analysis as well as dictionary compilation, validation, tests, and benchmarks.
@@ -52,6 +57,7 @@ The `-f, --format` flag selects the output shape:
 
 ```bash
 # Default: surface TAB pos TAB lemma TAB start TAB end
+# (columns are tab-separated; padded with spaces here for readability)
 suzume-cli "食べている"
 # 食べ    VERB        食べる    0    2
 # て      PARTICLE    て        2    3
@@ -100,7 +106,7 @@ suzume-cli -m split "API開発と高層ビル群"
 | `-d, --dict PATH` | Load user dictionary (can specify multiple) |
 | `--no-lemmatize` | Disable post-analysis lemma correction; source dictionary lemmas and conjugation/POS annotations remain |
 | `--merge-compounds` | Merge consecutive noun compounds (off by default) |
-| `--normalize-vu` | Normalize ヴ to ビ etc. (default: preserve) |
+| `--normalize-vu` | Normalize ヴ to ビ and similar (default: preserve) |
 | `--lowercase` | Convert ASCII to lowercase (default: preserve) |
 | `--preserve-symbols` | Keep punctuation-like `SYMBOL` tokens (default: remove); content symbols and emoji remain `OTHER` either way |
 | `--no-user-dict` | Disable user dictionary |
@@ -111,7 +117,20 @@ suzume-cli -m split "API開発と高層ビル群"
 | `-V, --verbose` | Verbose output |
 | `-VV, --very-verbose` | Very verbose (includes lattice dump) |
 
-The global `-v, --version` and `-h, --help` flags are also available.
+The global `-v, --version` and `-h, --help` flags are also available. Long options that take a value also accept the `--option=value` form, for example `--mode=search` or `--tag-min-length=1`.
+
+### Environment Variables
+
+| Variable | Effect |
+|----------|--------|
+| `SUZUME_DATA_DIR` | Data root that `analyze` searches for `core.dic` and `user.dic`, and that `dict lookup` searches for `core/*.tsv` and `user/*.tsv`. When unset, the search continues through `~/.suzume`, the install directory, and `./data` |
+| `SUZUME_DEBUG` | Debug log level written to stderr: `1` basic, `2` detailed, `3` trace. `--debug` sets level `1`. Effective only in builds with `ENABLE_DEBUG_LOG` (on by default for native builds) |
+| `SUZUME_SCORER_CONFIG` | Path to a JSON file of scorer-option overrides |
+| `SUZUME_SCORER_{SECTION}_{KEY}` | Overrides one scorer option. `SECTION` is `JOIN`, `SPLIT`, `UNARY`, `BIGRAM`, `VERB`, or `INFL`; `KEY` is the option field name |
+
+<DiagramScorerConfig />
+
+Unknown sections or keys in the JSON file are rejected rather than ignored.
 
 ### Tag Extraction
 
@@ -125,7 +144,7 @@ With `-f tags`, Suzume extracts content-word tags and drops low-information toke
 | `--include-low-info` | off | Keep low-information tokens |
 | `--tag-keep-duplicates` | off | Keep duplicate tags instead of deduplicating |
 | `--tag-use-surface` | off | Use surface forms instead of lemmas |
-| `--tag-pos POS` | all | Keep one POS; repeat to keep more. Particle/auxiliary filters also require the matching `--include-*` flag |
+| `--tag-pos POS` | all | Keep one POS (`noun`, `verb`, `adjective`, `adverb`, `particle`, or `auxiliary`); repeat to keep more. Particle/auxiliary filters also require the matching `--include-*` flag |
 | `--tag-exclude-basic` | off | Exclude tags whose lemma contains only hiragana |
 | `--tag-min-length LENGTH` | `2` | Minimum tag length in characters |
 | `--tag-max-tags MAX` | `0` | Maximum number of tags (`0` = unlimited) |
@@ -173,6 +192,7 @@ suzume-cli dict compile user.tsv           # → user.dic; refuses to overwrite
 suzume-cli dict compile user.tsv user.dic  # explicitly replace user.dic
 suzume-cli dict compile user.tsv out.dic   # custom output
 suzume-cli dict compile a.tsv b.tsv out.dic   # merge several inputs into one file
+suzume-cli dict compile --filter-trivial user.tsv   # omit 3+ character pure-kanji/katakana entries
 
 # Decompile binary to TSV (refuses to overwrite without --force)
 suzume-cli dict decompile user.dic         # → user.dump.tsv
@@ -226,13 +246,7 @@ Interactive commands:
 
 ### Dictionary Layers
 
-Suzume uses a layered dictionary system:
-
-| Layer | Source | Description |
-|-------|--------|-------------|
-| Layer 1 | Hardcoded | Particles, auxiliaries (built into binary) |
-| Layer 2 | `core.dic` | Core vocabulary |
-| Layer 3 | `user.dic` | User/domain-specific words |
+The `layer` and `find` commands refer to the built-in, core, and user layers. See [Dictionary Layers](/docs/user-dictionary#dictionary-layers) for what each layer holds and how they combine.
 
 ### TSV Format
 
@@ -250,17 +264,21 @@ Rows use `surface<TAB>POS[<TAB>conj_type][<TAB>lemma]`. The conjugation type is 
 
 This dictionary-file POS vocabulary is deliberately more explicit than the abbreviated runtime `Morpheme.pos` values (`NOUN`, `VERB`, `ADJ`, `ADV`, ...) returned by the analysis APIs.
 
-**Conjugation types (for VERB/ADJECTIVE):** `ICHIDAN`, `GODAN_KA`, `GODAN_GA`, `GODAN_SA`, `GODAN_TA`, `GODAN_NA`, `GODAN_BA`, `GODAN_MA`, `GODAN_RA`, `GODAN_WA`, `SURU`, `KURU`, `I_ADJ`, `NA_ADJ`
+**Conjugation types:** `ICHIDAN`, `GODAN_KA`, `GODAN_GA`, `GODAN_SA`, `GODAN_TA`, `GODAN_NA`, `GODAN_BA`, `GODAN_MA`, `GODAN_RA`, `GODAN_WA`, `SURU`, `KURU`, `I_ADJ`, `NA_ADJ` for verbs and adjectives, plus the markers `INTJ` (interjection) and `FAMILY` / `GIVEN` (family and given names). The parser accepts exactly this set; see [Conjugation Types](/docs/user-dictionary#conjugation-types).
+
+### Binary Format
+
+`dict compile` writes the `.dic` binary format, currently version 4. Suzume rejects other format versions, so keep the TSV source and recompile it with the current CLI. The file has a 16-byte `SZMD` header, a front-coded surface table, a grammar palette, an adaptive entry array, and an optional deduplicated lemma table. Repeated surfaces can retain distinct grammatical entries. Binary loads are additive and keep the existing dictionaries on failure; see [Binary Dictionaries](/docs/user-dictionary#binary-dictionaries) for loading from code.
 
 ## test
 
-Run verification tests and benchmarks.
+Run verification tests and benchmarks. Analysis, normalization, dictionary, and `--tag-*` options match `analyze`.
 
 ```bash
 # Test single input
 suzume-cli test "テスト文" --expect "テスト"
 
-# Run tests from file
+# Run tests from file (-f and --file are equivalent)
 suzume-cli test -f tests.tsv
 
 # Run with user dictionary
@@ -269,6 +287,8 @@ suzume-cli test -f tests.tsv -d user.dic
 # Reproducible benchmark (median of five samples after one warmup pass)
 suzume-cli test benchmark --iterations=1000 --samples=5 --warmup=1
 ```
+
+A single `--expect` test compares the comma-separated expected tags with the generated tag set. On success it prints nothing and exits `0`. On failure it prints `FAIL:` followed by the expected, actual, missing, and extra tags, and exits `1`. File mode runs every line and ends with a `Results:` summary line, exiting `1` if any test failed.
 
 The benchmark reports median initialization, first-analysis, and steady-state timing, steady throughput and per-text latency, and peak RSS. Use `-f corpus.txt` to replace the built-in corpus.
 

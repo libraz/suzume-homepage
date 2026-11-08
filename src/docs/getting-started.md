@@ -1,153 +1,264 @@
+---
+title: "Getting Started: Tokenize Japanese Text"
+description: "Split Japanese text into words with part-of-speech tags and lemmas from JavaScript, Python, Go, C++ or the CLI. Try the live demo, then install and run it."
+---
+
 # Getting Started
 
-Suzume is a lightweight Japanese tokenizer available through JavaScript/WASM, Python, Go, native C/C++, and command-line interfaces. Use it for Japanese tokenization, base forms, or keyword extraction in the runtime that fits your application.
+Suzume is a lightweight Japanese tokenizer for JavaScript/WASM, Python, Go, native C/C++, and the command line. It splits Japanese text into tokens and gives each token a [part of speech](/docs/glossary#pos) and a [lemma](/docs/glossary#lemma). Type a sentence below to see the result, then follow the steps for your runtime.
 
 <TokenizerPlayground />
 
 ## Choose a Binding
 
-| Environment | Start here |
-|-------------|------------|
-| Browser, Node.js, Deno, Bun | Continue with the JavaScript/WASM walkthrough below |
-| Python application or `suzume` command | [Python guide](/docs/python) and [Python CLI](/docs/python-cli) |
-| Go service or command | [Go bindings](/docs/go) |
-| Native C or C++ application | [C / C++ library](/docs/cpp) |
-| Dictionary development and native diagnostics | [Native CLI](/docs/cli) |
+Each step on this page has one tab per binding:
 
-## JavaScript/WASM Walkthrough
+| Tab | Runtime | Package | Reference |
+|-----|---------|---------|-----------|
+| JavaScript | Browser, Node.js, Deno, Bun | `@libraz/suzume` on npm | [API Reference](/docs/api) |
+| Python | CPython 3.10+ on Linux x86_64 or macOS arm64 | `suzume` on PyPI | [Python guide](/docs/python) |
+| Go | Go 1.26+ with cgo | `github.com/libraz/go-suzume` | [Go bindings](/docs/go) |
+| C++ | Native C or C++ program | Built from source | [C / C++ library](/docs/cpp) |
+| CLI | Shell | `suzume` command from the PyPI wheel | [Python CLI](/docs/python-cli) |
 
-### Installation
+## Install
 
-```bash
+::: code-group
+
+```bash [JavaScript]
 npm install @libraz/suzume
 ```
 
-See [Installation](/docs/installation) for all package managers, CDN, and other bindings.
+```bash [Python]
+pip install suzume
+```
 
-### Basic Usage
+```bash [Go]
+git clone https://github.com/libraz/go-suzume.git
+cd go-suzume && make lib
 
-```typescript
+# From your own module:
+go mod edit -replace github.com/libraz/go-suzume=/path/to/go-suzume
+go get github.com/libraz/go-suzume
+```
+
+```bash [C++]
+git clone https://github.com/libraz/suzume.git
+cd suzume
+make install   # into /usr/local; override with PREFIX=/opt/suzume
+```
+
+```bash [CLI]
+pip install suzume   # the wheel also installs the suzume command
+```
+
+:::
+
+[Installation](/docs/installation) covers other package managers, the CDN build, platform requirements, and the native `suzume-cli` developer tool.
+
+## Analyze Text
+
+::: code-group
+
+```typescript [JavaScript]
 import { Suzume } from '@libraz/suzume'
 
-// Create an instance
 const suzume = await Suzume.create()
 
-// Analyze text
-const morphemes = suzume.analyze('今日は良い天気ですね')
-
-for (const m of morphemes) {
-  console.log(`${m.surface} [${m.posJa}] - ${m.baseForm}`)
+for (const m of suzume.analyze('東京で美味しいラーメンを食べた')) {
+  console.log(`${m.surface}\t${m.pos}\t${m.baseForm}`)
 }
 
-// Free resources when done
 suzume.destroy()
 ```
 
-`Suzume.create()` also accepts options that tune tokenization:
+```python [Python]
+from suzume import Suzume
 
-```typescript
-const suzume = await Suzume.create({ mode: 'search', mergeCompounds: true })
+with Suzume() as suzume:
+    for m in suzume.analyze("東京で美味しいラーメンを食べた"):
+        print(f"{m.surface}\t{m.pos}\t{m.base_form}")
 ```
 
-Available options also cover bundled-dictionary loading, scorer configuration, and isolated WASM runtimes. See the [API Reference](/docs/api) for all defaults and trade-offs.
+```go [Go]
+package main
 
-The `mode` property can be changed after creation without reloading dictionaries. Instances share a cached WASM runtime by default; pass `freshWasmModule: true` only when separate linear memory is required.
+import (
+	"fmt"
+	"log"
 
-Beyond `destroy()`, the instance exposes text and binary dictionary loading, installed-entry counts, caller-dictionary clearing, dictionary status, stable error codes, and warnings. See the [API Reference](/docs/api).
+	"github.com/libraz/go-suzume"
+)
 
-### Common Tasks
+func main() {
+	analyzer, err := suzume.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer analyzer.Close()
 
-The following examples assume a live `suzume` instance. If you ran the basic example through `destroy()`, create a new instance with `await Suzume.create()` first, and destroy it after your last task.
+	for _, m := range analyzer.Analyze("東京で美味しいラーメンを食べた") {
+		fmt.Printf("%s\t%s\t%s\n", m.Surface, m.POS, m.BaseForm)
+	}
+}
+```
 
-#### Extract Search Keywords
+```cpp [C++]
+#include <iostream>
 
-```typescript
+#include "suzume/suzume.hpp"
+
+int main() {
+  suzume::Tokenizer tokenizer;
+  if (!tokenizer) return 1;
+  for (const auto& m : tokenizer.analyze("東京で美味しいラーメンを食べた")) {
+    std::cout << m.surface << '\t' << m.pos << '\t' << m.base_form << '\n';
+  }
+}
+```
+
+```bash [CLI]
+suzume "東京で美味しいラーメンを食べた"
+```
+
+:::
+
+Each printed line is one token, with its surface, part of speech, and lemma separated by tabs:
+
+<DiagramTokenAnatomy />
+
+The CLI prints the same three columns followed by the start and end offsets. `食べ` is the [continuative form](/docs/glossary#renyokei), the form a verb takes before `た`.
+
+A token carries more than these three fields: [conjugation type and form](/docs/glossary#conjugation-form), offsets, and flags such as `isUserDict` and `isUnknown`. The full field list is in the [Morpheme interface](/docs/api#morpheme-interface). Offsets count Unicode code points in the normalized text; see [Offsets](/docs/analysis-modes#offsets) before slicing the input with them.
+
+Construction options select the analysis mode and whether noun compounds merge; see [Modes, Offsets, and Normalization](/docs/analysis-modes#modes). Every option and its default is listed under [`Suzume.create(options?)`](/docs/api#suzume-create-options).
+
+## Common Tasks
+
+These snippets reuse the instance from [Analyze Text](#analyze-text), so run them before it is destroyed or closed.
+
+### Extract Search Keywords
+
+`generateTags()` drops particles, auxiliaries, formal nouns, and low-information words, and returns the lemma of each remaining token. `excludeBasic` also drops words whose lemma is all hiragana.
+
+::: code-group
+
+```typescript [JavaScript]
 const tags = suzume.generateTags('東京スカイツリーで夜景を撮影しました', {
   excludeBasic: true,
   maxTags: 5,
 })
 
-console.log(tags)
-// [
-//   { tag: '東京', pos: 'NOUN' },
-//   { tag: 'スカイツリー', pos: 'NOUN' },
-//   { tag: '夜景', pos: 'NOUN' },
-//   { tag: '撮影', pos: 'NOUN' }
-// ]
+for (const t of tags) {
+  console.log(`${t.tag}\t${t.pos}`)
+}
 ```
 
-#### Normalize Conjugated Words
+```python [Python]
+tags = suzume.generate_tags(
+    "東京スカイツリーで夜景を撮影しました",
+    exclude_basic=True,
+    max_tags=5,
+)
 
-```typescript
-const morphemes = suzume.analyze('食べさせられなかった')
+for t in tags:
+    print(f"{t.tag}\t{t.pos}")
+```
 
-for (const m of morphemes) {
+```go [Go]
+opts := suzume.DefaultTagOptions()
+opts.ExcludeBasic = true
+opts.MaxTags = 5
+
+for _, t := range analyzer.GenerateTagsWithOptions("東京スカイツリーで夜景を撮影しました", opts) {
+	fmt.Printf("%s\t%s\n", t.Tag, t.POS)
+}
+```
+
+```cpp [C++]
+suzume::TagOptions opts;
+opts.exclude_basic = true;
+opts.max_tags = 5;
+
+for (const auto& t : tokenizer.generateTags("東京スカイツリーで夜景を撮影しました", opts)) {
+  std::cout << t.tag << '\t' << t.pos << '\n';
+}
+```
+
+```bash [CLI]
+suzume -f tags --tag-exclude-basic --tag-max-tags 5 "東京スカイツリーで夜景を撮影しました"
+```
+
+:::
+
+```text
+東京	NOUN
+スカイツリー	NOUN
+夜景	NOUN
+撮影	NOUN
+```
+
+All tabs print this output. See [`generateTags(text, options?)`](/docs/api#generatetags-text-options) for the remaining filters.
+
+### Normalize Conjugated Words
+
+Every token in a conjugated chain reports its own lemma, so mapping surfaces to lemmas undoes the inflection.
+
+::: code-group
+
+```typescript [JavaScript]
+for (const m of suzume.analyze('食べさせられなかった')) {
   if (m.surface !== m.baseForm) {
     console.log(`${m.surface} -> ${m.baseForm}`)
   }
 }
 ```
 
-### Output Format
+```python [Python]
+for m in suzume.analyze("食べさせられなかった"):
+    if m.surface != m.base_form:
+        print(f"{m.surface} -> {m.base_form}")
+```
 
-`analyze()` returns an array of `Morpheme` objects:
-
-```typescript
-interface Morpheme {
-  surface: string      // Surface form
-  pos: string          // Part of speech (English)
-  baseForm: string     // Base/dictionary form
-  posJa: string        // Part of speech (Japanese)
-  conjType: string | null  // Conjugation type
-  conjForm: string | null  // Conjugation form
-  extendedPos: string  // Extended POS subcategory (e.g. "VERB_連用")
-  start: number        // Start Unicode code-point offset in normalized text
-  end: number          // End Unicode code-point offset in normalized text
-  startUtf16: number   // Start offset for JavaScript String.slice()
-  endUtf16: number     // End offset for JavaScript String.slice()
-  isUserDict: boolean       // Came from a loaded user dictionary
-  isFormalNoun: boolean     // Formal/dependent noun (e.g. こと, もの)
-  isLowInfo: boolean        // Low-information token (function-word-like)
-  isUnknown: boolean        // Generated as an unknown word candidate
-  isFromDictionary: boolean // Matched from a core or user dictionary
-  score: number             // Candidate score/cost used by the analyzer
+```go [Go]
+for _, m := range analyzer.Analyze("食べさせられなかった") {
+	if m.Surface != m.BaseForm {
+		fmt.Printf("%s -> %s\n", m.Surface, m.BaseForm)
+	}
 }
 ```
 
-`start` and `end` are Unicode code-point offsets into the normalized text. Use `analyzeWithNormalizedText()` when you need that exact text; use `startUtf16` and `endUtf16` to slice it with JavaScript:
-
-```typescript
-const { normalizedText, morphemes } =
-  suzume.analyzeWithNormalizedText('ＡＢＣを検索')
-
-for (const m of morphemes) {
-  console.log(normalizedText.slice(m.startUtf16, m.endUtf16))
+```cpp [C++]
+for (const auto& m : tokenizer.analyze("食べさせられなかった")) {
+  if (m.surface != m.base_form) {
+    std::cout << m.surface << " -> " << m.base_form << '\n';
+  }
 }
 ```
 
-### Browser Usage
-
-You can also load directly from a CDN:
-
-```html
-<script type="module">
-  import { Suzume } from 'https://cdn.jsdelivr.net/npm/@libraz/suzume/dist/index.js'
-
-  const suzume = await Suzume.create()
-  const result = suzume.analyze('こんにちは')
-  console.log(result)
-  suzume.destroy()
-</script>
+```bash [CLI]
+# Prints every token; the third column is the lemma.
+suzume "食べさせられなかった"
 ```
+
+:::
+
+```text
+食べ -> 食べる
+させ -> させる
+られ -> られる
+なかっ -> ない
+```
+
+The final `た` is already its own lemma, so the filter skips it.
 
 ## Next Steps
 
-- [Installation](/docs/installation) - Detailed setup instructions
-- [User Dictionary](/docs/user-dictionary) - Add custom words
-- [API Reference](/docs/api) - Full API documentation
-- [Python Guide](/docs/python) - Using Suzume from Python
-- [Python CLI](/docs/python-cli) - Analysis from the Python wheel
-- [Go Bindings](/docs/go) - Using Suzume from Go
-- [C / C++ Library](/docs/cpp) - Native C++ wrapper and C ABI
-- [Native Developer CLI](/docs/cli) - Dictionary and test workflows
-- [How It Works](/docs/how-it-works) - Technical deep-dive
+| Page | Read it for |
+|------|-------------|
+| [Installation](/docs/installation) | Package managers, CDN, platform requirements, `suzume-cli` |
+| [User Dictionary](/docs/user-dictionary) | Adding domain words |
+| [Modes, Offsets, and Normalization](/docs/analysis-modes) | Analysis modes, compound merging, offsets |
+| [Glossary](/docs/glossary) | Terms used in the output and these docs |
+| [How It Works](/docs/how-it-works) | The analysis pipeline |
+| [Native CLI](/docs/cli) | Dictionary compilation and test workflows |

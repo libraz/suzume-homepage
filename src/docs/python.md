@@ -1,3 +1,8 @@
+---
+title: "Python Bindings: Tokenize Japanese in Python"
+description: "Tokenize Japanese in Python with the suzume package from PyPI: constructor options, analysis results, Morpheme fields, tags, user dictionaries and errors."
+---
+
 # Python Bindings
 
 The [`suzume`](https://pypi.org/project/suzume/) package is a ctypes binding to the native Suzume library. Its wheel contains the shared library and bundled dictionaries.
@@ -85,11 +90,11 @@ with Suzume() as analyzer:
     assert analyzer.mode is Mode.SPLIT
 ```
 
-See [Analysis Modes](/docs/api) for the segmentation behavior of each mode.
+See [Analysis Modes](/docs/analysis-modes#modes) for the segmentation behavior of each mode.
 
 ## Analysis and normalized text
 
-`analyze()` returns `list[Morpheme]`. Each morpheme’s `start` and `end` are Unicode code-point offsets into the normalized text, which may differ from the input.
+`analyze()` returns `list[Morpheme]`. Each morpheme’s `start` and `end` are Unicode code-point offsets into the normalized text, which may differ from the input. See [Offsets](/docs/analysis-modes#offsets) for the concept.
 
 Use `analyze_with_normalized_text()` when you need the exact string used for those offsets:
 
@@ -109,20 +114,22 @@ The return value is a frozen `AnalysisResult` dataclass with `normalized_text: s
 | Field | Type | Description |
 |-------|------|-------------|
 | `surface` | `str` | Surface form in the normalized text |
-| `pos` | `str` | Part of speech in English, such as `NOUN` |
-| `base_form` | `str` | Dictionary or base form |
+| `pos` | `str` | [Part of speech](/docs/glossary#pos) in English, such as `NOUN` |
+| `base_form` | `str` | [Lemma](/docs/glossary#lemma) (base form) |
 | `pos_ja` | `str` | Part of speech in Japanese |
-| `conj_type` | `str \| None` | Conjugation type, or `None` for a non-conjugating word |
-| `conj_form` | `str \| None` | Conjugation form, or `None` for a non-conjugating word |
-| `extended_pos` | `str` | Stable extended POS code |
+| `conj_type` | `str \| None` | [Conjugation type](/docs/glossary#conjugation-type), or `None` when none applies |
+| `conj_form` | `str \| None` | [Conjugation form](/docs/glossary#conjugation-form), or `None` for a non-conjugating word |
+| `extended_pos` | `str` | Stable [extended POS](/docs/glossary#extended-pos) code |
 | `start` | `int` | Start Unicode code-point offset in normalized text |
 | `end` | `int` | End Unicode code-point offset in normalized text |
 | `is_user_dict` | `bool` | Whether the match came from a user dictionary |
-| `is_formal_noun` | `bool` | Whether the word is a formal noun such as こと or もの |
+| `is_formal_noun` | `bool` | Whether the word is a [formal noun](/docs/glossary#formal-noun) such as こと or もの |
 | `is_low_info` | `bool` | Whether the word is marked as low information |
 | `is_unknown` | `bool` | Whether the token is an unknown-word candidate |
 | `is_from_dictionary` | `bool` | Whether the match came from any dictionary |
 | `score` | `float` | Candidate score used by the analyzer |
+
+`conj_type` can be `None` even for a token that conjugates, such as the adjective `美しかっ`, which has `conj_form` `連用形`. Use `pos`, `extended_pos`, and `conj_form` to judge the form.
 
 See the [API Reference](/docs/api) for the `pos` and `extended_pos` values.
 
@@ -150,7 +157,7 @@ with Suzume() as analyzer:
 | `particle` | `16` |
 | `auxiliary` | `32` |
 
-`0` or an empty iterable selects all filterable parts of speech: nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries. Conjunctions, symbols, and other POS categories are excluded even with an empty filter. Pronouns can still be removed by `exclude_low_info`. Particles and auxiliaries are still excluded by default; set the corresponding exclusion option to `False` to return them:
+An unknown name raises `ValueError` (not `SuzumeError`). `0` or an empty iterable selects all filterable parts of speech: nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries. Conjunctions, symbols, and other POS categories are excluded even with an empty filter. Pronouns can still be removed by `exclude_low_info`. Particles and auxiliaries are still excluded by default; set the corresponding exclusion option to `False` to return them:
 
 ```python
 with Suzume() as analyzer:
@@ -190,7 +197,7 @@ with Suzume() as analyzer:
     print(expanded_count)
 ```
 
-Use `load_binary_dict(bytes)` for a compiled `.dic` dictionary. `clear_user_dictionaries()` removes dictionaries loaded by the caller but retains the bundled user dictionary.
+`load_user_dict()` and `load_binary_dict()` raise `SuzumeError` when the dictionary cannot be loaded. Use `load_binary_dict(bytes)` for a compiled `.dic` dictionary. `clear_user_dictionaries()` removes dictionaries loaded by the caller but retains the bundled user dictionary.
 
 ```python
 from pathlib import Path
@@ -228,7 +235,12 @@ except SuzumeError as error:
 | `INVALID_INPUT` | `6` |
 | `INTERNAL` | `7` |
 
-Text containing an unpaired surrogate raises `SuzumeError` with `INVALID_UTF8` before it reaches the native library. This applies to analyzed text, user-dictionary data, and `scorer_options` given as a string or a mapping.
+| Situation | Raises |
+|-----------|--------|
+| Native failure | `SuzumeError` with the matching `ErrorCode` |
+| Any use of a closed instance other than another `close()` | `SuzumeError` with `INTERNAL` |
+| Unpaired surrogate in analyzed text, user-dictionary data, or `scorer_options` (string or mapping), detected before the native call | `SuzumeError` with `INVALID_UTF8` |
+| Unknown `pos_filter` name | `ValueError` (not a `SuzumeError`) |
 
 ## API summary
 

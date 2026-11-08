@@ -1,6 +1,11 @@
+---
+title: "Speed and Accuracy: Japanese Tokenizer Benchmarks"
+description: "Reproducible WASM speed measurements under Node and word-boundary agreement on Suzume's own test data, with what each figure covers and what it leaves out."
+---
+
 # Speed and Accuracy
 
-This page reports a reproducible Node/WASM speed run and an in-sample boundary-agreement measurement. Each figure states what it covers so you can compare it with your own workload.
+This page reports a reproducible Node/WASM speed run and a boundary-agreement measurement on Suzume's own test data. Each figure states what it covers so you can compare it with your own workload. The commands run from the root of a checkout of [github.com/libraz/suzume](https://github.com/libraz/suzume).
 
 ## WASM speed under Node
 
@@ -8,10 +13,10 @@ The script measures the public JavaScript API, including result decoding. It fir
 
 | | Median |
 |---|---|
-| Create an analyzer in a loaded/shared WASM runtime | 2.263 ms |
+| Create an instance in a loaded/shared WASM runtime | 2.263 ms |
 | First analysis after creation | 0.439 ms |
-| Steady-state analysis, per text | 0.290876 ms |
-| Steady-state throughput | 13,751 tokens/sec |
+| Steady-state analysis, per text | 0.29 ms |
+| Steady-state throughput | about 3,440 texts/sec, 13,751 tokens/sec |
 
 ```bash
 make build
@@ -32,7 +37,7 @@ These checks use separate implementations and measurement conditions; compare re
 
 ## Boundary agreement on a fixture subset
 
-The script scores cases under `tests/data/tokenization` whose expected surfaces reassemble to the raw single-line input. It invokes the native CLI with its default dictionary loading. The full `universal_tokenization_test` suite uses `skip_user_dictionary=true`, while this script skips cases whose input would be normalized or contains a newline. Treat the result as an in-sample regression measure for this script's subset, not as full-suite health.
+The script scores cases under `tests/data/tokenization` whose expected surfaces reassemble to the raw single-line input. It invokes the native CLI with its default dictionary loading. The full `universal_tokenization_test` suite uses `skip_user_dictionary=true`, while this script skips cases whose input would be normalized or contains a newline. Treat the result as a regression measure on the same test data used to fix the tokenizer, for this script's subset only, not as full-suite health.
 
 Suzume is not measured by agreement with MeCab, since the two do not aim to produce interchangeable output — see [Differences from MeCab](/docs/mecab-comparison).
 
@@ -61,10 +66,9 @@ Boundary scores count agreement on interior boundaries between adjacent tokens; 
 
 ## What is not measured here
 
-- **Comparative accuracy.** There is no table putting Suzume's F1 next to
-  another tokenizer's on a shared corpus. Doing that fairly needs an
-  annotation standard both tools target, and Suzume deliberately does not
-  target MeCab's. See [Differences from MeCab](/docs/mecab-comparison).
-- **Held-out accuracy.** The reported cases are in-sample; a held-out estimate needs text that was never used to fix a bug here.
-- **Memory under adversarial input.** Allocation counts require an
-  instrumented build; the released artifact does not report them.
+| Not measured | Why |
+|---|---|
+| Speed in Python, Go and native C/C++ | Only the Node/WASM path was timed on this page. For native, run `suzume-cli test benchmark` (above) on your machine |
+| Comparative accuracy | Putting Suzume's F1 next to another tokenizer's fairly needs an annotation standard both tools target, and Suzume deliberately does not target MeCab's. See [Differences from MeCab](/docs/mecab-comparison) |
+| Accuracy on unseen text | The reported cases are the same test data used to fix the tokenizer; an estimate on unseen text needs text that was never used to fix a bug |
+| Memory under adversarial input | Allocation counts require an instrumented build; the released artifact does not report them |

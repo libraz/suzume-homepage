@@ -1,3 +1,8 @@
+---
+title: "Python バインディング：Python で日本語を解析"
+description: "PyPI の suzume パッケージで日本語をトークン化します。コンストラクタのオプション、解析結果、Morpheme のフィールド、タグ生成、ユーザー辞書、エラーを説明します。"
+---
+
 # Python バインディング
 
 [`suzume`](https://pypi.org/project/suzume/) パッケージは、Suzume のネイティブライブラリを呼び出す ctypes バインディングです。ホイールには共有ライブラリと同梱辞書が含まれます。
@@ -85,11 +90,11 @@ with Suzume() as analyzer:
     assert analyzer.mode is Mode.SPLIT
 ```
 
-各モードの分割動作は [解析モード](/ja/docs/api) を参照してください。
+各モードの分割動作は[解析モード](/ja/docs/analysis-modes#modes)を参照してください。
 
 ## 解析と正規化後テキスト
 
-`analyze()` は `list[Morpheme]` を返します。各形態素の `start` と `end` は正規化後テキスト上の Unicode コードポイントオフセットで、入力テキスト上の位置とは異なる場合があります。
+`analyze()` は `list[Morpheme]` を返します。各トークンの `start` と `end` は正規化後テキスト上の Unicode コードポイントオフセットで、入力テキスト上の位置とは異なる場合があります。概念は[オフセット](/ja/docs/analysis-modes#offsets)を参照してください。
 
 オフセットが参照する文字列も必要な場合は `analyze_with_normalized_text()` を使います。
 
@@ -100,29 +105,31 @@ with Suzume(preserve_case=False) as analyzer:
     print(result.morphemes)
 ```
 
-戻り値は frozen dataclass の `AnalysisResult` で、`normalized_text: str` と `morphemes: list[Morpheme]` を持ちます。
+戻り値は変更不可（`frozen=True`）の dataclass `AnalysisResult` で、`normalized_text: str` と `morphemes: list[Morpheme]` を持ちます。
 
 ## Morpheme のフィールド
 
-`Morpheme` は frozen dataclass です。
+`Morpheme` は変更不可（`frozen=True`）の dataclass です。
 
 | フィールド | 型 | 説明 |
 |-----------|----|------|
 | `surface` | `str` | 正規化後テキスト中の表層形 |
-| `pos` | `str` | 英語の品詞。例: `NOUN` |
-| `base_form` | `str` | 辞書形・原形 |
+| `pos` | `str` | 英語の[品詞](/ja/docs/glossary#pos)。例: `NOUN` |
+| `base_form` | `str` | [原形](/ja/docs/glossary#lemma) |
 | `pos_ja` | `str` | 日本語の品詞 |
-| `conj_type` | `str \| None` | 活用型。活用しない語では `None` |
-| `conj_form` | `str \| None` | 活用形。活用しない語では `None` |
-| `extended_pos` | `str` | 安定した拡張品詞コード |
+| `conj_type` | `str \| None` | [活用型](/ja/docs/glossary#conjugation-type)。該当がなければ `None` |
+| `conj_form` | `str \| None` | [活用形](/ja/docs/glossary#conjugation-form)。活用しない語では `None` |
+| `extended_pos` | `str` | 安定した[拡張品詞](/ja/docs/glossary#extended-pos)コード |
 | `start` | `int` | 正規化後テキストにおける開始 Unicode コードポイントオフセット |
 | `end` | `int` | 正規化後テキストにおける終了 Unicode コードポイントオフセット |
 | `is_user_dict` | `bool` | ユーザー辞書にマッチしたか |
-| `is_formal_noun` | `bool` | こと・ものなどの形式名詞か |
+| `is_formal_noun` | `bool` | こと・ものなどの[形式名詞](/ja/docs/glossary#formal-noun)か |
 | `is_low_info` | `bool` | 低情報量の語としてマークされているか |
 | `is_unknown` | `bool` | 未知語候補か |
 | `is_from_dictionary` | `bool` | いずれかの辞書にマッチしたか |
 | `score` | `float` | 解析器が使った候補スコア |
+
+`conj_type` は、活用するトークンでも `None` になることがあります。たとえば形容詞 `美しかっ` は `conj_form` が `連用形` ですが、`conj_type` は `None` です。形の判断には `pos`、`extended_pos`、`conj_form` を使ってください。
 
 `pos` と `extended_pos` の値は [API リファレンス](/ja/docs/api) を参照してください。
 
@@ -150,7 +157,7 @@ with Suzume() as analyzer:
 | `particle` | `16` |
 | `auxiliary` | `32` |
 
-`0` または空のイテラブルは、フィルター可能な品詞（代名詞を含む名詞、動詞、形容詞、副詞、助詞、助動詞）をすべて選択します。空のフィルターでも、接続詞、記号などその他の品詞は除外されます。代名詞も `exclude_low_info` で除外される場合があります。助詞と助動詞は既定で除外されます。結果に含めるには、対応する除外オプションを `False` にしてください。
+未知の名前を渡すと `ValueError` が発生します（`SuzumeError` ではありません）。`0` または空のイテラブルは、フィルター可能な品詞（代名詞を含む名詞、動詞、形容詞、副詞、助詞、助動詞）をすべて選択します。空のフィルターでも、接続詞、記号などその他の品詞は除外されます。代名詞も `exclude_low_info` で除外される場合があります。助詞と助動詞は既定で除外されます。結果に含めるには、対応する除外オプションを `False` にしてください。
 
 ```python
 with Suzume() as analyzer:
@@ -190,7 +197,7 @@ with Suzume() as analyzer:
     print(expanded_count)
 ```
 
-コンパイル済みの `.dic` 辞書は `load_binary_dict(bytes)` で読み込みます。`clear_user_dictionaries()` は呼び出し側が読み込んだ辞書を削除しますが、同梱ユーザー辞書は残します。
+`load_user_dict()` と `load_binary_dict()` は、辞書を読み込めない場合に `SuzumeError` を送出します。コンパイル済みの `.dic` 辞書は `load_binary_dict(bytes)` で読み込みます。`clear_user_dictionaries()` は呼び出し側が読み込んだ辞書を削除しますが、同梱ユーザー辞書は残します。
 
 ```python
 from pathlib import Path
@@ -228,7 +235,12 @@ except SuzumeError as error:
 | `INVALID_INPUT` | `6` |
 | `INTERNAL` | `7` |
 
-対になっていないサロゲートを含むテキストは、ネイティブライブラリに渡る前に `INVALID_UTF8` の `SuzumeError` になります。解析対象のテキスト、ユーザー辞書データ、文字列またはマッピングで渡す `scorer_options` のいずれも対象です。
+| 状況 | 送出される例外 |
+|------|---------------|
+| ネイティブ側の失敗 | 対応する `ErrorCode` の `SuzumeError` |
+| `close()` 後のインスタンスの使用（再度の `close()` を除く） | `INTERNAL` の `SuzumeError` |
+| 解析対象のテキスト、ユーザー辞書データ、`scorer_options`（文字列またはマッピング）に対になっていないサロゲートがある（ネイティブ呼び出し前に検出） | `INVALID_UTF8` の `SuzumeError` |
+| 未知の `pos_filter` 名 | `ValueError`（`SuzumeError` ではない） |
 
 ## API 概要
 

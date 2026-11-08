@@ -1,3 +1,8 @@
+---
+title: "Build Suzume from Source: C++17 and WASM"
+description: "Build the Suzume C++17 static library and native CLI from source with CMake, plus the optional shared C library, embedded dictionaries, examples and WASM."
+---
+
 # Native Build
 
 Suzume builds as a C++17 static library and native developer CLI. A shared C ABI library, dictionary embedding, integration examples, and WASM are optional.

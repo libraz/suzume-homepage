@@ -1,3 +1,8 @@
+---
+title: "MeCab vs Suzume: Compounds, Quantities, and Names"
+description: "How Suzume keeps kanji compounds, quantities, dates and names together and which suffixes it leaves visible, compared with MeCab output in tested examples."
+---
+
 # Compounds, Quantities, and Names
 
 Suzume can keep a compound or quantity together while leaving a productive suffix or administrative boundary visible. The examples below group those decisions by the kind of word being analyzed.
@@ -30,7 +35,7 @@ Without a full dictionary, Suzume cannot determine where to split kanji compound
 
 ### Katakana Compounds
 
-An unknown ordinary katakana run is normally kept as one noun candidate. Dictionary and shape rules can assign another POS, as with mimetic `ドキドキ(ADV)`.
+An unknown ordinary katakana run is normally kept as one noun candidate. Dictionary and shape rules can assign another [POS](/docs/glossary#pos), as with mimetic `ドキドキ(ADV)`.
 
 <TokenDiff
   input="サンプルデータ"
@@ -90,7 +95,7 @@ These noun + suffix combinations function as single lexical units.
 
 ### Verb Stem + 方
 
-When the formal noun 方 follows a short verb stem, Suzume merges the expression into one search unit denoting a method.
+When the [formal noun](/docs/glossary#formal-noun) 方 follows a short verb stem, Suzume merges the expression into one search unit denoting a method.
 
 <TokenDiff input="走り方" mecab="走り / 方" suzume="走り方(NOUN)" />
 
@@ -232,7 +237,13 @@ Separating an honorific is more useful for ordinary names, while a short hiragan
 
 ### Verb Stem + Productive Suffix
 
-Productive suffixes after a verb stem — がち (tendency), たて (freshness), っぱなし (left as-is) — keep their boundary and are tagged `SUFFIX`, so the verb stem stays searchable with its lemma.
+Productive suffixes after a verb stem keep their boundary and are tagged `SUFFIX`, so the verb stem stays searchable with its [lemma](/docs/glossary#lemma).
+
+| Suffix | Meaning |
+|--------|---------|
+| がち | tendency |
+| たて | freshness |
+| っぱなし | left as-is |
 
 <TokenDiff input="忘れがち" mecab="忘れ(動詞) / がち(名詞・接尾)" suzume="忘れ(VERB, lemma: 忘れる) / がち(SUFFIX)" />
 

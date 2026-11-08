@@ -1,3 +1,8 @@
+---
+title: "C / C++ Library: Embed a Japanese Tokenizer"
+description: "Link Suzume's C++17 wrapper or C ABI into native code: install, CMake and pkg-config, analysis results, modes, tags, errors, ownership and ABI compatibility."
+---
+
 # C / C++ Library
 
 Suzume ships a native static library, an optional shared library, and two public headers:
@@ -63,7 +68,7 @@ int main() {
 }
 ```
 
-`analyze()` returns only the morpheme vector. Both analysis methods accept `std::string_view`, so a substring does not need a temporary NUL-terminated copy. `Tokenizer` is move-only and calls `suzume_destroy()` from its destructor.
+`valid()` reports whether the handle was created, and `explicit operator bool` is the same test. `analyze()` returns only the morpheme vector. Both analysis methods accept `std::string_view`, so a substring does not need a temporary NUL-terminated copy. `Tokenizer` is move-only and calls `suzume_destroy()` from its destructor.
 
 Use `Morpheme::base_form` in new code. `Morpheme::lemma` is a deprecated source-compatibility alias containing the same value.
 
@@ -170,7 +175,9 @@ tokenizer.setMode(suzume::Mode::Split);
 const suzume::Mode current = tokenizer.mode();
 ```
 
-The C accessors are `suzume_set_mode()` and `suzume_mode()`. An invalid handle makes `suzume_mode()` return `SUZUME_MODE_INVALID`.
+`setMode()` returns `true` on success and `false` for an invalid handle or an unrecognized mode. `mode()` on an invalid tokenizer returns `Mode::Normal`, so test `valid()` when the difference matters.
+
+The C accessors are `suzume_set_mode()` and `suzume_mode()`. An invalid handle makes `suzume_mode()` return `SUZUME_MODE_INVALID`, which the C++ wrapper does not expose.
 
 | C++ `Options` / C field | Default | Meaning |
 |-------------------------|---------|---------|
@@ -250,7 +257,7 @@ User-dictionary APIs are additive:
 |-----|---|---------|
 | `loadUserDictionary()` | `suzume_load_user_dict()` | Load UTF-8 TSV or legacy 3-column CSV bytes |
 | `loadUserDictionaryCount()` | `suzume_load_user_dict_count()` | Load source entries and return the installed count |
-| `loadBinaryDictionary()` | `suzume_load_binary_dict()` | Load a compiled `.dic` from memory |
+| `loadBinaryDictionary(const std::uint8_t*, std::size_t)` | `suzume_load_binary_dict()` | Load a compiled `.dic` from memory; returns `bool` |
 | `clearUserDictionaries()` | `suzume_clear_user_dictionaries()` | Remove caller-loaded dictionaries; keep the bundled user dictionary |
 | `hasCoreDictionary()` | `suzume_has_core_dictionary()` | Test whether the L2 core dictionary is loaded |
 | `dictionaryWarnings()` | `suzume_dictionary_warning_count()`, `suzume_dictionary_warning()` | Read loading, parsing, and scorer diagnostics |
@@ -323,6 +330,18 @@ make embedded
 ```
 
 This bakes `core.dic` and `user.dic` into the static library and disables dictionary-file discovery. Scorer configuration can still read `SUZUME_SCORER_CONFIG`; set `Options::skip_env_config = true` (or the C option field with the same name) when the process must not consult environment-based files. The library supports hosted embedded or RTOS targets with a C++ runtime and heap, not a freestanding bare-metal target.
+
+## Symbol Visibility
+
+`suzume_c.h` decorates every entry point with `SUZUME_EXPORT`. The macros that select its expansion are:
+
+| Macro | Defined by | Effect |
+|-------|------------|--------|
+| `SUZUME_EXPORTS` | The build, while compiling the shared library | Export symbols (`dllexport` on Windows, default visibility elsewhere) |
+| `SUZUME_STATIC` | The `suzume::suzume` CMake target, to its consumers | No decoration |
+| neither | Consumers of the shared library | Import (`dllimport` on Windows) |
+
+Linking through the installed CMake targets or pkg-config sets these correctly. Define `SUZUME_STATIC` yourself only when you link the static archive on Windows without the CMake target. Without it the header declares the functions `dllimport` and the link fails. Never define `SUZUME_EXPORTS` in a consumer.
 
 ## Thread Safety
 

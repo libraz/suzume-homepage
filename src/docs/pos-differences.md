@@ -1,6 +1,11 @@
+---
+title: "POS Tags Compared: MeCab vs Suzume"
+description: "Why the same Japanese token gets different part-of-speech labels in MeCab and Suzume, grouped by lexical category, predicate and context, and how they map."
+---
+
 # POS Classification vs MeCab
 
-The same token can carry different POS labels in MeCab and Suzume. The examples below group those differences by lexical category, predicate structure, and context; the final section explains how the two taxonomies relate.
+The same token can carry different [POS](/docs/glossary#pos) labels in MeCab and Suzume. The examples below group those differences by lexical category, predicate structure, and context; the final section explains how the two taxonomies relate.
 
 ::: tip Looking for token boundary differences?
 This page covers how tokens are labeled. For where token boundaries differ — merging, splitting, and normalization — see [Differences from MeCab](/docs/mecab-comparison).
@@ -14,7 +19,7 @@ The **MeCab** row uses Japanese POS names; the **Suzume** row uses public API ta
 
 ### Adjective-Derived よく
 
-MeCab lexicalizes よく as an adverb. Suzume assigns `ADJ` as the continuative form of よい:
+MeCab lexicalizes よく as an adverb. Suzume assigns `ADJ` as the [continuative form](/docs/glossary#renyokei) of よい:
 
 <TokenDiff input="よくある質問" mecab="よく(副詞) / ある(動詞) / 質問(名詞)" suzume="よく(ADJ) / ある(DET) / 質問(NOUN)" />
 
@@ -32,7 +37,7 @@ Suzume also assigns `PRON` to the colloquial pronouns どいつ, こいつ, そ�
 
 <TokenDiff input="こいつは" mecab="こいつ(名詞) / は(助詞)" suzume="こいつ(PRON) / は(PARTICLE)" />
 
-Colloquial `あんた`, `おめえ`, and `てめえ`, and literary `いずこ`, are also `PRON`. The lemma of `おめえ` is `おまえ`.
+Colloquial `あんた`, `おめえ`, and `てめえ`, and literary `いずこ`, are also `PRON`. The [lemma](/docs/glossary#lemma) of `おめえ` is `おまえ`.
 
 ### Greeting Interjections
 
@@ -101,7 +106,7 @@ Mimetics ending in っと are also kept whole as adverbs:
 
 Hiragana repetitions also stay whole as `ADV`, including voiced repetitions such as `はるばる` and `ほのぼの`. Kanji-led repetitions such as `恐る恐る` and `泣き泣き` receive the same tag. A following adverbial と remains separate: `しっとりと` gives `しっとり(ADV) / と(PARTICLE)`.
 
-Before the copula だ or です, a reduplicated kana mimetic is the predicate and is tagged `ADJ`. MeCab tags some of these as adverbs and others as adjectival nouns, depending on the word. Before する or a verb, the same word stays `ADV`, as in `ふわふわした`.
+Before the [copula](/docs/glossary#copula) だ or です, a reduplicated kana mimetic is the predicate and is tagged `ADJ`. MeCab tags some of these as adverbs and others as adjectival nouns, depending on the word. Before する or a verb, the same word stays `ADV`, as in `ふわふわした`.
 
 <TokenDiff input="ふわふわだ" mecab="ふわふわ(副詞) / だ(助動詞)" suzume="ふわふわ(ADJ) / だ(AUX)" />
 
@@ -155,7 +160,7 @@ A hiragana verb stem before に plus a motion verb remains `VERB` in a purpose e
 
 ### Restoring Hiragana Verb Inflections
 
-When MeCab analyzes a short pure-hiragana nasal sound change as a noun, Suzume restores the verb and its lemma from the following だ/で and the inflection pattern. A Godan-wa verb whose final う was split as an auxiliary is also restored to one token.
+When MeCab analyzes a short pure-hiragana [nasal sound change](/docs/glossary#onbin) as a noun, Suzume restores the verb and its lemma from the following だ/で and the inflection pattern. A [Godan](/docs/glossary#godan-ichidan)-wa verb whose final う was split as an auxiliary is also restored to one token.
 
 <TokenDiff input="かんで" mecab="かん(名詞) / で(助詞)" suzume="かん(VERB, lemma: かむ) / で" />
 
@@ -201,7 +206,7 @@ Suzume recognizes colloquial contracted hypothetical forms as one inflected pred
 
 <TokenDiff input="早けりゃ" mecab="早けりゃ(形容詞, lemma: 早い)" suzume="早けりゃ(ADJ, lemma: 早い)" />
 
-Verb forms report `VERB_仮定縮約` in `extendedPos`; adjective forms keep their adjective inflection category.
+Verb forms report `VERB_仮定縮約` in [`extendedPos`](/docs/glossary#extended-pos); adjective forms keep their adjective inflection category.
 
 ### Colloquial Verb Contractions
 
@@ -258,7 +263,7 @@ Suzume applies context-aware POS classification for several ambiguous words:
 
 Without a preceding predicate, the fragment かどうか can be misread as a verb. Supply the complete clause when analyzing this construction.
 
-**よう:** the volitional う after a 未然形 is `AUX`. In ような, このような方法, and 夢のような話だ, よう is the formal noun `NOUN` and な is copular `AUX` with lemma だ:
+**よう:** the volitional う after a [未然形](/docs/glossary#mizenkei) is `AUX`. In ような, このような方法, and 夢のような話だ, よう is the [formal noun](/docs/glossary#formal-noun) `NOUN` and な is copular `AUX` with lemma だ:
 
 <TokenDiff input="見よう" mecab="見よ(動詞) / う(助動詞)" suzume="見よ(VERB, lemma: 見る) / う(AUX)" />
 

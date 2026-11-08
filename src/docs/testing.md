@@ -1,3 +1,8 @@
+---
+title: "Testing Guide: Core, Bindings, and CI"
+description: "How the Suzume core repository tests the C++ core, WASM and Python bindings, native CLI and cross-binding parity, and how to add tests, benchmarks and CI."
+---
+
 # Testing Guide
 
 The core repository tests the C++ core, WASM and Python bindings, native CLI, MCP oracle, examples, and cross-binding parity. The Go binding is maintained and tested in its own repository.
@@ -95,16 +100,18 @@ Expectations in `tests/data/tokenization/*.json` are generated from the referenc
 Both `tests/data/tokenization/*.json` and `data/**/*.tsv` are tooling-managed; repository hooks block direct writes. Do not change an expected token merely to match current Suzume output. Fix the analyzer or the normalization rule, then regenerate through the tooling.
 :::
 
-With the repository MCP server configured, the standard workflow is:
+With the repository MCP server configured, a mismatch goes through one of two fixes before the case is registered:
+
+<DiagramFixtureLoop />
 
 ```text
 test_show(input_text="問題文")
-# Fix and rebuild the analyzer or normalization rule.
+# Fix the tokenizer rule and rebuild, or fix the normalization rule.
 test_show(input_text="問題文")
 test_add(input_text="問題文", file="verb_example.json")
 ```
 
-After changing normalization rules under `scripts/mcp/src/suzume_mcp/core/`, synchronize affected expectations with `test_needs_suzume_update(apply=True)`. See the repository `CONTRIBUTING.md` and `AGENTS.md` for the current workflow and tool reference.
+Normalization rules live under `scripts/mcp/src/suzume_mcp/core/`. See the repository `CONTRIBUTING.md` and `AGENTS.md` for the current workflow and tool reference.
 
 ::: warning POS labels in fixtures
 The `pos` values in these JSON fixtures use a Title-case reference taxonomy (`Noun`, `Particle`, …). This is a separate label set from the runtime `Morpheme.pos` values returned by the library, which are UPPERCASE English (`NOUN`, `PARTICLE`, …). Don't assume the two match verbatim.

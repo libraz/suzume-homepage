@@ -1,8 +1,13 @@
+---
+title: "Go バインディング：Go で日本語を解析"
+description: "github.com/libraz/go-suzume で Go から日本語をトークン化します。辞書を埋め込んだ cgo バインディングの要件、解析モード、オフセット、タグ生成、ユーザー辞書を説明します。"
+---
+
 # Go バインディング
 
 [`github.com/libraz/go-suzume`](https://github.com/libraz/go-suzume) モジュールは Suzume の Go バインディングです。Go のサービスやコマンドラインツールから、JavaScript/WASM パッケージを介さずに同じ日本語トークナイザーを使えます。
 
-このバインディングはネイティブ C++ コアを薄く包んだ cgo レイヤーです。コア辞書とユーザー辞書は `go:embed` でモジュールに埋め込まれ、起動時に自動で解析器から参照できる状態になるため、ビルドした実行バイナリに外部辞書ファイルは不要です。
+このバインディングはネイティブ C++ コアを薄く包んだ cgo レイヤーです。コア辞書とユーザー辞書は `go:embed` で埋め込まれるため、ビルドした実行バイナリに外部辞書ファイルは不要です。
 
 ## 必要環境
 
@@ -14,7 +19,11 @@ Python ホイールと違いコンパイル済みバイナリは同梱されて�
 
 ## インストール
 
-静的ライブラリと辞書はどちらも C++ ソースから生成され、Go モジュールには含まれません。そのため `go get` だけではビルドできません。リポジトリをクローンして一度ビルドします。
+静的ライブラリと辞書はどちらも C++ ソースから生成され、Go モジュールには含まれません。そのため `go get` だけではビルドできません。
+
+<DiagramGoBuild />
+
+リポジトリをクローンして一度ビルドします。
 
 ```bash
 git clone https://github.com/libraz/go-suzume.git
@@ -39,11 +48,16 @@ go get github.com/libraz/go-suzume
 make lib
 ```
 
-同期はキャッシュされたコアと辞書を置き換えるため、次のビルドは選んだソースを使います。`make sync` を使うと、代わりに上流のデフォルトブランチから取得します。
+同期はキャッシュされたコアと辞書を置き換えるため、次のビルドは選んだソースを使います。スクリプトには Makefile の近道が 2 つあります。
+
+| コマンド | 取得元 |
+|---------|--------|
+| `make sync` | 上流の既定ブランチから取得（`./sync-upstream.sh`） |
+| `make sync-local` | 隣のディレクトリにある `../suzume` をコピー（`./sync-upstream.sh --local`） |
 
 ## クイックスタート
 
-パッケージ名は `suzume` です。`New()` で解析器を作成し、`defer s.Close()` でネイティブハンドルを確実に解放して、解析された形態素を反復処理します。
+パッケージ名は `suzume` です。`New()` で解析器を作成し、`defer s.Close()` でネイティブハンドルを確実に解放して、解析されたトークンを反復処理します。
 
 ```go
 package main
@@ -68,9 +82,9 @@ func main() {
 }
 ```
 
-`Analyze()` は `[]Morpheme` スライスを返します。入力から形態素が得られない場合も、呼び出しが失敗した場合も `nil` になり、戻り値だけでは区別できません。`LastError()` も確実な判定には使えません。ネイティブの診断は現在の OS スレッドに属し、値を読む前に Go ランタイムがゴルーチンを別スレッドへ移す可能性があるためです。`Close()` は何度呼んでも安全で、ファイナライザによる解放も予備として用意されていますが、明示的に `defer` するのが想定された使い方です。
+`Analyze()` は `[]Morpheme` スライスを返します。入力からトークンが得られない場合も、呼び出しが失敗した場合も `nil` になり、戻り値だけでは区別できません。`LastError()` も確実な判定には使えません。ネイティブの診断は現在の OS スレッドに属し、値を読む前に Go ランタイムがゴルーチンを別スレッドへ移す可能性があるためです。`Close()` は何度呼んでも安全で、ファイナライザによる解放も予備として用意されていますが、明示的に `defer` するのが想定された使い方です。
 
-インスタンスはネイティブ側の可変状態を保持しており、並行呼び出しには安全ではありません。ゴルーチンごとに 1 インスタンスを使うか、アクセスを直列化してください。別々のインスタンスは並行に動作でき、作成コストも小さいものです。
+インスタンスはネイティブ側の可変状態を保持しており、並行呼び出しには安全ではありません。ゴルーチンごとに 1 インスタンスを使うか、アクセスを直列化してください。別々のインスタンスは並行に動作でき、作成コストも小さいです。
 
 ::: tip 埋め込み辞書
 パッケージの init 時に、埋め込まれた辞書はコンテンツアドレス方式のキャッシュディレクトリへ書き出され、`SUZUME_DATA_DIR` 経由でコアに渡されます。プログラム開始前に自分で `SUZUME_DATA_DIR` を設定していればそちらが優先され、埋め込み辞書は使われません。
@@ -78,7 +92,7 @@ func main() {
 
 ## 解析モード
 
-`NewWithExtendedOptions()` を使うと、分割モード・原形化・複合語結合まで含めて制御できます。`ExtendedOptions` のゼロ値はライブラリの既定値と一致しない（原形化と大文字小文字・ヴの保持が無効になってしまう）ため、`DefaultExtendedOptions()` を起点にしてください。
+`NewWithExtendedOptions()` を使うと、分割モード・[原形](/ja/docs/glossary#lemma)補正・[複合語](/ja/docs/glossary#compound)結合まで含めて制御できます。`ExtendedOptions` のゼロ値はライブラリの既定値と一致しないため、`DefaultExtendedOptions()` を起点にしてください（[ゼロ値](#zero-values) を参照）。
 
 ```go
 opts := suzume.DefaultExtendedOptions()
@@ -102,7 +116,7 @@ defer s.Close()
 | `PreserveCase` | `bool` | `true` | ASCII 英字の大文字・小文字を保持 |
 | `PreserveSymbols` | `bool` | `false` | 句読点系の `SYMBOL` トークンを保持 |
 | `Mode` | `AnalysisMode` | `ModeNormal` | `ModeNormal`、`ModeSearch`、`ModeSplit` のいずれかを選択 |
-| `Lemmatize` | `bool` | `true` | 原形補正を適用 |
+| `Lemmatize` | `bool` | `true` | [原形](/ja/docs/glossary#lemma)補正を適用 |
 | `MergeCompounds` | `bool` | `false` | 連続する名詞複合語を結合 |
 | `SkipUserDictionary` | `bool` | `false` | 同梱ユーザー辞書の自動読み込みを省略 |
 | `SkipCoreDictionary` | `bool` | `false` | 同梱コア辞書の自動読み込みを省略 |
@@ -111,7 +125,15 @@ defer s.Close()
 | `ScorerOptionsJSON` | `string` | 空文字列 | 環境設定の後に適用する JSON スコアラー上書き |
 | `DataDirectory` | `string` | 空文字列 | このディレクトリだけから辞書を読み込み |
 
-`ScorerOptionsJSON` には有効な JSON を指定してください。無効な値を指定すると `NewWithExtendedOptions()` は `ErrorCodeParse` を持つ `*suzume.Error` を返します。`SkipEnvConfig` は環境設定を無効にしますが、`ScorerOptionsJSON` は無効にしません。空でない `DataDirectory` は `SUZUME_DATA_DIR` とパッケージ内蔵辞書の自動展開より優先され、コア辞書と同梱ユーザー辞書はそのディレクトリだけから探します。`DataDirectory` が空なら、`SUZUME_DATA_DIR` があらかじめ設定されていない場合に限り、パッケージが内蔵辞書をキャッシュディレクトリに展開します。
+`ScorerOptionsJSON` には有効な JSON を指定してください。無効な値を指定すると `NewWithExtendedOptions()` は `ErrorCodeParse` を持つ `*suzume.Error` を返します。`SkipEnvConfig` は環境設定を無効にしますが、`ScorerOptionsJSON` は無効にしません。
+
+コア辞書と同梱ユーザー辞書は、次の表のとおり 1 か所から読み込まれます。
+
+| `DataDirectory` | `SUZUME_DATA_DIR` | 辞書の読み込み元 |
+|-----------------|-------------------|------------------|
+| 空でない | どちらでも | `DataDirectory` のみ |
+| 空 | 起動前に設定済み | `SUZUME_DATA_DIR` |
+| 空 | 未設定 | 内蔵コピー（パッケージの init 時にキャッシュディレクトリへ展開） |
 
 `Mode()` は現在のモードを返します。`SetMode()` は辞書を読み直さずにモードを変更します。クローズ済みのインスタンスでは通常の Go エラー、無効なモードでは `ErrorCodeInvalidInput` を持つ `*suzume.Error` を返します。`Close()` の後の `Mode()` は `ModeInvalid` を返します。
 
@@ -128,11 +150,21 @@ if err := s.SetMode(suzume.ModeSplit); err != nil {
 fmt.Println(s.Mode())
 ```
 
-正規化だけを調整したい場合は `NewWithOptions(Options)` が使えます。`PreserveVu`、`PreserveCase`、`PreserveSymbols` の 3 つのトグルだけを受け取り、モードと原形化はライブラリの既定値のままにします。`PreserveSymbols` が制御するのは句読点などの `SYMBOL` トークンで、内容を持つ記号と絵文字は設定にかかわらず `OTHER` として残ります。
+正規化だけを調整したい場合は `NewWithOptions(Options)` が使えます。`PreserveVu`、`PreserveCase`、`PreserveSymbols` の 3 つのトグルだけを受け取り、モードと原形補正はライブラリの既定値のままにします。`PreserveSymbols` が制御するのは句読点などの `SYMBOL` トークンで、内容を持つ記号と絵文字は設定にかかわらず `OTHER` として残ります。
+
+### ゼロ値 {#zero-values}
+
+オプション構造体は全フィールドをそのままコピーするため、未設定のフィールドがある構造体リテラルではライブラリの既定値が無効になります。
+
+| 構造体 | ゼロ値の影響 | 起点にするもの |
+|--------|-------------|---------------|
+| `Options` | `NewWithOptions(Options{})` は `PreserveVu` と `PreserveCase` を `false` にし、ヴと ASCII 大文字小文字の保持が無効になります。3 つのトグルすべてを明示的に設定してください | 3 つのフィールドをすべて設定したリテラル |
+| `ExtendedOptions` | 原形補正とヴ・大文字小文字の保持が無効になる | `DefaultExtendedOptions()` |
+| `TagOptions` | すべての除外フィルターが無効になる | `DefaultTagOptions()` |
 
 ## 正規化後テキストとオフセット
 
-`AnalyzeWithNormalizedText()` は、`NormalizedText` と、そこを参照する `Start`／`End` オフセットを持つ `Morpheme` のスライスをまとめた `AnalysisResult` を返します。オフセットは Unicode コードポイント単位なので、正規化後文字列を `[]rune` に変換してから切り出してください。このメソッドにエラー戻り値はなく、クローズ済みインスタンスやネイティブ解析の失敗では `Analyze()` と同じ曖昧さを持つゼロ値の `AnalysisResult` が返ります。
+`AnalyzeWithNormalizedText()` は `AnalysisResult` を返します。`NormalizedText` と `Morphemes` を持ち、各 `Start`／`End` は `NormalizedText` 上のオフセットです。オフセットは Unicode コードポイント単位なので、正規化後文字列を `[]rune` に変換してから切り出してください。このメソッドにエラー戻り値はなく、クローズ済みインスタンスやネイティブ解析の失敗では `Analyze()` と同じ曖昧さを持つゼロ値の `AnalysisResult` が返ります。
 
 ```go
 result := s.AnalyzeWithNormalizedText("ＡＢＣを検索")
@@ -144,28 +176,28 @@ for _, m := range result.Morphemes {
 
 ## Morpheme のフィールド {#morpheme-fields}
 
-`Analyze()` は `Morpheme` 構造体のスライスを返します。
+`Analyze()` は `Morpheme` 構造体のスライスを返します。以下の [品詞](/ja/docs/glossary#pos) などの用語は [用語集](/ja/docs/glossary) を参照してください。
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
 | `Surface` | `string` | テキスト中に現れる表層形 |
 | `POS` | `string` | 英語の品詞（大文字、例: `NOUN`） |
-| `BaseForm` | `string` | 辞書形・原形 |
+| `BaseForm` | `string` | [原形](/ja/docs/glossary#lemma) |
 | `POSJa` | `string` | 日本語の品詞（例: 名詞） |
-| `ConjType` | `string` | 活用型。`IsConjugatable` が true でも空文字列の場合あり |
-| `ConjForm` | `string` | 活用形。`IsConjugatable` が true の場合に意味を持つ |
-| `ExtendedPOS` | `string` | 安定した拡張品詞コード（例: `VERB_連用`） |
+| `ConjType` | `string` | [活用型](/ja/docs/glossary#conjugation-type)。`IsConjugatable` が true でも空文字列の場合あり |
+| `ConjForm` | `string` | [活用形](/ja/docs/glossary#conjugation-form)。`IsConjugatable` が true の場合に意味を持つ |
+| `ExtendedPOS` | `string` | 安定した[拡張品詞](/ja/docs/glossary#extended-pos)コード（例: `VERB_連用`） |
 | `Start` | `int` | 正規化後テキストにおける開始 Unicode コードポイントオフセット |
 | `End` | `int` | 正規化後テキストにおける終了 Unicode コードポイントオフセット |
 | `IsUserDict` | `bool` | ユーザー辞書にマッチした場合 true |
-| `IsFormalNoun` | `bool` | こと・もの などの形式名詞で true |
-| `IsLowInfo` | `bool` | タグ生成向けに低情報量と判定された場合 true |
-| `IsUnknown` | `bool` | 未知語候補として生成された場合 true |
+| `IsFormalNoun` | `bool` | こと・ものなどの[形式名詞](/ja/docs/glossary#formal-noun)で true |
+| `IsLowInfo` | `bool` | タグ生成向けに[低情報量](/ja/docs/glossary#low-info)と判定された場合 true |
+| `IsUnknown` | `bool` | [未知語](/ja/docs/glossary#unknown-word)候補として生成された場合 true |
 | `IsFromDictionary` | `bool` | いずれかの辞書にマッチした場合 true |
 | `IsConjugatable` | `bool` | 活用フィールドが意味を持つ場合 true |
 | `Score` | `float32` | 解析器が用いる候補スコア・コスト |
 
-`IsConjugatable` は動詞・形容詞だけでなく助動詞でも true になります。活用可能な形態素でも、該当する活用型がなければ `ConjType` は空文字列です。
+`IsConjugatable` は動詞・形容詞だけでなく助動詞でも true になります。活用可能なトークンでも、該当する活用型がなければ `ConjType` は空文字列です。
 
 `POS` と `ExtendedPOS` の全一覧は [API リファレンス](/ja/docs/api) を参照してください。
 
@@ -197,18 +229,18 @@ tags := s.GenerateTagsWithOptions("美味しいラーメンを食べた", opts)
 |-----------|-----|-------|------|
 | `POSFilter` | `uint8` | `0` | 対象とする品詞のビットマスク。`0` はすべてのフィルター対象品詞を選び、`POSNoun` には代名詞も含む |
 | `ExcludeBasic` | `bool` | `false` | 原形がひらがなのみの語を除外 |
-| `UseLemma` | `bool` | `true` | 表層形ではなく原形（辞書形）を使う |
+| `UseLemma` | `bool` | `true` | 表層形ではなく原形を使う |
 | `MinLength` | `int` | `2` | タグの最小文字数 |
 | `MaxTags` | `int` | `0` | タグの最大件数（`0` = 無制限） |
 | `ExcludeParticles` | `bool` | `true` | 助詞を除外 |
 | `ExcludeAuxiliaries` | `bool` | `true` | 助動詞を除外 |
-| `ExcludeFormalNouns` | `bool` | `true` | こと・もの などの形式名詞を除外 |
+| `ExcludeFormalNouns` | `bool` | `true` | こと・ものなどの形式名詞を除外 |
 | `ExcludeLowInfo` | `bool` | `true` | 低情報量の語を除外（代名詞も対象） |
 | `RemoveDuplicates` | `bool` | `true` | 重複するタグを除去 |
 
 ## ユーザー辞書
 
-`LoadUserDictionary()` で、現行の TSV 形式からカスタム語を実行時に追加できます。従来の 3 列 CSV も受け付けます。
+`LoadUserDictionary()` で、現行の TSV 形式からカスタム語を[ユーザー辞書](/ja/docs/glossary#user-dictionary)へ実行時に追加できます。従来の 3 列 CSV も受け付けます。
 
 ```go
 source := []byte("東京公園\tNOUN\n点検する\tVERB\tSURU\n")
@@ -255,7 +287,18 @@ fmt.Println("登録数:", installed)
 
 ## エラー
 
-ネイティブ API を呼び出すコンストラクターとエラーを返すメソッドは、ネイティブ側の失敗を `*suzume.Error` として保持します。`Code` は安定した `ErrorCode` の値で、`Message` に診断内容が入ります。クローズ済みハンドルや空入力のチェックは通常の Go エラーを返します。メッセージを解析せず、`errors.As` でネイティブエラーを調べてください。返された型付きエラーにはネイティブ診断が保持されるため、OS スレッドに紐づく `LastError()` の注意点は適用されません。
+ネイティブ API を呼び出す `New` 系の関数とエラーを返すメソッドは、ネイティブ側の失敗を `*suzume.Error` として保持します。フィールドは 2 つあり、`Code` は下表の安定した `ErrorCode` の値、`Message` は失敗した操作とネイティブ診断を `操作: 診断` の形でつないだ文字列です。クローズ済みハンドルや空入力のチェックは通常の Go エラーを返します。メッセージを解析せず、`errors.As` でネイティブエラーを調べてください。返された型付きエラーにはネイティブ診断が保持されるため、OS スレッドに紐づく `LastError()` の注意点は適用されません。
+
+| 定数 | 発生する場面 |
+|------|-------------|
+| `ErrorCodeSuccess` | エラーが設定されていない（`LastErrorCode()` のみ） |
+| `ErrorCodeInvalidUTF8` | 入力が有効な UTF-8 ではない |
+| `ErrorCodeDictionaryLoadFailed` | 辞書を読み込めなかった |
+| `ErrorCodeFileNotFound` | 必要なファイルが見つからない |
+| `ErrorCodeParse` | ソースや JSON を解析できなかった（無効な `ScorerOptionsJSON` など） |
+| `ErrorCodeOutOfMemory` | ネイティブ側のメモリ確保に失敗した |
+| `ErrorCodeInvalidInput` | 引数が無効（`SetMode()` に未知のモードを渡した場合など） |
+| `ErrorCodeInternal` | 想定外の内部エラー |
 
 ```go
 package main
@@ -294,11 +337,11 @@ func main() {
 |------|------|
 | `New() (*Suzume, error)` | 既定オプションで解析器を作成 |
 | `NewWithOptions(opts Options) (*Suzume, error)` | 正規化トグルのみ指定して作成 |
-| `NewWithExtendedOptions(opts ExtendedOptions) (*Suzume, error)` | モード・原形化・複合語結合まで指定して作成 |
-| `DefaultExtendedOptions() ExtendedOptions` | ライブラリ既定値の `ExtendedOptions`（起点として使用） |
-| `DefaultTagOptions() TagOptions` | ライブラリ既定値の `TagOptions`（起点として使用） |
+| `NewWithExtendedOptions(opts ExtendedOptions) (*Suzume, error)` | モード・原形補正・複合語結合まで指定して作成 |
+| `DefaultExtendedOptions() ExtendedOptions` | ライブラリ既定値の `ExtendedOptions`。起点として使います |
+| `DefaultTagOptions() TagOptions` | ライブラリ既定値の `TagOptions`。起点として使います |
 | `Version() string` | ネイティブ Suzume ライブラリのバージョン文字列 |
-| `LastError() string` | 現在の OS スレッドのネイティブ診断。Go から後で失敗原因を確認する用途には不確実 |
+| `LastError() string` | 現在の OS スレッドのネイティブ診断。Go から後で失敗原因を確認する用途には向きません |
 | `LastErrorCode() ErrorCode` | 現在の OS スレッドの診断コード。スレッドに関する制約は `LastError()` と同じ |
 
 `*Suzume` のメソッド:

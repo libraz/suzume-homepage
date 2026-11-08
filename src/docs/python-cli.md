@@ -1,3 +1,8 @@
+---
+title: "Python CLI: Tokenize Japanese from the Shell"
+description: "The suzume command from the Python wheel: tokenize Japanese from arguments or standard input, pick an output format, load dictionaries, print tags or JSON."
+---
+
 # Python CLI
 
 The Python wheel installs `suzume`, a command for analysis and tag extraction. It uses the same bundled native library and dictionaries as the Python API.
@@ -28,7 +33,7 @@ suzume --mode search "東京の公園"
 suzume analyze --mode search "東京の公園"
 ```
 
-Use `--` before input that begins with a hyphen.
+Use `--` before input that begins with a hyphen. If there is no input text, the command prints `suzume: error: no input text provided` to standard error and exits with status 1.
 
 ## Output formats
 
@@ -39,7 +44,7 @@ Select the format with `-f` or `--format`:
 | `morpheme` | Default. `surface` TAB `POS` TAB `lemma` TAB `start` TAB `end` |
 | `tsv` | Same fields as `morpheme` |
 | `tags` | `tag` TAB `POS`, one tag per line |
-| `json` | An object containing `input`, `normalized_text`, and `morphemes` |
+| `json` | An object containing `input`, `normalized_text`, and `morphemes` (see [JSON and offsets](#json-and-offsets)) |
 | `chasen` | ChaSen-like fields followed by `EOS` |
 
 ```bash
@@ -69,7 +74,9 @@ suzume --normalize-vu --preserve-symbols "ヴァイオリン、ビオラ"
 
 Currency and unit signs, arrows, technical marks, and emoji remain `OTHER` by default. `--preserve-symbols` adds punctuation-like tokens such as `、` and `。`.
 
-Run `suzume --help` for the current option summary and `suzume --version` for the installed native library version.
+Options that take a value accept both `--option value` and `--option=value`.
+
+Run `suzume --help` for the current option summary. `suzume --version`, `suzume -v`, and `suzume version` all print the installed native library version; the version request must be the only argument.
 
 ## Dictionaries
 
@@ -120,7 +127,18 @@ suzume --format tags \
 
 ## JSON and offsets
 
-Morpheme `start` and `end` values are Unicode code-point offsets into the normalized text, not necessarily the original input. JSON output includes that exact string as `normalized_text`:
+Token `start` and `end` values are Unicode code-point offsets into the [normalized](/docs/glossary#normalization) text, not necessarily the original input; see [Offsets](/docs/analysis-modes#offsets). JSON output includes that exact string as `normalized_text`. Each entry in `morphemes` has these keys:
+
+| Key | Value |
+|-----|-------|
+| `surface` | Surface form |
+| `pos` | Part of speech in English |
+| `lemma` | Lemma (the key is `lemma`, not `base_form`) |
+| `start`, `end` | Code-point offsets into `normalized_text` |
+| `extended_pos` | Extended POS code |
+| `is_user_dict`, `is_formal_noun`, `is_low_info`, `is_unknown`, `is_from_dictionary` | Boolean flags, as in the Python `Morpheme` |
+| `score` | Candidate score |
+
 
 ```bash
 suzume --lowercase --format json "ABCを検索"

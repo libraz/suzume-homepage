@@ -1,3 +1,8 @@
+---
+title: "JavaScript / WASM API Reference"
+description: "Reference for @libraz/suzume in browsers, Node.js, Deno and Bun: Suzume.create options, analyze, generateTags, user dictionaries, Morpheme fields and errors."
+---
+
 # API Reference
 
 This page documents the JavaScript / WASM binding of Suzume, published to npm as [`@libraz/suzume`](/docs/installation). Python, Go, C/C++, and the two command-line interfaces have separate guides.
@@ -24,7 +29,7 @@ static async create(options?: SuzumeOptions & { wasmPath?: string }): Promise<Su
 | `preserveCase` | `boolean` | `true` | Preserve case (don't lowercase ASCII) |
 | `preserveSymbols` | `boolean` | `false` | Preserve punctuation-like `SYMBOL` tokens; emoji and content-bearing symbols remain `OTHER` regardless of this option |
 | `mode` | `'normal' \| 'search' \| 'split'` | `'normal'` | Analysis mode. Use `search` or `split` for search-oriented segmentation |
-| `lemmatize` | `boolean` | `true` | Keep corrected dictionary forms; POS and conjugation annotations are computed either way |
+| `lemmatize` | `boolean` | `true` | Apply lemma correction; POS and conjugation annotations are computed either way |
 | `mergeCompounds` | `boolean` | `false` | Merge consecutive noun compounds where possible |
 | `skipUserDictionary` | `boolean` | `false` | Skip automatic loading of the bundled user dictionary |
 | `skipCoreDictionary` | `boolean` | `false` | Skip automatic loading of the bundled L2 core dictionary |
@@ -63,9 +68,11 @@ searchSuzume.destroy()
 
 The `mode` option controls how text is segmented:
 
-- **`normal`** — balanced segmentation for general use (default).
-- **`search`** — search-oriented output that merges consecutive noun compounds into larger searchable units.
-- **`split`** — the most aggressive segmentation, breaking compounds into their smallest meaningful units.
+| Mode | Segmentation |
+|------|--------------|
+| `normal` | Balanced segmentation for general use (default) |
+| `search` | Search-oriented output that merges consecutive noun compounds into larger searchable units |
+| `split` | The most aggressive segmentation, breaking compounds into their smallest meaningful units |
 
 In `normal` mode, `mergeCompounds` controls noun-compound merging. `search` enables merging, while `split` disables it.
 
@@ -73,7 +80,9 @@ In `normal` mode, `mergeCompounds` controls noun-compound merging. `search` enab
 
 #### Shared WASM runtime
 
-By default, calls with the same `wasmPath` share one cached WASM runtime. Each `Suzume` object has its own analyzer handle and options, but the handles use the same WebAssembly linear memory. `destroy()` releases one handle; it does not unload the cached runtime or affect other handles.
+By default, calls with the same `wasmPath` share one cached WASM runtime. Each `Suzume` object gets its own analyzer handle and options inside that runtime's linear memory.
+
+<DiagramWasmRuntime />
 
 Set `freshWasmModule: true` when an instance must have an isolated runtime. The standalone `version()` function uses the same cache unless it also receives `freshWasmModule: true`.
 
@@ -153,7 +162,9 @@ for (const morpheme of morphemes) {
 }
 ```
 
-`start` and `end` are Unicode code-point offsets into `normalizedText`. `startUtf16` and `endUtf16` are JavaScript UTF-16 code-unit offsets and can be passed directly to `String.prototype.slice()`. The two sets differ before or across characters outside the Basic Multilingual Plane, including many emoji and rare kanji. Offsets refer to normalized text, which may differ from the input. Content-bearing symbols and emoji stay in the default output as `OTHER`, so their ranges remain represented even when `preserveSymbols` is `false`.
+`start` and `end` are Unicode code-point offsets into `normalizedText`. `startUtf16` and `endUtf16` are JavaScript UTF-16 code-unit offsets and can be passed directly to `String.prototype.slice()`. The two sets differ before or across characters outside the Basic Multilingual Plane, including many emoji and rare kanji.
+
+Offsets refer to the [normalized](/docs/glossary#normalization) text, which may differ from the input; see [Offsets](/docs/analysis-modes#offsets) for the concept. Content-bearing symbols and emoji stay in the default output as `OTHER`, so their ranges remain represented even when `preserveSymbols` is `false`.
 
 ---
 
@@ -170,7 +181,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | Property | Type | Description |
 |----------|------|-------------|
 | `tag` | `string` | Tag text (surface or lemma depending on `useLemma`) |
-| `pos` | `string` | Part of speech (`NOUN`, `VERB`, `ADJ`, `ADV`, etc.) |
+| `pos` | `string` | [Part of speech](/docs/glossary#pos) (`NOUN`, `VERB`, `ADJ`, `ADV`, etc.) |
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -184,7 +195,7 @@ generateTags(text: string, options?: TagOptions): Tag[]
 | `posFilter` | `readonly TagPosFilterName[]` | `undefined` (all) | POS categories to include; an empty array also includes every filterable category, with pronouns included in `noun` |
 | `pos` | `readonly TagPosFilterName[]` | `undefined` | Deprecated alias for `posFilter`; `posFilter` wins when both are present |
 | `excludeBasic` | `boolean` | `false` | Exclude basic verbs/words with hiragana-only lemma |
-| `useLemma` | `boolean` | `true` | Use lemma (dictionary form) instead of surface form |
+| `useLemma` | `boolean` | `true` | Use the [lemma](/docs/glossary#lemma) instead of the surface form |
 | `minLength` | `number` | `2` | Minimum tag length in characters |
 | `maxTags` | `number` | `0` | Maximum number of tags (0 = unlimited) |
 | `excludeParticles` | `boolean` | `true` | Exclude particles |
@@ -252,7 +263,7 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 ```
 
 ::: tip excludeBasic
-`excludeBasic: true` filters out words whose lemma (dictionary form) is written entirely in hiragana. It removes entries such as する, いる, ある, なる, いく, and くる while keeping kanji-containing entries such as 開始, 管理, and 確認.
+`excludeBasic: true` filters out words whose lemma is written entirely in hiragana. It removes entries such as する, いる, ある, なる, いく, and くる while keeping kanji-containing entries such as 開始, 管理, and 確認.
 :::
 
 <details>
@@ -260,18 +271,20 @@ const top3 = suzume.generateTags('東京タワーと東京スカイツリーを�
 
 The tag generator applies these filters in order:
 
-1. **Particles** — excluded when `excludeParticles` is `true` (default)
-2. **Auxiliaries** — excluded when `excludeAuxiliaries` is `true` (default)
-3. **Formal nouns** — excluded when `excludeFormalNouns` is `true` (default)
-4. **Low-info words** — excluded when `excludeLowInfo` is `true` (default)
-5. **Conjunctions** — always excluded
-6. **Symbols** — always excluded
-7. **POS filter** — if `posFilter` is non-empty, only matching categories pass; an empty or undefined filter still admits only nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries
-8. **Basic words** — if `excludeBasic: true`, words with hiragana-only lemma are excluded
-9. **Tag text** — the lemma or surface is selected according to `useLemma`
-10. **Min length** — tags shorter than `minLength` Unicode characters are excluded
-11. **Deduplication** — duplicate tags are removed when `removeDuplicates` is `true`
-12. **Result limit** — generation stops at `maxTags`; `0` is unlimited
+| Step | Filter | Behavior |
+|-----:|--------|----------|
+| 1 | Particles | Excluded when `excludeParticles` is `true` (default) |
+| 2 | Auxiliaries | Excluded when `excludeAuxiliaries` is `true` (default) |
+| 3 | Formal nouns | Excluded when `excludeFormalNouns` is `true` (default) |
+| 4 | Low-info words | Excluded when `excludeLowInfo` is `true` (default) |
+| 5 | Conjunctions | Always excluded |
+| 6 | Symbols | Always excluded |
+| 7 | POS filter | If `posFilter` is non-empty, only matching categories pass; an empty or undefined filter still admits only nouns (including pronouns), verbs, adjectives, adverbs, particles, and auxiliaries |
+| 8 | Basic words | If `excludeBasic: true`, words with hiragana-only lemma are excluded |
+| 9 | Tag text | The lemma or surface is selected according to `useLemma` |
+| 10 | Min length | Tags shorter than `minLength` Unicode characters are excluded |
+| 11 | Deduplication | Duplicate tags are removed when `removeDuplicates` is `true` |
+| 12 | Result limit | Generation stops at `maxTags`; `0` is unlimited |
 
 </details>
 
@@ -279,7 +292,7 @@ The tag generator applies these filters in order:
 
 ### `loadUserDictionary(data)`
 
-Adds source dictionary entries to the analyzer. Loads are cumulative until `clearUserDictionaries()` is called.
+Adds source [user dictionary](/docs/glossary#user-dictionary) entries to the analyzer. Loads are cumulative until `clearUserDictionaries()` is called.
 
 ```typescript
 loadUserDictionary(data: string): boolean
@@ -493,9 +506,7 @@ Releases this analyzer handle and its allocations. The shared WASM runtime remai
 destroy(): void
 ```
 
-::: info Automatic cleanup via FinalizationRegistry
-Suzume registers a `FinalizationRegistry` callback, so resources will be freed automatically when the instance is garbage collected. However, calling `destroy()` explicitly is recommended for immediate cleanup — especially in Node.js where GC timing is unpredictable and WASM memory is not visible to the GC's heap pressure heuristics.
-:::
+Call it explicitly when you are done with an instance. See [Memory Management](#memory-management) for what happens if you do not.
 
 **Example:**
 ```typescript
@@ -514,10 +525,10 @@ Represents a single linguistic token.
 interface Morpheme {
   surface: string      // Surface form (as appears in text)
   pos: string          // Part of speech (English)
-  baseForm: string     // Base/dictionary form
+  baseForm: string     // Lemma (base form)
   posJa: string        // Part of speech (Japanese)
-  conjType: string | null  // Conjugation type
-  conjForm: string | null  // Conjugation form
+  conjType: string | null  // Conjugation type; null if none applies
+  conjForm: string | null  // Conjugation form; null if not conjugatable
   extendedPos: string  // Stable extended POS code (e.g. "VERB_連用")
   start: number        // Start Unicode code-point offset in normalized text
   end: number          // End Unicode code-point offset in normalized text
@@ -537,22 +548,24 @@ interface Morpheme {
 | Property | Type | Description | Example |
 |----------|------|-------------|---------|
 | `surface` | `string` | Surface form as it appears in text | `"食べ"` |
-| `pos` | `string` | Part of speech in English | `"VERB"` |
-| `baseForm` | `string` | Dictionary/base form | `"食べる"` |
+| `pos` | `string` | [Part of speech](/docs/glossary#pos) in English | `"VERB"` |
+| `baseForm` | `string` | [Lemma](/docs/glossary#lemma) (base form) | `"食べる"` |
 | `posJa` | `string` | Part of speech in Japanese | `"動詞"` |
-| `conjType` | `string \| null` | Conjugation type (for verbs/adjectives) | `"一段"` |
-| `conjForm` | `string \| null` | Conjugation form | `"連用形"` |
-| `extendedPos` | `string` | Stable extended POS code | `"VERB_連用"` |
+| `conjType` | `string \| null` | [Conjugation type](/docs/glossary#conjugation-type) | `"一段"` |
+| `conjForm` | `string \| null` | [Conjugation form](/docs/glossary#conjugation-form) | `"連用形"` |
+| `extendedPos` | `string` | Stable [extended POS](/docs/glossary#extended-pos) code | `"VERB_連用"` |
 | `start` | `number` | Start Unicode code-point offset in normalized text | `0` |
 | `end` | `number` | End Unicode code-point offset in normalized text | `2` |
 | `startUtf16` | `number` | Start JavaScript UTF-16 offset in normalized text | `0` |
 | `endUtf16` | `number` | End JavaScript UTF-16 offset in normalized text | `2` |
 | `isUserDict` | `boolean` | True when matched from a user dictionary | `false` |
-| `isFormalNoun` | `boolean` | True for formal nouns such as こと and もの | `false` |
+| `isFormalNoun` | `boolean` | True for [formal nouns](/docs/glossary#formal-noun) such as こと and もの | `false` |
 | `isLowInfo` | `boolean` | True when marked as low information for tag generation | `false` |
 | `isUnknown` | `boolean` | True when generated as an unknown-word candidate | `true` |
 | `isFromDictionary` | `boolean` | True when matched from any dictionary | `false` |
 | `score` | `number` | Candidate score/cost used by the analyzer | `-0.17` |
+
+`conjType` and `conjForm` are `null` for tokens that do not conjugate (nouns, particles). They can also be `null` or partly filled for tokens that do: `conjForm` may be set while `conjType` is `null`, as for the adjective `美しかっ` (`conjForm` `連用形`) or the auxiliary `いる` in `見ている` (`AUX_継続`, `conjForm` `終止形`). Treat a `null` `conjType` as "no conjugation type available", not as "does not conjugate"; use `pos`, `extendedPos`, and `conjForm` to judge the form.
 
 ### Part of Speech Values
 
@@ -740,7 +753,12 @@ try {
 }
 ```
 
-`Suzume.create()`, `analyze()`, `analyzeWithNormalizedText()`, `generateTags()`, the `OrThrow` dictionary methods, mode changes, and `clearUserDictionaries()` throw on native failure. Dictionary methods without `OrThrow` return `false` or `0` on native dictionary-load failure; use `lastError` and `lastErrorCode` for details. JavaScript-side validation still throws: any text argument containing an unpaired UTF-16 surrogate, including dictionary text and the keys and string values of `scorerOptions`, throws `SuzumeError` with `InvalidUtf8`. Methods that require a live handle also throw after `destroy()`.
+| Situation | Result |
+|-----------|--------|
+| Native failure in `Suzume.create()`, `analyze()`, `analyzeWithNormalizedText()`, `generateTags()`, the `OrThrow` dictionary methods, mode changes, or `clearUserDictionaries()` | Throws `SuzumeError` |
+| Native dictionary-load failure in a method without `OrThrow` | Returns `false` or `0`; read `lastError` and `lastErrorCode` |
+| Text argument with an unpaired UTF-16 surrogate, including dictionary text and the keys and string values of `scorerOptions` | Throws `SuzumeError` with `InvalidUtf8` (JavaScript-side validation) |
+| Method that needs a live handle, called after `destroy()` | Throws
 
 ::: danger WebAssembly out-of-memory behavior
 An allocation failure aborts the WASM runtime instead of returning a normal `OutOfMemory` result. It does not follow the catchable `SuzumeError` path, and the affected runtime cannot be reused. Because instances share a runtime by default, an abort also invalidates the other handles on that runtime. Process long documents in chunks, and use `freshWasmModule: true` when failure isolation is required.
@@ -750,7 +768,7 @@ An allocation failure aborts the WASM runtime instead of returning a normal `Out
 
 ## Memory Management
 
-Suzume uses WebAssembly which allocates memory outside the JavaScript heap. A `FinalizationRegistry` ensures cleanup on GC, but explicit `destroy()` is strongly recommended — especially in Node.js where GC timing is unpredictable and WASM memory is invisible to the GC's heap pressure heuristics.
+Suzume allocates its memory in WebAssembly linear memory, outside the JavaScript heap; the figure under [Shared WASM runtime](#shared-wasm-runtime) shows which side the GC sees. In Node.js, V8 does not count that memory toward heap usage, so many undestroyed handles can grow memory use while the GC sees no pressure and the `FinalizationRegistry` cleanup is delayed. Call `destroy()` explicitly, especially in server-side code.
 
 ```typescript
 // Good: Clean up when done
@@ -780,7 +798,3 @@ class MyApp {
   }
 }
 ```
-
-::: warning Node.js
-In Node.js, WASM memory is not tracked by V8's heap size. If you create many handles without calling `destroy()`, memory usage can grow even though the GC sees no pressure. Call `destroy()` explicitly in server-side code.
-:::
