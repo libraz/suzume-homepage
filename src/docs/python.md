@@ -228,6 +228,8 @@ except SuzumeError as error:
 | `INVALID_INPUT` | `6` |
 | `INTERNAL` | `7` |
 
+Text containing an unpaired surrogate raises `SuzumeError` with `INVALID_UTF8` before it reaches the native library. This applies to analyzed text, user-dictionary data, and `scorer_options` given as a string or a mapping.
+
 ## API summary
 
 | Member | Description |

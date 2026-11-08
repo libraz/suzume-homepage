@@ -740,7 +740,7 @@ try {
 }
 ```
 
-`Suzume.create()`, `analyze()`, `analyzeWithNormalizedText()`, `generateTags()`, the `OrThrow` dictionary methods, mode changes, and `clearUserDictionaries()` throw on native failure. Dictionary methods without `OrThrow` return `false` or `0` on native dictionary-load failure; use `lastError` and `lastErrorCode` for details. JavaScript-side validation, such as a lone low UTF-16 surrogate in dictionary text, can still throw. Methods that require a live handle also throw after `destroy()`.
+`Suzume.create()`, `analyze()`, `analyzeWithNormalizedText()`, `generateTags()`, the `OrThrow` dictionary methods, mode changes, and `clearUserDictionaries()` throw on native failure. Dictionary methods without `OrThrow` return `false` or `0` on native dictionary-load failure; use `lastError` and `lastErrorCode` for details. JavaScript-side validation still throws: any text argument containing an unpaired UTF-16 surrogate, including dictionary text and the keys and string values of `scorerOptions`, throws `SuzumeError` with `InvalidUtf8`. Methods that require a live handle also throw after `destroy()`.
 
 ::: danger WebAssembly out-of-memory behavior
 An allocation failure aborts the WASM runtime instead of returning a normal `OutOfMemory` result. It does not follow the catchable `SuzumeError` path, and the affected runtime cannot be reused. Because instances share a runtime by default, an abort also invalidates the other handles on that runtime. Process long documents in chunks, and use `freshWasmModule: true` when failure isolation is required.

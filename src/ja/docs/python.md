@@ -228,6 +228,8 @@ except SuzumeError as error:
 | `INVALID_INPUT` | `6` |
 | `INTERNAL` | `7` |
 
+対になっていないサロゲートを含むテキストは、ネイティブライブラリに渡る前に `INVALID_UTF8` の `SuzumeError` になります。解析対象のテキスト、ユーザー辞書データ、文字列またはマッピングで渡す `scorer_options` のいずれも対象です。
+
 ## API 概要
 
 | メンバー | 説明 |

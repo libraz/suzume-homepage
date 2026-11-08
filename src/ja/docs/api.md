@@ -740,7 +740,7 @@ try {
 }
 ```
 
-`Suzume.create()`、`analyze()`、`analyzeWithNormalizedText()`、`generateTags()`、辞書読み込みの `OrThrow` メソッド、モード変更、`clearUserDictionaries()` は、ネイティブ側で失敗すると例外を投げます。`OrThrow` のない辞書メソッドは、ネイティブ側の辞書読み込みに失敗すると `false` または `0` を返します。詳細は `lastError` と `lastErrorCode` で確認できます。ただし、辞書テキストに単独の UTF-16 下位サロゲートがある場合など、JavaScript 側の検証で例外を投げることがあります。有効なハンドルを必要とするメソッドも、`destroy()` の後は例外を投げます。
+`Suzume.create()`、`analyze()`、`analyzeWithNormalizedText()`、`generateTags()`、辞書読み込みの `OrThrow` メソッド、モード変更、`clearUserDictionaries()` は、ネイティブ側で失敗すると例外を投げます。`OrThrow` のない辞書メソッドは、ネイティブ側の辞書読み込みに失敗すると `false` または `0` を返します。詳細は `lastError` と `lastErrorCode` で確認できます。ただし、JavaScript 側の検証は常に例外を投げます。辞書テキストや `scorerOptions` のキー・文字列値を含め、対になっていない UTF-16 サロゲートを含むテキスト引数を渡すと、`InvalidUtf8` の `SuzumeError` になります。有効なハンドルを必要とするメソッドも、`destroy()` の後は例外を投げます。
 
 ::: danger WebAssembly のメモリ不足
 メモリ確保に失敗すると、通常の `OutOfMemory` を返さず WASM ランタイムが停止します。回復可能な `SuzumeError` の経路には入らず、停止したランタイムは再利用できません。デフォルトでは複数のインスタンスがランタイムを共有するため、同じランタイム上のほかのハンドルも使えなくなります。長い文書は分割して処理してください。障害をランタイム単位で分離する必要がある場合は `freshWasmModule: true` を使います。

@@ -242,7 +242,7 @@ C ABI は安定した数値コードを使います。次の関数は静的ラ�
 - `suzume_conjugation_type_label()`
 - `suzume_conjugation_form_label()`
 
-失敗は NULL、0、または偽相当のコードで通知されます。直後に `suzume_last_error()` と `suzume_last_error_code()` を読んでください。メッセージはスレッドローカルの借用文字列で、後続の C API 呼び出しが消去または置換すると無効になります。安定したコードには `SUZUME_ERROR_SUCCESS` のほか、不正 UTF-8、辞書、ファイル、解析、メモリ不足、不正入力、内部エラーがあります。C++ では `Tokenizer::lastError()` と `Tokenizer::lastErrorCode()` が同じ情報を返します。
+失敗は NULL、0、または偽相当のコードで通知されます。直後に `suzume_last_error()` と `suzume_last_error_code()` を読んでください。メッセージはスレッドローカルの借用文字列で、後続の C API 呼び出しが消去または置換すると無効になります。読み取り専用の問い合わせ（`suzume_mode()`、`suzume_has_core_dictionary()`、辞書警告の取得関数）は、成功しても直前の診断を消しません。安定したコードには `SUZUME_ERROR_SUCCESS` のほか、不正 UTF-8、辞書、ファイル、解析、メモリ不足、不正入力、内部エラーがあります。C++ では `Tokenizer::lastError()` と `Tokenizer::lastErrorCode()` が同じ情報を返します。
 
 ユーザー辞書 API は追加式です。
 

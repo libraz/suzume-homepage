@@ -242,7 +242,7 @@ The C ABI uses stable numeric codes. These helpers return static labels; do not 
 - `suzume_conjugation_type_label()`
 - `suzume_conjugation_form_label()`
 
-Failures return NULL, 0, or a false-like code. Read `suzume_last_error()` and `suzume_last_error_code()` immediately. The message is thread-local, borrowed, and invalidated when a later C API call clears or replaces it. Stable codes range from `SUZUME_ERROR_SUCCESS` through invalid UTF-8, dictionary, file, parse, out-of-memory, invalid-input, and internal errors. C++ exposes the same values as `Tokenizer::lastError()` and `Tokenizer::lastErrorCode()`.
+Failures return NULL, 0, or a false-like code. Read `suzume_last_error()` and `suzume_last_error_code()` immediately. The message is thread-local, borrowed, and invalidated when a later C API call clears or replaces it. A successful read-only query (`suzume_mode()`, `suzume_has_core_dictionary()`, or the dictionary-warning accessors) leaves the earlier diagnostic in place. Stable codes range from `SUZUME_ERROR_SUCCESS` through invalid UTF-8, dictionary, file, parse, out-of-memory, invalid-input, and internal errors. C++ exposes the same values as `Tokenizer::lastError()` and `Tokenizer::lastErrorCode()`.
 
 User-dictionary APIs are additive:
 
